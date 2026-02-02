@@ -1,3 +1,6 @@
+// Copyright (C) 2026 José Antonio Mayo García
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #import "@preview/ilm:1.4.2": *
 
 #set text(lang: "es")
