@@ -124,7 +124,7 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
 
   #figure(
     image("img/motiv/sphere_equivalent_curves.svg", width: 80%),
-    caption: [Dos curvas equivalentes en la carta estereográfica desde el polo norte (izquierda), desde el polo sur (derecha) y en la esfera representada dentro de $RR^3$ (derecha).],
+    caption: [Dos curvas equivalentes en la carta estereográfica desde el polo norte (izquierda), desde el polo sur (centro) y en la esfera representada dentro de $RR^3$ (derecha).],
   ) <fig:sphere_equivalent_curves>
 
 ]
