@@ -3,17 +3,18 @@
 
 #import "@preview/ilm:1.4.2": *
 #import "utils.typ": *
+#import "@preview/ctheorems:1.1.3": *
+
+#show: thmrules
 
 #show: frame-style(kind: "example", styles.thmbox)
-#show: frame-style(kind: "definition", styles.thmbox)
-#show: thmrules
 
 #set text(lang: "es")
 #set text(font: "Noto Sans")
 #show math.equation: set text(font: "Fira Math", fallback: true)
 #set quote(block: true)
 
-
+#show figure: set block(breakable: true)
 
 #show: ilm.with(
   title: [TFM (CAMBIAR PORTADA)],

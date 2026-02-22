@@ -10,10 +10,15 @@
   base: "theorem",
   titlefmt: strong,
 )
-#let definition = thmbox("definition", "Definición", inset: (
-  x: 0em,
-  top: 0em,
-))
+
+#let definition = thmbox(
+  "definition",
+  "Definición",
+  inset: (
+    x: 0em,
+    top: 0em,
+  ),
+)
 
 #let proof = thmproof("proof", "Proof")
 

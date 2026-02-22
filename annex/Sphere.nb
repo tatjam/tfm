@@ -1,0 +1,482 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Proof that the maps are compatible", "Section"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ",
+  RowBox[{
+   RowBox[{"f", "^",
+    RowBox[{"(",
+     RowBox[{"-", "1"}], ")"}]}], ",", " ",
+   RowBox[{
+   "gives", " ", "u", " ", "in", " ", "function", " ", "of", " ", "x"}]}],
+  "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"eq1", ":=",
+  RowBox[{"{",
+   RowBox[{
+    RowBox[{"u1", "==",
+     FractionBox["x1",
+      RowBox[{"1", "-", "x3"}]]}], ",",
+    RowBox[{"u2", "==",
+     FractionBox["x2",
+      RowBox[{"1", "-", "x3"}]]}], ",",
+    RowBox[{
+     RowBox[{
+      RowBox[{"x1", "^", "2"}], "+",
+      RowBox[{"x2", "^", "2"}], "+",
+      RowBox[{"x3", "^", "2"}]}], "==", "1"}]}], "}"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ",
+  RowBox[{"f", ",", " ",
+   RowBox[{
+   "gives", " ", "x", " ", "in", " ", "function", " ", "of", " ", "u"}]}],
+  "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"f", ":=",
+  RowBox[{"Solve", "[",
+   RowBox[{"eq1", ",",
+    RowBox[{"{",
+     RowBox[{"x1", ",", "x2", ",", "x3"}], "}"}]}], "]"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ",
+  RowBox[{
+   RowBox[{"g", "^",
+    RowBox[{"(",
+     RowBox[{"-", "1"}], ")"}]}], ",", " ",
+   RowBox[{
+   "gives", " ", "v", " ", "in", " ", "function", " ", "of", " ", "x"}]}],
+  "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"eq2", ":=",
+  RowBox[{"{",
+   RowBox[{
+    RowBox[{"v1", "->",
+     FractionBox["x1",
+      RowBox[{"1", "+", "x3"}]]}], ",",
+    RowBox[{"v2", "->",
+     FractionBox["x2",
+      RowBox[{"1", "+", "x3"}]]}]}], "}"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ",
+  RowBox[{
+   RowBox[{
+    RowBox[{"g", "^",
+     RowBox[{"(",
+      RowBox[{"-", "1"}], ")"}]}], " ", "compose", " ", "f"}], ",", " ",
+   RowBox[{
+   "gives", "  ", "v", " ", "in", " ", "function", " ", "of", " ", "u"}]}],
+  " ", "*)"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ginvComposeF", "=",
+  RowBox[{
+   RowBox[{
+    RowBox[{"(",
+     RowBox[{
+      RowBox[{"eq2", "/.", "f"}], "//", "FullSimplify"}], ")"}], "[",
+    RowBox[{"[", "1", "]"}], "]"}], "[",
+   RowBox[{"[",
+    RowBox[{"{",
+     RowBox[{"1", ",", "2"}], "}"}], "]"}], "]"}]}]], "Input"]
+}]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"{",
+   RowBox[{
+    RowBox[{"v1func", "[",
+     RowBox[{"u1_", ",", "u2_"}], "]"}], ",",
+    RowBox[{"v2func", "[",
+     RowBox[{"u1_", ",", "u2_"}], "]"}]}], "}"}], "=",
+  RowBox[{
+   RowBox[{"{",
+    RowBox[{"v1", ",", "v2"}], "}"}], "/.", "ginvComposeF"}]}]], "Input"]
+}]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"jacobian", "=",
+  RowBox[{
+   RowBox[{"D", "[",
+    RowBox[{
+     RowBox[{
+      RowBox[{"{",
+       RowBox[{"v1", ",", "v2"}], "}"}], "/.", " ", "ginvComposeF"}], ",",
+     RowBox[{"{",
+      RowBox[{"{",
+       RowBox[{"u1", ",", "u2"}], "}"}], "}"}]}], "]"}], "//",
+   "FullSimplify"}]}]], "Input"]
+}]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"jacobian", "//", "MatrixForm"}]], "Input"]
+}]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Map", "[",
+   RowBox[{
+    RowBox[{
+     RowBox[{"FunctionDomain", "[",
+      RowBox[{"#", ",",
+       RowBox[{"{",
+        RowBox[{"u1", ",", "u2"}], "}"}]}], "]"}], "&"}], ",",
+    RowBox[{"Flatten", "[", "jacobian", "]"}]}], "]"}], "//",
+  "FullSimplify"}]], "Input"]
+}]]
+}]],
+
+Cell[CellGroupData[{
+
+Cell["Example of eq0.5uivalent curves in the sphere", "Section"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ",
+  RowBox[{"Curve", " ", "in", " ", "u"}], "*)"}]], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"phi", "[", "t_", "]"}], ":=",
+   RowBox[{"{",
+    RowBox[{
+     RowBox[{"1", "+", "t"}], ",",
+     RowBox[{"1", "+",
+      RowBox[{"t", "^", "2"}]}]}], "}"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{
+   RowBox[{"psi", "[", "t_", "]"}], ":=",
+   RowBox[{"{",
+    RowBox[{
+     RowBox[{"1", "+",
+      RowBox[{"Sin", "[", "t", "]"}]}], ",",
+     RowBox[{"2", "-",
+      RowBox[{"Cos", "[", "t", "]"}]}]}], "}"}]}], ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"equivalencePoint", "=",
+   RowBox[{"{",
+    RowBox[{
+     RowBox[{"u1", "->", "1"}], ",",
+     RowBox[{"u2", "->", "1"}]}], "}"}]}], ";"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Limit", "[",
+  RowBox[{
+   FractionBox[
+    RowBox[{"(",
+     RowBox[{
+      RowBox[{"phi", "[", "t", "]"}], "-",
+      RowBox[{"psi", "[", "t", "]"}]}], ")"}], "t"], ",",
+   RowBox[{"t", "->", "0"}]}], "]"}]], "Input"]
+}]],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"phiCurve", "[", "t_", "]"}], ":=",
+   RowBox[{"{",
+    RowBox[{
+     RowBox[{"u1", "->",
+      RowBox[{
+       RowBox[{"phi", "[", "t", "]"}], "[",
+       RowBox[{"[", "1", "]"}], "]"}]}], ",",
+     RowBox[{"u2", "->",
+      RowBox[{
+       RowBox[{"phi", "[", "t", "]"}], "[",
+       RowBox[{"[", "2", "]"}], "]"}]}]}], "}"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{
+   RowBox[{"psiCurve", "[", "t_", "]"}], ":=",
+   RowBox[{"{",
+    RowBox[{
+     RowBox[{"u1", "->",
+      RowBox[{
+       RowBox[{"psi", "[", "t", "]"}], "[",
+       RowBox[{"[", "1", "]"}], "]"}]}], ",",
+     RowBox[{"u2", "->",
+      RowBox[{
+       RowBox[{"psi", "[", "t", "]"}], "[",
+       RowBox[{"[", "2", "]"}], "]"}]}]}], "}"}]}], ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*",
+  RowBox[{
+  "Curve", " ", "in", " ", "the", " ", "manifold", " ", "embedded", " ", "in",
+    " ",
+   RowBox[{"RR", "^", "3"}]}], "*)"}]], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"phiInManifold", "[", "t_", "]"}], ":=",
+   RowBox[{
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"x1", ",", "x2", ",", "x3"}], "}"}], "/.",
+     RowBox[{"f", "[",
+      RowBox[{"[", "1", "]"}], "]"}]}], "/.",
+    RowBox[{"phiCurve", "[", "t", "]"}]}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{
+   RowBox[{"psiInManifold", "[", "t_", "]"}], ":=",
+   RowBox[{
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"x1", ",", "x2", ",", "x3"}], "}"}], "/.",
+     RowBox[{"f", "[",
+      RowBox[{"[", "1", "]"}], "]"}]}], "/.",
+    RowBox[{"psiCurve", "[", "t", "]"}]}]}], ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"pointInManifold", ":=",
+   RowBox[{
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"x1", ",", "x2", ",", "x3"}], "}"}], "/.",
+     RowBox[{"f", "[",
+      RowBox[{"[", "1", "]"}], "]"}]}], "/.", "equivalencePoint"}]}],
+  ";"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["pointInManifold"], "Input"]
+}]],
+
+Cell[BoxData[
+ RowBox[{"(*", " ",
+  RowBox[{"Curve", " ", "in", " ", "v"}], " ", "*)"}]], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"phiV", "[", "t_", "]"}], ":=",
+   RowBox[{
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"v1", ",", "v2"}], "}"}], "/.", "ginvComposeF"}], "/.",
+    RowBox[{"phiCurve", "[", "t", "]"}]}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{
+   RowBox[{"psiV", "[", "t_", "]"}], ":=",
+   RowBox[{
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"v1", ",", "v2"}], "}"}], "/.", "ginvComposeF"}], "/.",
+    RowBox[{"psiCurve", "[", "t", "]"}]}]}], ";"}]}], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"equivalencePointV", "=",
+  RowBox[{
+   RowBox[{
+    RowBox[{"{",
+     RowBox[{"v1", ",", "v2"}], "}"}], "/.", "ginvComposeF"}], "/.",
+   "equivalencePoint"}]}]], "Input"]
+}]],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"mainPlotu", "=",
+   RowBox[{"ParametricPlot", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{
+       RowBox[{"phi", "[", "t", "]"}], ",",
+       RowBox[{"psi", "[", "t", "]"}]}], "}"}], ",",
+     RowBox[{"{",
+      RowBox[{"t", ",",
+       RowBox[{"-", "Pi"}], ",", "Pi"}], "}"}], ",",
+     RowBox[{"AxesOrigin", "->",
+      RowBox[{"{",
+       RowBox[{"0", ",", "0"}], "}"}]}], ",",
+     RowBox[{"Ticks", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"{", "1", "}"}], ",", " ",
+        RowBox[{"{", "1", "}"}]}], "}"}]}], ",",
+     RowBox[{"GridLines", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"{", "1", "}"}], ",",
+        RowBox[{"{", "1", "}"}]}], "}"}]}]}], "]"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"detailPlotu", "=",
+   RowBox[{"Show", "[",
+    RowBox[{"{",
+     RowBox[{
+      RowBox[{"ParametricPlot", "[",
+       RowBox[{
+        RowBox[{"{",
+         RowBox[{
+          RowBox[{"phi", "[", "t", "]"}], ",",
+          RowBox[{"psi", "[", "t", "]"}]}], "}"}], ",",
+        RowBox[{"{",
+         RowBox[{"t", ",",
+          RowBox[{"-", "Pi"}], ",", "Pi"}], "}"}], ",",
+        RowBox[{"PlotRange", "->",
+         RowBox[{"{",
+          RowBox[{
+           RowBox[{"{",
+            RowBox[{"0.8", ",", "1.2"}], "}"}], ",",
+           RowBox[{"{",
+            RowBox[{"0.8", ",", "1.2"}], "}"}]}], "}"}]}], ",",
+        RowBox[{"Frame", "->", "True"}], ",",
+        RowBox[{"FrameTicks", "->", "None"}], ",",
+        RowBox[{"Axes", "->", "True"}], ",",
+        RowBox[{"Background", "->", "White"}], " ", ",",
+        RowBox[{"Ticks", "->",
+         RowBox[{"{",
+          RowBox[{
+           RowBox[{"{", "1", "}"}], ",", " ",
+           RowBox[{"{", "1", "}"}]}], "}"}]}], ",",
+        RowBox[{"GridLines", "->",
+         RowBox[{"{",
+          RowBox[{
+           RowBox[{"{", "1", "}"}], ",",
+           RowBox[{"{", "1", "}"}]}], "}"}]}]}], "]"}], ",",
+      RowBox[{"Graphics", "[",
+       RowBox[{"Point", "[",
+        RowBox[{"{",
+         RowBox[{"1", ",", "1"}], "}"}], "]"}], "]"}]}], "}"}], "]"}]}],
+  ";"}], "\n",
+ RowBox[{
+  RowBox[{"plot2du", "=",
+   RowBox[{"Show", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"mainPlotu", ",",
+       RowBox[{"Graphics", "[",
+        RowBox[{"Point", "[",
+         RowBox[{"{",
+          RowBox[{"1", ",", "1"}], "}"}], "]"}], "]"}]}], "}"}], ",",
+     RowBox[{"Epilog", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"EdgeForm", "[",
+         RowBox[{"Directive", "[",
+          RowBox[{"Thin", ",", "Red"}], "]"}], "]"}], ",",
+        RowBox[{"FaceForm", "[", "None", "]"}], ",",
+        RowBox[{"Rectangle", "[",
+         RowBox[{
+          RowBox[{"{",
+           RowBox[{"0.8", ",", "0.8"}], "}"}], ",",
+          RowBox[{"{",
+           RowBox[{"1.2", ",", "1.2"}], "}"}]}], "]"}], ",",
+        RowBox[{"Inset", "[",
+         RowBox[{"detailPlotu", ",",
+          RowBox[{"Scaled", "[",
+           RowBox[{"{",
+            RowBox[{"0.25", ",", "0.75"}], "}"}], "]"}], ",", "Center", ",",
+          RowBox[{"Scaled", "[", "0.4", "]"}]}], "]"}]}], "}"}]}]}], "]"}]}],
+  ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"mainPlotv", "=",
+   RowBox[{"ParametricPlot", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{
+       RowBox[{"phiV", "[", "t", "]"}], ",",
+       RowBox[{"psiV", "[", "t", "]"}]}], "}"}], ",",
+     RowBox[{"{",
+      RowBox[{"t", ",",
+       RowBox[{"-", "Pi"}], ",", "Pi"}], "}"}], ",",
+     RowBox[{"AxesOrigin", "->",
+      RowBox[{"{",
+       RowBox[{"0", ",", "0"}], "}"}]}], ",",
+     RowBox[{"Ticks", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"{", "0.5", "}"}], ",", " ",
+        RowBox[{"{", "0.5", "}"}]}], "}"}]}], ",",
+     RowBox[{"GridLines", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"{", "0.5", "}"}], ",",
+        RowBox[{"{", "0.5", "}"}]}], "}"}]}]}], "]"}]}], ";"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"plot2dv", "=",
+  RowBox[{"Show", "[",
+   RowBox[{"{",
+    RowBox[{"mainPlotv", ",",
+     RowBox[{"Graphics", "[",
+      RowBox[{"Point", "[", "equivalencePointV", "]"}], "]"}]}], "}"}],
+   "]"}]}]], "Input"]
+}]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"plot3d", "=",
+   RowBox[{"Show", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{
+       RowBox[{"Graphics3D", "[",
+        RowBox[{"{",
+         RowBox[{
+          RowBox[{"AbsolutePointSize", "[", "5", "]"}], ",",
+          RowBox[{"Point", "[", "pointInManifold", "]"}]}], "}"}], "]"}], ",",
+       RowBox[{"Graphics3D", "[",
+        RowBox[{"{",
+         RowBox[{
+          RowBox[{"GrayLevel", "[", "1.0", "]"}], ",", " ",
+          RowBox[{"Sphere", "[", "]"}]}], "}"}], "]"}], ",",
+       RowBox[{"ParametricPlot3D", "[",
+        RowBox[{
+         RowBox[{"{",
+          RowBox[{
+           RowBox[{"phiInManifold", "[", "t", "]"}], ",", " ",
+           RowBox[{"psiInManifold", "[", "t", "]"}]}], "}"}], ",",
+         RowBox[{"{",
+          RowBox[{"t", ",",
+           RowBox[{"-", "\[Pi]"}], ",", "\[Pi]"}], "}"}]}], "]"}]}], "}"}], ",",
+     RowBox[{"Boxed", "->", "False"}], ",",
+     RowBox[{"Lighting", "->", "\"\<Accent\>\""}], ",",
+     RowBox[{"ViewPoint", "->",
+      RowBox[{"{",
+       RowBox[{"1", ",", "1", ",", "1"}], "}"}]}]}], "]"}]}], ";"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"\[IndentingNewLine]",
+  RowBox[{"GraphicsRow", "[",
+   RowBox[{
+    RowBox[{"{",
+     RowBox[{"plot2du", ",", "plot2dv", ",", "plot3d"}], "}"}], ",",
+    RowBox[{"ImageSize", "->", "600"}], ",",
+    RowBox[{"Spacings", "->", "10"}]}], "]"}]}]], "Input"]
+}]]
+}]]
+}]
+(* End of Notebook Content *)
