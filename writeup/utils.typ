@@ -2,6 +2,11 @@
 #import "@preview/ctheorems:1.1.3": *
 
 #let (example) = frame(kind: "example", "Ejemplo", blue.lighten(60%))
+#let (note) = frame(
+  kind: "note",
+  "Nota",
+  gray.lighten(50%),
+)
 
 #let theorem = thmbox("theorem", "Theorem", fill: rgb("#eeffee"))
 #let corollary = thmplain(
@@ -22,3 +27,5 @@
 
 #let proof = thmproof("proof", "Proof")
 
+
+#let comp = math.class("binary", scale(70%, $circle$))

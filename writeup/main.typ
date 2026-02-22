@@ -8,6 +8,7 @@
 #show: thmrules
 
 #show: frame-style(kind: "example", styles.thmbox)
+#show: frame-style(kind: "note", styles.thmbox)
 
 #set text(lang: "es")
 #set text(font: "Noto Sans")
