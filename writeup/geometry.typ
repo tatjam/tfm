@@ -256,7 +256,7 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
 
 Comencemos esta sección con un ejemplo introductorio, que sentará la motivación necesaria.
 
-#example[Gradiente de una función escalar sobre una variedad][
+#example[Derivada de una función escalar sobre una variedad][
 
   Consideremos ahora una función suficientemente suave definida sobre cierta variedad diferencial #box[$h: M -> RR$], y una curva $gamma: RR -> M$. Estudiemos la tasa de cambio de $h$ a medida que avanzamos en $gamma$, para un punto $t = 0$. Para indicar esta derivada utilizaremos la siguiente notación, dando énfasis en que se trata de una derivada convencional en cuanto a una única variable:
 
@@ -313,3 +313,23 @@ Comencemos esta sección con un ejemplo introductorio, que sentará la motivaci�
   Estas nuevas entidades matemáticas "que hemos descubierto" no son vectores tangentes, ni pertenecen a $T M$, si bien están íntimamente relacionados con estos. En lo que sigue daremos nombre a esta entidad.
 ]
 
+#definition[Una *1-forma* o *covector* es una transformación lineal que lleva de un espacio vectorial a los reales, es decir, #box[$omega: RR^n -> RR$] #cite_mech(163).] <def:1form>
+
+#note[Las 1-formas forman un espacio vectorial][
+  Si definimos la suma de dos 1-formas $omega_1$ y $omega_2$, aplicadas a cierto vector $vb(v)$, como $(omega_1 + omega_2)(vb(v)) = omega_1(vb(v)) + omega_2(vb(v))$ y la multiplicación por un escalar #box[$(lambda omega)(vb(v)) = lambda omega(vb(v))$], podemos considerar que las 1-formas presentan estructura de espacio vectorial de tantas dimensiones como los vectores sobre los que se aplican #cite_mech(163).
+
+  Este espacio vectorial se denomina como el *espacio dual* a $RR^n$, y generalmente se escribe como $(RR^n)^*$.
+]
+
+Esta estructura de 1-forma es muy general, y nosotros nos fijamos en su aplicación sobre una variedad diferencial. Al igual que definimos para cada punto de la variedad el espacio tangente, es posible asignar a cada punto de una variedad un espacio de 1-formas denominado el espacio cotangente.
+
+#definition[El *espacio cotangente* a un punto de una variedad diferencial $M$ es el espacio dual del espacio tangente de este y se denomina $T^*_x M$.]
+
+Es decir, para cada punto $x in M$ tenemos un espacio tangente $T_x M$, y a su vez podemos definir el espacio de todas las 1-formas que nos llevan de este mismo espacio tangente a los reales, es decir $omega: T_x M -> RR$, denominado $T^*_x M$.
+
+#example[Ejemplo de un covector del espacio cotangente][
+
+  Consideremos el ejemplo anterior. Hemos visto que para una curva arbitraria $gamma: RR -> M$ y una función sobre la variedad $h: M -> RR$, podemos definir $(h comp gamma)' (0)$. Denominando $x = gamma(0)$, y realizando la misma construcción para todas las posibles curvas no equivalentes que pasan por ese punto (es decir,todos los vectores del espacio tangente) podemos construir el mapa #box[$omega: T_x M -> RR$].
+
+  Este mapa $omega$ es una 1-forma (se puede demostrar su linealidad) sobre el espacio tangente $T_x M$, y por lo tanto es una de las posibles 1-formas del espacio cotangente de la variedad en ese punto, $T^*_x M$.
+]
