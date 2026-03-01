@@ -1,11 +1,14 @@
 #import "@preview/physica:0.9.8": *
 #import "utils.typ": *
 
-#let cite_mech(x) = cite(<arnold_mathematical_1989>, supplement: [pág. #x])
+#let cite_mech(x) = cite(
+  <arnoldMathematicalMethodsClassical1989>,
+  supplement: [pág. #x],
+)
 
 == Variedades diferenciables
 
-Comenzamos la sección con un repaso breve de varios conceptos que serán necesarios en el resto del trabajo. Si bien las definiciones no tienen un rigor matemático completo, son suficientes para su uso en mecánica clásica. Todas ellas han sido tomadas y adaptadas de @arnold_mathematical_1989.
+Comenzamos la sección con un repaso breve de varios conceptos que serán necesarios en el resto del trabajo. Si bien las definiciones no tienen un rigor matemático completo, son suficientes para su uso en mecánica clásica. Todas ellas han sido tomadas y adaptadas de @arnoldMathematicalMethodsClassical1989.
 
 #definition[Una *variedad topológica* se define como un conjunto de puntos, junto con una cantidad contable de cartas, tal que todo punto del conjunto esté representado por, al menos, una carta #cite_mech(77)] <def:manifold>
 
@@ -141,7 +144,7 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
   Debido a la construcción que hemos utilizado para formar el espacio tangente, utilizando las cartas que son espacios euclídeos, el espacio tangente a un punto siempre será un espacio euclídeo. Además, este espacio tendrá las mismas dimensiones que la variedad a la que pertenece.
 ]
 
-#definition[El *fibrado tangente a una variedad diferenciable M* se denomina $T M$ y es la unión #footnote[La definición rigurosa de esta operación de unión se escapa del alcance del trabajo] de todos los espacios tangentes de cada punto de esta, y es a su vez una variedad diferenciable con el doble de dimensiones que $M$ #cite_mech(81).]
+#definition[El *fibrado tangente a una variedad diferenciable M* se denomina $T M$ y es la unión #footnote[La definición rigurosa de esta operación de unión se escapa del alcance del trabajo.] de todos los espacios tangentes de cada punto de esta, y es a su vez una variedad diferenciable con el doble de dimensiones que $M$ #cite_mech(81).]
 
 #example[Fibrado tangente al círculo][
   Como ejemplo directo y fácil de visualizar, consideremos la construcción del fibrado tangente al círculo $S^1$. El círculo se puede representar por dos cartas, de forma análoga a la esfera, mediante proyección estereográfica (asumiendo radio unitario y centro en el origen). Denominemos $(U, f)$ y $(V, g)$ a ambas cartas, con
@@ -159,7 +162,7 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
 
   utilizando la identidad $x_1^2 + x_2^2 = 1$ y operando.
 
-  Consideremos ahora dos curvas equivalentes, $phi: RR -> S^1$, $psi: RR -> S^1$, tal que $x = phi(0) = psi(0)$. Denominaremos a la proyección de las dos curvas en la primera carta #footnote[Sí $x$ no es representable en la primera carta, se podría usar la segunda equivalentemente.] $phi^U (t)$ y $psi^U (t)$. Recordando la definición de curva equivalente, afirmamos que ambas curvas son equivalentes sí $dd(phi^U (0)) = dd(psi^U (0)) = epsilon^u$. Notamos que al ser funciones de una sola variable, las derivadas toman cualquier valor $epsilon^u in RR$, y por lo tanto obtenemos el espacio tangente a $x$ como $T_x S^1 tilde.equiv RR$. Como espacio vectorial, el espacio tangente aceptará una base definida con un solo número real, por ejemplo $1$.
+  Consideremos ahora dos curvas equivalentes, $phi: RR -> S^1$, $psi: RR -> S^1$, tal que $x = phi(0) = psi(0)$. Denominaremos a la proyección de las dos curvas en la primera carta #footnote[Sí $x$ no es representable en la primera carta, se podría usar la segunda equivalentemente.] $phi^U (t)$ y $psi^U (t)$. Recordando la definición de curva equivalente, afirmamos que ambas curvas son equivalentes sí $dot(phi)^U (0) = dot(psi)^U (0) = epsilon^u$, dónde el punto denota la derivada respecto al único argumento. Notamos que al ser funciones de una sola variable, las derivadas toman cualquier valor $epsilon^u in RR$, y por lo tanto obtenemos el espacio tangente a $x$ como $T_x S^1 tilde.equiv RR$.
 
   Definidos los espacios tangentes a cada punto, podemos empezar a construir el fibrado tangente. Primero, construyamos para cada carta el producto cartesiano de esta con su espacio tangente,
 
@@ -171,7 +174,7 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
   Por otra parte, podemos construir para cada conjunto de pares una función que nos lleva a puntos de $T S^1$. Definiremos, para $A$:
 
   - La *proyección natural* $p: A -> S^1$ tal que $p(u, epsilon^u) = f(u)$
-  - El *diferencial* $dd(f): A -> T_u S^1$, tal que $dd(f)(u, epsilon^u)$ representa una familia de equivalencia de curvas que pasan por $u$, es decir $phi^U (0) = psi^U (0) = u$ con $dd(phi^U) (0) = dd(psi^U) (0) = epsilon^u$.
+  - El *diferencial* $dd(f): A -> T_u S^1$, tal que $dd(f)(u, epsilon^u)$ representa una familia de equivalencia de curvas que pasan por $u$, es decir $phi^U (0) = psi^U (0) = u$ con $dot(phi)^U (0) = dot(psi)^U (0) = epsilon^u$.
   - La función $F$ que combina las dos anteriores, es decir, asigna a cada $(u, epsilon^u)$ un punto de $M$ (mediante la proyección natural) y una familia de equivalencia de curvas que pasan por ese punto.
   - La carta $(A, F)$ que representa parte de $T S^1$
 
@@ -183,8 +186,8 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
   De la definición de curva equivalente, y el hecho de estar trabajando en una variedad diferencial, podemos obtener que
 
   $
-    d phi^U (0) = d psi^U (0) = epsilon^u & , quad "y" \
-    d phi^V (0) = d psi^V (0) = epsilon^v &
+    dot(phi)^U (0) = dot(psi)^U (0) = epsilon^u & , quad "y" \
+    dot(phi)^V (0) = dot(psi)^V (0) = epsilon^v & .
   $
 
   Las previas igualdades se pueden explotar para relacionar $epsilon^u$ y $epsilon^v$ si introducimos la relación entre ambas cartas $tau = (g^(-1) comp f)$,
@@ -196,7 +199,7 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
   Tomando la derivada, obtenemos
 
   $
-    dd(phi^V)(0) = dd(tau) (phi^U (0)) dd(phi^U) (0)
+    dot(phi)^V (0) = dd(tau) (phi^U (0)) dot(phi)^U (0),
   $
 
   dónde identificamos cada término y obtenemos
@@ -205,13 +208,13 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
     epsilon^v = dd(tau) (u) thick epsilon^u.
   $
 
-  En el caso particular de nuestras dos cartas,
+  Notamos el uso notacional, dónde $dd(tau)$ denota un mapa de un espacio tangente a otro, mientras que $dot(phi)$ es una derivada convencional respecto a una variable. En este ejemplo particular, ambas son derivadas de una sola variable. Para nuestras dos cartas,
 
   $
     epsilon^v = - epsilon^u / u^2,
   $
 
-  concluyendo que ambas son compatibles gracias a las dos funciones $tau$ y $dd(tau)$ (denominada típicamente "_aplicación progrediente_"). Resumiendo de forma gráfica:
+  concluyendo que ambas son compatibles gracias a las dos funciones $tau$ y $dd(tau)$. Resumiendo de forma gráfica:
 
   #text(red)[Figura]
 
@@ -230,8 +233,8 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
   Por su parte, si consideramos dos curvas equivalentes que pasan por un cierto punto $x = phi(0) = psi(0)$, cuya representación en ambas cartas es denominado $u$ y $v$ respectivamente, tendremos
 
   $
-    & dd(phi^U) (0) = dd(psi^U) (0) = mat(epsilon^u_1; epsilon^u_2) quad "y" \
-    & dd(phi^V) (0) = dd(psi^V) (0) = mat(epsilon^v_1; epsilon^v_2).
+    & dot(phi)^U (0) = dot(psi)^U (0) = mat(epsilon^u_1; epsilon^u_2) quad "y" \
+    & dot(phi)^V (0) = dot(psi)^V (0) = mat(epsilon^v_1; epsilon^v_2).
   $
 
   La relación entre ambas proyecciones de ls mismas curvas es la función $tau$, y de forma análoga al ejemplo anterior, tenemos
@@ -249,28 +252,64 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
 
 ] <ej:sphereFibration>
 
+== Fibrado cotangente
 
-== Mecánica Lagrangiana para una partícula en órbita
+Comencemos esta sección con un ejemplo introductorio, que sentará la motivación necesaria.
 
-Consideremos una partícula orbitando la Tierra en una órbita elíptica. Denominemos a la variedad diferenciable de posibles posiciones del satélite $Q$, y la posición real del satélite es un punto de esta variedad diferenciable, $p in Q$. En términos de mecánica clásica, $Q$ es el espacio de configuración del satélite #cite_mech(53).
+#example[Gradiente de una función escalar sobre una variedad][
 
-#example[Espacio de configuración de un péndulo esférico][
+  Consideremos ahora una función suficientemente suave definida sobre cierta variedad diferencial #box[$h: M -> RR$], y una curva $gamma: RR -> M$. Estudiemos la tasa de cambio de $h$ a medida que avanzamos en $gamma$, para un punto $t = 0$. Para indicar esta derivada utilizaremos la siguiente notación, dando énfasis en que se trata de una derivada convencional en cuanto a una única variable:
 
-  Como ejemplo, consideremos un péndulo simple en tres dimensiones, es decir, una partícula unida rígidamente a un eje que puede girar en todas las direcciones. Consideremos que sobre la partícula actúa la gravedad, asumida unidireccional.
+  $
+    (h comp gamma)' (0) = lim_(t -> 0) ((h comp gamma)(t) - (h comp gamma)(0)) / t.
+  $
 
-  Por intuición física, podemos deducir que la partícula puede situarse en una esfera dentro del volumen euclídeo. Esto nos lleva a pensar que el espacio de configuración $Q$ del péndulo se corresponde a la esfera. Es decir, que $Q$ es isomórfico a la esfera $S^2$, expresado como $Q tilde.equiv S^2$.
+  Tomemos dos cartas para la variedad diferencial, $(U, f)$ y $(V, g)$, compatibles y relacionadas por un mapa $tau: U -> V$, con su Jacobiano $dd(tau)$. La proyección de la curva $gamma$ en ambas cartas será entonces $gamma^U: RR -> U$ y $gamma^V: RR -> V$ respectivamente. La previamente introducida derivada se puede calcular de forma similar en ambas cartas según
 
-  Esta definición anterior es totalmente libre de coordenadas. En particular, podemos ofrecer una visión de la configuración del péndulo en cuanto a su vector posición euclídeo $vb(x) = x_1 vb(e_1) + x_2 vb(e_2) + x_3 vb(e_3)$ tal que $x_1^2 + x_2^2 + x_3^2 = 1$ definiendo el centro del péndulo como el origen del sistema de coordenadas, y la base vectorial ${vb(e_1), vb(e_2), vb(e_3)}$ como vectores de longitud igual a la longitud de la barra rígida del péndulo, uno de ellos apuntando en la dirección de la gravedad, y los otros dos completando el sistema de coordenadas por regla de la mano derecha.
+  $
+    (h comp gamma)' (0) = (h comp f comp gamma^U)' (0) = (h comp g comp gamma^V)' (0).
+  $
 
-  Por otra parte, podríamos ofrecer una definición del sistema en cuanto a tan solo dos coordenadas angulares, $theta in [0, pi)$ y $phi in [0, 2 pi]$, eliminando la ecuación de restricción.
+  Podemos aplicar la ley de la cadena, por ejemplo, para la primera carta
 
-] <ej:conf_pendulo>
+  $
+    (h comp f comp gamma^U)' (0) = dd((h comp f)) (u) med dot(gamma)^U (0),
+  $
 
-El espacio de configuración no es suficiente si consideramos la evolución temporal del sistema, ya que no representa las velocidades. Asumiendo que $Q$ es una variedad diferenciable, el espacio de estados se define entonces como el fibrado de los espacios tangentes a $Q$, $T Q$ #cite_mech(53).
+  dónde $u = f^(-1) (gamma (0))$. Análogamente, se puede obtener la misma relación para la segunda carta, quedando
 
-#example[Espacio de estados de un péndulo esférico][
-  Retomando el @ej:conf_pendulo, el espacio tangente en cada punto $p$, denominado $T_p Q$ es el espacio de velocidades de la partícula en cada uno de estos puntos. Debido a que la partícula está a una distancia fija del centro del péndulo, este espacio tangente es isomórfico a un plano, $T_p Q tilde.equiv RR^2$:
+  $
+    dd((h comp f)) (u) med dot(gamma)^U (0) = dd((h comp g)) (v) med dot(gamma)^V (0)
+  $ <eq:derivative_invariance>
 
-  #text(red)[ACABAR]
+  Podemos representar la anterior expresión gráficamente:
 
-] <ej:estados_pendulo>
+  #figure(
+    image("img/motiv/1forms_motivation_1.svg", width: 80%),
+    caption: [Igualdad presentada en la @eq:derivative_invariance de forma visual, para dos cartas de la esfera. Se aprecia que, sí bien los "vectores" que permiten obtener la derivada de la función (colores de la esfera y sus cartas, junto con las líneas de nivel) son muy diferentes, su "producto escalar" es idéntico.],
+  ) <fig:1forms_motivation_1>
+
+  Ahora, podemos relacionar las magnitudes a ambos lados de la @eq:derivative_invariance mediante la función $tau$. Recordando los anteriores ejemplos, tenemos que
+
+  $
+    dot(gamma)^U (0) = dd(tau) med dot(gamma)^V (0),
+  $
+
+  por lo que, sustituyendo en la @eq:derivative_invariance,
+
+  $
+    dd((h comp f))(u) med dd(tau) med dot(gamma)^V (0) = dd((h comp g))(v) med dot(gamma)^V (0).
+  $
+
+  Ya que la curva $gamma$ elegida es arbitraria, podemos concluir que
+
+  $
+    dd((h comp f))(u) med dd(tau) = dd((h comp g))(v), quad "es decir" \
+    dd((h comp f))(u) = dd((h comp g))(v) med (dd(tau))^(-1)
+  $
+
+  Es aparente que, si bien los dos objetos que hemos dibujado como flechas en la @fig:1forms_motivation_1 son similares, son fundamentalmente diferentes, ya que la proyección del vector tangente $dot(gamma)^U$ se obtiene a partir de la otra proyección, $dot(gamma)^V$ a través de $dd(tau)$, pero $dd((h comp f))(u)$ se obtiene a partir de $dd((h comp g))(v)$ a partir de $dd(tau)^(-1)$.
+
+  Estas nuevas entidades matemáticas "que hemos descubierto" no son vectores tangentes, ni pertenecen a $T M$, si bien están íntimamente relacionados con estos. En lo que sigue daremos nombre a esta entidad.
+]
+

@@ -26,10 +26,15 @@
   listing-index: (enabled: false),
 )
 
-= Motivación
+= Fundamentos geométricos
 
-#include "motiv.typ"
+#include "geometry.typ"
+
+= Mecánica geométrica
+
+#include "mechanics.typ"
 
 
+= Propagación de incertidumbre
 
 
