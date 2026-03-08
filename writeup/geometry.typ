@@ -440,18 +440,83 @@ De forma análoga al espacio tangente, podemos construir una variedad diferencia
     omega^v & = (h^V)'(v) in RR.
   $
 
-  Los diferentes valores que pueden tomar $omega^u$ y $omega^v$ son precisamente el espacio cotangente en ese punto.
+  Cada diferente función $h$ que consideremos nos dará un valor de $omega^u$ y de $omega^v$, y por lo tanto podemos formar familias de equivalencia de funciones mediante este valor. El espacio cotangente $T^*_x M$ es el espacio vectorial formado por todas las familias de equivalencia de funciones con derivada en $x$, mientras que podemos identificar cada familia con un número real en las cartas.
 
-  Ahora, podemos construir para cada carta de $S^1$ un conjunto formado por el producto de cada punto de la carta con su espacio cotangente,
+  Ahora, podemos construir para cada carta de $S^1$ un conjunto formado por el producto de cada punto de la carta con su espacio cotangente, ya definido,
 
   $
     T^* U & = {(u, omega^u) | u in U, omega^u in RR}, \
     T^* V & = {(v, omega^v) | v in V, omega^v in RR}
   $
 
-  dónde en el caso del círculo, los covectores son también números reales. Ahora, de forma análoga, podemos introducir
+  Ahora, de forma análoga al caso del fibrado tangente, podemos introducir la proyección natural $p: T^* U -> S^1$ tal que $p(u, omega^u) = f(u)$. La compatibilidad entre las proyecciones naturales de $T^* U$ y $T^* V$ es evidente.
 
-  - La *proyección natural* $p: T^* U -> S^1$ tal que $p(u, omega^u) = f(u)$
+  Por otra parte, los componentes cotangentes deben relacionarse de alguna forma. Planteamos entonces el mapa dual al diferencial en cada punto $u$,
 
+  $
+    dd(f^*_u): T^*_u U -> T^*_f(u) S^1,
+  $
+
+  que asigna a cada coordenada del espacio cotangente a $U$ una 1-forma de la variedad de forma lineal. Con la proyección natural y el mapa dual, podemos construir el denominado "pullback",
+
+  $
+    dd(f^*): T^* U -> T^* S^1 quad dd(f^*)(u,omega^u) = dd(f^*_u)(omega^u).
+  $
+
+  Demostremos ahora la compatibilidad entre los "pullback". Para ello, consideremos el significado de $h^U$ y $h^V$,
+
+  $
+    h^U = h comp f, \
+    h^V = h comp g.
+  $
+
+  Por lo tanto,
+
+  $
+    h^V = h^U comp f^(-1) comp g,
+  $
+
+  pero recordemos que $tau = g^(-1) comp f$, y por lo tanto $tau^(-1) = f^(-1) comp g$, luego
+
+  $
+    h^V = h^U comp tau^(-1).
+  $
+
+  Por lo tanto, aplicando la regla de la cadena
+
+  $
+    (h^V)'(v) = (h^U)'(tau^(-1)(v)) med (tau^(-1))'(v) = (h^U)' (u) med (tau^(-1))' (v).
+  $
+
+  Identificando términos,
+
+  $
+    omega^v = omega^u med (tau^(-1))' (v),
+  $
+
+  que identificamos con la transformación $dd(tau^*): T^* U -> T^* V$, también conocida como "pullback". La nomenclatura resulta algo aparente ahora, ya que $dd(tau^*)$, para llevarnos de $U$ a $V$, utiliza $tau^(-1): V -> U$, "tirando" de los vectores en sentido contrario al sentido de la transformación.
+
+  En nuestro caso particular, $tau(u) = 1 / u$ luego $tau^(-1)(v) = 1 / v$ y tenemos
+
+  $
+    omega^v = -omega^u / v^2,
+  $
+
+
+  Con fin de comparar con los vectores tangentes, expresemos en función de $u$ en el lado derecho de la expresión que queda en
+
+  $
+    omega^v = -omega^u u^2.
+  $
+
+  Recordando la expresión de los vectores tangentes,
+
+  $
+    epsilon^v = -epsilon^u / u^2,
+  $
+
+  observamos que ambos se transforman de forma inversa.
+
+  Como apreciamos, ambos mapas son compatibles y hemos demostrado que el fibrado cotangente es también una variedad diferencial.
 ]
 
