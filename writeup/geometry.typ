@@ -91,27 +91,27 @@ Además, podemos obtener el mapa notando que las cartas son biyectivas, por lo t
 
 La introducción del concepto de diferenciabilidad de una variedad es vital, ya que nos permite definir el espacio tangente a un punto de la variedad.
 
-#definition[Consideremos una variedad diferenciable $M$, y dos curvas denominadas $phi: RR -> M$ y $psi: RR -> M$, así como una carta en la que ambas tomen coordenadas (en la carta) $vb(phi)(t)$ y $vb(psi)(t)$ respectivamente. Ambas se denominan *curvas equivalentes en un punto* sí $vb(phi)(0) = vb(psi)(0)$ y $lim_(t -> 0) (vb(phi)(t) - vb(psi)(t)) / t = 0$ #cite_mech(81).] <def:equivalentCurves>
+#definition[Consideremos una variedad diferenciable $M$, y dos curvas denominadas $phi: RR -> M$ y $psi: RR -> M$, así como una carta en la que ambas tomen coordenadas (en la carta) $phi^U (t)$ y $psi^U (t)$ respectivamente. Ambas se denominan *curvas equivalentes en un punto* sí $phi^U (0) = psi^U (0)$ y $lim_(t -> 0) (phi^U (t) - psi^U (t)) / t = 0$ #cite_mech(81).] <def:equivalentCurves>
 
 
 #example[Dos curvas equivalentes en la esfera][
   Como ejemplo, consideremos las curvas cuya proyección en la carta estereográfica desde el polo norte $(U, f)$ del @ej:sphereAtlas, en particular
 
   $
-    vb(phi)(t) = mat(phi_1(t); phi_2(t)) = mat(
+    phi^U (t) = mat(phi^U_1(t); phi^U_2(t)) = mat(
       1 + t;
       1 + t^2;
     ) \
-    vb(psi)(t) = mat(psi_1(t); psi_2(t)) = mat(
+    psi^U (t) = mat(psi^U_1(t); psi^U_2(t)) = mat(
       1 + sin(t);
       2 - cos(t);
     ).
   $
 
-  Notamos que $vb(phi)(0) = mat(1, 1)^TT$ y $vb(psi)(0) = mat(1, 1)^TT$, y a su vez
+  Notamos que $phi^U (0) = mat(1, 1)^TT$ y $psi^U (0) = mat(1, 1)^TT$, y a su vez
 
   $
-    lim_(t -> 0) (vb(phi)(t) - vb(psi)(t)) / t =
+    lim_(t -> 0) (phi^U (t) - psi^U (t)) / t =
     lim_(t -> 0) 1 / t mat(
       t - sin(t);
       t^2 + cos(t) - 1
@@ -357,7 +357,7 @@ Comencemos esta sección con un ejemplo introductorio, que sentará la motivaci�
   es decir,
 
   $
-    omega^V = omega^U med upright(J)(tau)^(-1)
+    omega^V = omega^U med upright(J)(tau)^(-1) = (upright(J)(tau)^TT)^(-1) omega^U
   $
 
   Notamos que, por contraparte, los vectores tangentes se transforman según
@@ -366,7 +366,7 @@ Comencemos esta sección con un ejemplo introductorio, que sentará la motivaci�
     (gamma^V)' = upright(J)(tau) (gamma^U)'.
   $
 
-  Concluimos por tanto que $omega^U$ y $omega^V$ no son vectores en el sentido estricto, si no que son un nuevo objecto, cuyo nombre introduciremos en breve.
+  Concluimos por tanto que $omega^U$ y $omega^V$ no son vectores en el sentido estricto, si no que son un nuevo objecto, que se transforma entre cartas de forma diferente, cuyo nombre introduciremos en breve.
 
 ]
 
@@ -378,11 +378,37 @@ Comencemos esta sección con un ejemplo introductorio, que sentará la motivaci�
   Este espacio vectorial se denomina como el *espacio dual* a $RR^n$, y generalmente se escribe como $(RR^n)^*$.
 ]
 
+#example[Visualización de las 1-formas][
+  Si podemos representar los vectores tangentes como flechas, las 1-formas tienen una representación clara: líneas de nivel @needhamVisualDifferentialGeometry2021a. A su vez, su expresión en coordenadas se puede enteder como una flecha perpendicular a estos, con su longitud proporcional al número de líneas de nivel por unidad de longitud.
+
+  La actuación de la 1-forma en un vector finalmente es proporcional al número de líneas de nivel cortadas por el vector. Notamos que la actuación de la 1-forma sobre un vector es independiente de la carta utilizada.
+
+  Para imaginar el efecto de las transformaciones entre cartas, imaginemos que los vectores y las líneas de nivel de las 1-formas se dibujan sobre una substancia elástica, y la transformación $tau$ deforma esta substancia.
+
+  Representamos el efecto de una transformación tipo escala $tau = mat(2, 0; 0, 1)$:
+
+  #figure(
+    image("img/motiv/1form_scale.svg", width: 60%),
+    caption: [Efecto de la transformación en un vector (azul) y una 1-forma (líneas de nivel grises). Apreciamos como las coordenadas del vector (en ejes anteriores a la transformación) cumplen $tau$, mientras que las coordenadas de la 1-forma cumplen $(tau^TT)^(-1) = mat(1/2, 0; 0, 1)$ para mantenerse perpendiculares a las líneas de nivel.],
+  ) <fig:1forms-visualize-scale>
+
+  Para apreciar el efecto de la transpuesta, consideremos la transformación tipo sesgo $tau = mat(1, -1; 0, 1)$:
+
+  #figure(
+    image("img/motiv/1form_sket.svg", width: 60%),
+    caption: [En este caso,la transformación sesga el plano, teniendo $(tau^TT)^(-1) = mat(1, 0; 1, 1).$ Las coordenadas están escritas en el plano antes de la transformación.],
+  ) <fig:1forms-visualize-skew>
+
+  Es apreciable que tratar a las 1-formas como vectores lleva a confusión, ya que estos se transforman de formas geométricamente muy distintas. En cambio, la visualización como líneas de nivel es mucho más intuitiva.
+]
+
 Esta estructura de 1-forma es muy general, y nosotros nos fijamos en su aplicación sobre una variedad diferencial. Al igual que definimos para cada punto de la variedad el espacio tangente, es posible asignar a cada punto de una variedad un espacio de 1-formas denominado el espacio cotangente.
 
 #definition[El *espacio cotangente* a un punto de una variedad diferencial $M$ es el espacio dual del espacio tangente de este y se denomina $T^*_x M$.]
 
 Es decir, para cada punto $x in M$ tenemos un espacio tangente $T_x M$, y a su vez podemos definir el espacio de todas las 1-formas que nos llevan de este mismo espacio tangente a los reales, es decir $omega: T_x M -> RR$, denominado $T^*_x M$.
+
+Equivalentemente, podríamos hablar de que el espacio cotangente es el espacio vectorial formado por todas las "funciones equivalentes" (funciones con mismo Jacobiano en una carta para ese punto) que se pueden definir para ese punto.
 
 #example[Ejemplo de un covector del espacio cotangente][
 
@@ -393,4 +419,39 @@ Es decir, para cada punto $x in M$ tenemos un espacio tangente $T_x M$, y a su v
   $
 
   dónde $u = gamma^U (0)$.
+
+  Esta 1-forma pertenece entonces al espacio $T^*_u U$, y podríamos encontrar una infinidad de 1-formas similares.
 ]
+
+De forma análoga al espacio tangente, podemos construir una variedad diferencial como unión de todos los espacios cotangentes.
+
+#definition[El *fibrado cotangente a una variedad diferenciable M* se denomina $T^* M$ y es la unión de todos los espacios cotangentes de cada punto de esta, y es a su vez una variedad diferenciable con el doble de dimensiones que $M$.]
+#example[Fibrado cotangente al círculo][
+  Podemos realizar la construcción del fibrado cotangente de la esfera de forma análoga al fibrado tangente de la esfera, si bien es interesante realizar de nuevo los pasos para observar las diferencias entre ambos.
+
+  Como en el @ej:circleFibration, tenemos dos cartas $(U, f)$ y $(V, g)$ para $S^1$ mediante la proyección estereográfica, relacionadas por $tau: U -> V$, junto con las cartas de $T S^1$, que hemos denominado $(T U, dd(f))$ y $(T V, dd(g))$, relacionadas por $dd(tau): T U -> T V$.
+
+  Consideremos ahora una función $h: S^1 -> RR$, con su proyección en ambas cartas $h^U: U -> RR$ y $h^V: V -> RR$. Consideremos que existe un punto $x in S^1$ tal que $f(u) = x$, $g(v) = x$.
+
+  Podemos entonces evaluar la derivada de $h$ en las cartas en este punto, que denominaremos
+
+  $
+    omega^u & = (h^U)'(u) in RR \
+    omega^v & = (h^V)'(v) in RR.
+  $
+
+  Los diferentes valores que pueden tomar $omega^u$ y $omega^v$ son precisamente el espacio cotangente en ese punto.
+
+  Ahora, podemos construir para cada carta de $S^1$ un conjunto formado por el producto de cada punto de la carta con su espacio cotangente,
+
+  $
+    T^* U & = {(u, omega^u) | u in U, omega^u in RR}, \
+    T^* V & = {(v, omega^v) | v in V, omega^v in RR}
+  $
+
+  dónde en el caso del círculo, los covectores son también números reales. Ahora, de forma análoga, podemos introducir
+
+  - La *proyección natural* $p: T^* U -> S^1$ tal que $p(u, omega^u) = f(u)$
+
+]
+
