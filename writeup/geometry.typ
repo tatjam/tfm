@@ -162,31 +162,31 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
 
   utilizando la identidad $x_1^2 + x_2^2 = 1$ y operando.
 
-  Consideremos ahora dos curvas equivalentes, $phi: RR -> S^1$, $psi: RR -> S^1$, tal que $x = phi(0) = psi(0)$. Denominaremos a la proyección de las dos curvas en la primera carta #footnote[Sí $x$ no es representable en la primera carta, se podría usar la segunda equivalentemente.] $phi^U (t)$ y $psi^U (t)$. Recordando la definición de curva equivalente, afirmamos que ambas curvas son equivalentes sí $dot(phi)^U (0) = dot(psi)^U (0) = epsilon^u$, dónde el punto denota la derivada respecto al único argumento. Notamos que al ser funciones de una sola variable, las derivadas toman cualquier valor $epsilon^u in RR$, y por lo tanto obtenemos el espacio tangente a $x$ como $T_x S^1 tilde.equiv RR$.
+  Consideremos ahora dos curvas equivalentes, $phi: RR -> S^1$, $psi: RR -> S^1$, tal que $x = phi(0) = psi(0)$. Denominaremos a la proyección de las dos curvas en la primera carta #footnote[Sí $x$ no es representable en la primera carta, se podría usar la segunda equivalentemente.] $phi^U (t)$ y $psi^U (t)$. Recordando la definición de curva equivalente, afirmamos que ambas curvas son equivalentes sí $(phi^U)' (0) = (psi^U) (0) = epsilon^u$, dónde la comilla denota la derivada convencional respecto a un único argumento. Notamos que al ser funciones de una sola variable, las derivadas toman cualquier valor $epsilon^u in RR$, y por lo tanto obtenemos el espacio tangente a $x$ como $T_x S^1 tilde.equiv RR$.
 
-  Definidos los espacios tangentes a cada punto, podemos empezar a construir el fibrado tangente. Primero, construyamos para cada carta el producto cartesiano de esta con su espacio tangente,
+  Definidos los espacios tangentes a cada punto, podemos empezar a construir el fibrado tangente. Primero, construyamos para cada carta el producto cartesiano de esta con su espacio tangente. Al ser espacios planos, estos son trivialmente equivalentes a sus fibrados tangentes:
 
   $
-    A = {(u, epsilon^u) | u in U, epsilon^u in RR}, \
-    B = {(v, epsilon^v) | v in V, epsilon^v in RR}.
+    T U = {(u, epsilon^u) | u in U, epsilon^u in RR}, \
+    T V = {(v, epsilon^v) | v in V, epsilon^v in RR}.
   $
 
-  Por otra parte, podemos construir para cada conjunto de pares una función que nos lleva a puntos de $T S^1$. Definiremos, para $A$:
+  Por otra parte, podemos construir para cada conjunto de pares una función que nos lleva a puntos de $T S^1$. Definiremos, para $T U$:
 
-  - La *proyección natural* $p: A -> S^1$ tal que $p(u, epsilon^u) = f(u)$
+  - La *proyección natural* $p: T U -> S^1$ tal que $p(u, epsilon^u) = f(u)$
   - El *diferencial* $dd(f)_u: T_u U -> T_f(u) S^1$, que asigna a cada coordenada del espacio tangente a $U$ un vector tangente de la variedad de forma lineal #footnote[La linealidad garantiza que exista un único $dd(f)_u$, hecho que no demostraremos.].
-  - La función $F: A -> T S^1$ que combina #footnote[Hemos introducido un ligero razonamiento circular al utilizar  $T S^1$, que es el objeto que estamos construyendo. Podríamos alternativamente definir $F: A -> union.sq.big_x T_x S^1$ y posteriormente equipar esta unión disjunta con la topología suave del fibrado tangente, evitando así el argumento circular.] las dos anteriores, es decir, #box[$F(u, epsilon^u) = dd(f)_u(epsilon^u)$].
-  - La carta $(A, F)$, que representa parte de la variedad $T S^1$.
+  - El *pushforward* $dd(f): T U -> T S^1$ que combina #footnote[Hemos introducido un ligero razonamiento circular al utilizar  $T S^1$, que es el objeto que estamos construyendo. Podríamos alternativamente definir $dd(f): T U -> union.sq.big_x T_x S^1$ y posteriormente equipar esta unión disjunta con la topología suave del fibrado tangente, evitando así el argumento circular.] las dos anteriores, es decir, #box[$dd(f)(u, epsilon^u) = dd(f)_u (epsilon^u)$].
+  - La carta $(T U, dd(f))$, que representa parte de la variedad $T S^1$.
 
-  Equivalentemente para $B$ podremos definir una proyección natural, un diferencial $dd(g)_v$, y con estas dos la función $G$, y formar la carta $(B, G)$. A continuación demostraremos que estas dos cartas forman un atlas para $T S^1$ y por lo tanto que $T S^1$ es una variedad diferenciable.
+  Equivalentemente para $B$ podremos definir una proyección natural, un diferencial $dd(g)_v$, y con estas dos el pushforward $dd(g)$, y formar la carta $(T V, dd(g))$. A continuación demostraremos que estas dos cartas forman un atlas para $T S^1$ y por lo tanto que $T S^1$ es una variedad diferenciable.
 
-  Es rápido ver que ambas cartas cubren por completo $T S^1$. Ahora, para que las cartas formen un atlas, deben ser compatibles. Es inmediato ver que la transformación de las proyecciones naturales de $A$ a $B$ existe, y es precisamente la función $tau$ previamente definida. Por otra parte, debemos demostrar la compatibilidad de sus diferenciales.
+  Es rápido ver que ambas cartas cubren por completo $T S^1$. Ahora, para que las cartas formen un atlas, deben ser compatibles. Es inmediato ver que la transformación de las proyecciones naturales de $T U$ a $T V$ existe, y es precisamente la función $tau$ previamente definida. Por otra parte, debemos demostrar la compatibilidad de sus diferenciales.
 
   De la definición de curva equivalente, y el hecho de estar trabajando en una variedad diferencial, podemos obtener que, para dos curvas equivalentes $phi$ y $psi$,
 
   $
-    dot(phi)^U (0) = dot(psi)^U (0) = epsilon^u & , quad "y" \
-    dot(phi)^V (0) = dot(psi)^V (0) = epsilon^v & .
+    (phi^U)' (0) = (psi^U)' (0) = epsilon^u & , quad "y" \
+    (phi^V)' (0) = (psi^V)' (0) = epsilon^v & .
   $
 
   Las previas igualdades se pueden explotar para relacionar $epsilon^u$ y $epsilon^v$ si introducimos la relación entre ambas cartas $tau = (g^(-1) comp f)$,
@@ -195,27 +195,27 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
     phi^V (0) & = tau (phi^U (0)).
   $
 
-  Tomando la derivada,
+  Tomando la derivada convencional,
 
   $
-    dot(phi)^V (0) = dot(tau) (phi^U (0)) dot(phi)^U (0),
+    (phi^V)' (0) = tau' (phi^U (0)) (phi^U)' (0),
   $
 
   dónde identificamos cada término y obtenemos
 
   $
-    epsilon^v = dot(tau) (u) thick epsilon^u = - epsilon^u / u^2.
+    epsilon^v = tau' (u) thick epsilon^u = - epsilon^u / u^2.
   $
 
-  Demostrando por tanto que los diferenciales son compatibles, y que $(A, F)$ y $(B, G)$ forman un atlas de $T S^1$.
+  Demostrando por tanto que los diferenciales son compatibles, y que $(T U, dd(f))$ y $(T V, dd(g))$ forman un atlas de $T S^1$.
 
-  Por último, consideremos la composición $dd(tau) = G^(-1) comp F$, tal que
+  Por último, consideremos la composición $dd(tau) = dd(g)^(-1) comp dd(f)$, tal que
 
   $
-    dd(tau): A -> B.
+    dd(tau): T U -> T V.
   $
 
-  Este objeto que nos lleva de las coordenadas de un vector tangente ($epsilon^u$) en cierta carta, a las coordenadas del mismo vector tangente ($epsilon^v$) en otra carta, se conoce como "pushforward". Es importante también notar que $dd(tau)$ actua sobre el par $(u, epsilon^u)$, no solo sobre $epsilon^u$. Para este ejemplo, podríamos escribir
+  Este objeto que nos lleva de las coordenadas de un vector tangente ($epsilon^u$) en cierta carta, a las coordenadas del mismo vector tangente ($epsilon^v$) en otra carta, se conoce también como pushforward. Es importante también notar que $dd(tau)$ actua sobre el par $(u, epsilon^u)$, no solo sobre $epsilon^u$. Para este ejemplo, podríamos escribir
 
   $
     dd(tau)(u, epsilon^u) = (1 / u, -epsilon^u / u^2).
@@ -237,84 +237,137 @@ La introducción del concepto de diferenciabilidad de una variedad es vital, ya 
   Por su parte, si consideramos dos curvas equivalentes que pasan por un cierto punto $x = phi(0) = psi(0)$, cuya representación en ambas cartas es denominado $u$ y $v$ respectivamente, tendremos
 
   $
-    & dot(phi)^U (0) = dot(psi)^U (0) = mat(epsilon^u_1; epsilon^u_2) quad "y" \
-    & dot(phi)^V (0) = dot(psi)^V (0) = mat(epsilon^v_1; epsilon^v_2).
+    & (phi^U)' (0) = (psi^U)' (0) = mat(epsilon^u_1; epsilon^u_2) quad "y" \
+    & (phi^V)' (0) = (psi^V)' (0) = mat(epsilon^v_1; epsilon^v_2).
   $
 
-  La relación entre ambas proyecciones de ls mismas curvas es la función $tau$, y de forma análoga al ejemplo anterior, tenemos
+  La relación entre ambas proyecciones de las mismas curvas es la función $tau$, y de forma análoga al ejemplo anterior, pero tomando explícitamente el Jacobiano (al tratarse de una función multivariable), tenemos
 
   $
-    mat(epsilon^v_1; epsilon^v_2) = dd(tau) (u_1, u_2) med mat(epsilon^u_1; epsilon^u_2),
+    mat(epsilon^v_1; epsilon^v_2) = upright(J)_tau (u_1, u_2) med mat(epsilon^u_1; epsilon^u_2),
   $
 
-  dónde $dd(tau) (u_1, u_2)$ es el Jacobiano de $tau$.
+  dónde $upright(J)_tau (u_1, u_2)$ es el Jacobiano de $tau$ evaluado en $(u_1, u_2)$.
 
-  Al contrario de el caso del círculo, no es sencillo representar la variedad $T S^2$, ya que presenta cuatro dimensiones, pero si que podemos representar $tau$ y $dd(tau)$ para un solo punto:
+  Equivalentemente, podríamos definir el pushforward y su actuación
 
-  #text(red)[Figura]
-
+  $
+    dd(tau)(mat(u_1; u_2), mat(epsilon^u_1, epsilon^u_2)) = (mat(v_1; v_2), med upright(J)_tau (u_1, u_2) mat(epsilon^u_1; epsilon^u_2)).
+  $
 
 ] <ej:sphereFibration>
+
+#example[Notación de la velocidad de una curva][
+
+  Consideraremos que la variedad $M$ tiene una carta, $(U, f)$, al igual que su fibrado tangente $T M$, con la carta $(T U, dd(f))$. La curva tendrá entonces su proyección $gamma^U: RR -> U$.
+
+  Vamos a considerar ahora la siguiente definición
+
+  $
+    dot(gamma)^U: RR -> T U quad dot(gamma^U)(t) = (gamma^U (t), (gamma^U)' (t)),
+  $
+
+  junto con
+
+  $
+    dot(gamma): RR -> T M quad dot(gamma)(t) = (gamma(t), dd(f)_(gamma^U (t))((gamma^U)'(t))).
+  $
+
+  Si bien la notación de la definición es muy densa, encapsular el punto y su derivada en el mismo objeto nos permite usar la elegante relación
+
+  $
+    dot(gamma) = dd(f) comp dot(gamma)^U.
+  $
+
+  Es importante recordar que $dot(gamma)^U$ nos lleva a vectores con coordenadas claramente definidas (al ser parte de $U$ que es euclídeo), pero $dot(gamma)$ nos lleva a verdaderos vectores tangentes abstractos.
+
+  Imaginemos ahora una segunda carta para $M$, $(V, g)$, y su respectiva carta para el fibrado tangente $(T V, dd(g))$, relacionados por $tau: U -> V$ y $dd(tau): T U -> T V$. Podemos entonces relacionar
+
+  $
+    dot(gamma)^V = dd(tau) comp dot(gamma)^U,
+  $
+
+  notación que justifica el nombre de pushforward, $dd(tau)$ "empuja" un vector tangente de una carta a otra. La misma notación se utiliza para transformaciones hacía la variedad diferencial, o incluso dentro de la misma variedad.
+]
+
 
 == Fibrado cotangente
 
 Comencemos esta sección con un ejemplo introductorio, que sentará la motivación necesaria.
 
-#example[Derivada de una función escalar sobre una variedad][
+#example[Derivada de una función escalar a lo largo de una curva sobre una variedad diferenciable][
 
-  Consideremos ahora una función suficientemente suave definida sobre cierta variedad diferencial #box[$h: M -> RR$], y una curva $gamma: RR -> M$. Estudiemos la tasa de cambio de $h$ a medida que avanzamos en $gamma$, para un punto $t = 0$. Para indicar esta derivada utilizaremos la siguiente notación, dando énfasis en que se trata de una derivada convencional en cuanto a una única variable:
+  Consideremos una función suficientemente suave definida sobre cierta variedad diferencial #box[$h: M -> RR$], y una curva $gamma: RR -> M$, junto con las previamente introducidas cartas $(U, f)$, $(V, g)$, $(T U, dd(f))$ y $(T V dd(g))$.
 
-  $
-    (h comp gamma)' (0) = lim_(t -> 0) ((h comp gamma)(t) - (h comp gamma)(0)) / t.
-  $
-
-  Tomemos dos cartas para la variedad diferencial, $(U, f)$ y $(V, g)$, compatibles y relacionadas por un mapa $tau: U -> V$, con su Jacobiano $dd(tau): T U -> T V$. La proyección de la curva $gamma$ en ambas cartas será entonces #box[$gamma^U: RR -> U$] y #box[$gamma^V: RR -> V$] respectivamente. La previamente introducida derivada se puede calcular de forma similar en ambas cartas según
+  La evaluación de $h$ a lo largo de la curva se puede escribir como $h comp gamma$, y por lo tanto debemos estudiar la derivada (convencional) de esta composición. Para ello, afirmamos que, ya que el valor de $h$ es invariante entre cartas, es decir,
 
   $
-    (h comp gamma)' (0) = (h comp f comp gamma^U)' (0) = (h comp g comp gamma^V)' (0).
+    (h comp gamma) = (h comp f comp gamma^U) = (h comp g comp gamma^V),
   $
 
-  Podemos aplicar la ley de la cadena, por ejemplo, para la primera carta
+  su derivada también lo debe ser,
 
   $
-    (h comp f comp gamma^U)' (0) = dd((h comp f)) (u) med dot(gamma)^U (0),
+    (h comp gamma)' = (h comp f comp gamma^U)' = (h comp g comp gamma^V)'.
   $
 
-  dónde $u = f^(-1) (gamma (0))$. Análogamente, se puede obtener la misma relación para la segunda carta, quedando
+  Estas igualdades de la derecha son funciones convencionales,
 
   $
-    dd((h comp f)) (u) med dot(gamma)^U (0) = dd((h comp g)) (v) med dot(gamma)^V (0)
-  $ <eq:derivative_invariance>
+    (h comp f comp gamma^U): RR ->^(gamma^U) underbrace(RR^n, U) ->^(h comp f) RR,
+  $
 
-  Podemos representar la anterior expresión gráficamente:
+  lo que motiva aplicar la regla de la cadena (si bien lo debemos hacer con coordenadas, utilizando matrices), para obtener
+
+  $
+    (h comp f comp gamma^U)'(t) = underbrace(dd((h comp f))(gamma^U (0)), mat(circle, circle, circle)) med underbrace((gamma^U)'(0), mat(circle; circle; circle)).
+  $
+
+  Con el fin de que la notación no obstaculize la intuición, vamos a escribir la anterior expresión como
+
+  $
+    (h comp f comp gamma^U)' (t) = omega^U med (gamma^U)' (0)
+  $
+
+  De forma análoga, se obtiene la misma construcción para la otra carta y podemos plantear (con la misma notación),
+
+  $
+    omega^U med (gamma^U)'(0) = omega^V med (gamma^V)' (0)
+  $<eq:derivative_invariance>
+
+  Gráficamente, si bien no del todo rigurosamente#footnote[La introducción del producto escalar es innecesaria, todo el desarrollo es posible sin métrica sobre las variedades], podemos entender ambas matrices como "vectores" en las cartas, y el producto como una proyección de uno en el otro.
 
   #figure(
     image("img/motiv/1forms_motivation_1.svg", width: 80%),
     caption: [Igualdad presentada en la @eq:derivative_invariance de forma visual, para dos cartas de la esfera. Se aprecia que, sí bien los "vectores" que permiten obtener la derivada de la función (colores de la esfera y sus cartas, junto con las líneas de nivel) son muy diferentes, su "producto escalar" es idéntico.],
   ) <fig:1forms_motivation_1>
 
-  Ahora, podemos relacionar las magnitudes a ambos lados de la @eq:derivative_invariance mediante la función $tau$. Recordando los anteriores ejemplos, tenemos que
+  Consideremos ahora la relación $tau: U -> V$ entre las cartas (una función multivariable convencional), y su Jacobinao $upright(J) (tau)$, que nos permite escribir $(gamma^V)'(0) = upright(J) (tau) (gamma^U)'$. Tenemos entonces
 
   $
-    dot(gamma)^U (0) = dd(tau) med dot(gamma)^V (0),
+    omega^U med (gamma^U)'(0) = omega^V med upright(J) (tau) med (gamma^U)'(0),
   $
 
-  por lo que, sustituyendo en la @eq:derivative_invariance,
+  ya que la curva $gamma$ elegida, y su derivada, son arbitrarias, podemos eliminarla de ambos lados y relacionar
 
   $
-    dd((h comp f))(u) med dd(tau) med dot(gamma)^V (0) = dd((h comp g))(v) med dot(gamma)^V (0).
+    omega^U = omega^V med upright(J)(tau),
   $
 
-  Ya que la curva $gamma$ elegida es arbitraria, podemos concluir que
+  es decir,
 
   $
-    dd((h comp f))(u) med dd(tau) = dd((h comp g))(v), quad "es decir" \
-    dd((h comp f))(u) = dd((h comp g))(v) med (dd(tau))^(-1) = \
+    omega^V = omega^U med upright(J)(tau)^(-1)
   $
 
-  Es aparente que, si bien los dos objetos que hemos dibujado como flechas en la @fig:1forms_motivation_1 son similares, son fundamentalmente diferentes, ya que la proyección del vector tangente $dot(gamma)^U$ se obtiene a partir de la otra proyección, $dot(gamma)^V$ a través de $dd(tau)$, pero $dd((h comp f))(u)$ se obtiene a partir de $dd((h comp g))(v)$ a través de $dd(tau)^(-1)$.
+  Notamos que, por contraparte, los vectores tangentes se transforman según
 
-  Estas nuevas entidades matemáticas "que hemos descubierto" no son vectores tangentes, ni pertenecen a $T M$, si bien están íntimamente relacionados con estos. En lo que sigue daremos nombre a esta entidad.
+  $
+    (gamma^V)' = upright(J)(tau) (gamma^U)'.
+  $
+
+  Concluimos por tanto que $omega^U$ y $omega^V$ no son vectores en el sentido estricto, si no que son un nuevo objecto, cuyo nombre introduciremos en breve.
+
 ]
 
 #definition[Una *1-forma* o *covector* es una transformación lineal que lleva de un espacio vectorial a los reales, es decir, #box[$omega: RR^n -> RR$] #cite_mech(163).] <def:1form>
@@ -333,7 +386,11 @@ Es decir, para cada punto $x in M$ tenemos un espacio tangente $T_x M$, y a su v
 
 #example[Ejemplo de un covector del espacio cotangente][
 
-  Consideremos el ejemplo anterior. Hemos visto que para una curva arbitraria $gamma: RR -> M$ y una función sobre la variedad $h: M -> RR$, podemos definir $(h comp gamma)' (0)$. Denominando $x = gamma(0)$, y realizando la misma construcción para todas las posibles curvas no equivalentes que pasan por ese punto (es decir,todos los vectores del espacio tangente) podemos construir el mapa #box[$omega: T_x M -> RR$].
+  Retomemos el ejemplo anterior, notamos que, si bien hemos realizado el procedimiento con coordenadas (usando matrices), la actuación de una matriz fila en una matriz columna no es más que un mapa lineal. Identificamos entonces al objeto $omega^U$, con una 1-forma, es decir,
 
-  Este mapa $omega$ es una 1-forma (se puede demostrar su linealidad) sobre el espacio tangente $T_x M$, y por lo tanto es una de las posibles 1-formas del espacio cotangente de la variedad en ese punto, $T^*_x M$.
+  $
+    omega^U: T_u U -> RR,
+  $
+
+  dónde $u = gamma^U (0)$.
 ]
