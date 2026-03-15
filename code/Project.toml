@@ -1,0 +1,12 @@
+name = "OrbitalUncertainty"
+uuid = "a9a1a3d1-c457-4620-9d4d-81bb393a3c57"
+version = "0.1.0"
+authors = ["tatjam <tatjam02@gmail.com>"]
+
+[deps]
+SatelliteToolbox = "6ac157d9-b43d-51bb-8fab-48bf53814f4a"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+SatelliteToolbox = "1.0.0"
+Test = "1.11.0"
