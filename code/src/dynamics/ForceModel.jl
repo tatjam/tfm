@@ -57,3 +57,14 @@ function acceleration(fm::ForceModel, r, v, t)
 
     return a
 end
+
+"""Newton's equation for a ForceModel"""
+function newton_model!(du, u, p::ForceModel, t)
+    r = SA[u[1], u[2], u[3]]
+    v = SA[u[4], u[5], u[6]]
+    a = acceleration(p, r, v, t)
+    du[1:3] .= v[1:3]
+    du[4:6] .= a
+
+    return nothing
+end
