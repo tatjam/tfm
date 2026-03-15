@@ -2,7 +2,7 @@
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "d760aefad90ff8ec9184bfa83b0b1ea76cb9ecc3"
+project_hash = "0d7ff953a0ddbb485dfaff7dcdc20c8a746268c8"
 
 [[deps.Accessors]]
 deps = ["CompositionsBase", "ConstructionBase", "Dates", "InverseFunctions", "MacroTools"]
@@ -318,7 +318,7 @@ uuid = "fbd9d27c-2d1c-5c1c-99f2-7497d746985d"
 version = "1.0.0"
 
 [[deps.OrbitalUncertainty]]
-deps = ["SatelliteToolbox"]
+deps = ["LinearAlgebra", "SatelliteToolbox", "Test"]
 path = "."
 uuid = "a9a1a3d1-c457-4620-9d4d-81bb393a3c57"
 version = "0.1.0"

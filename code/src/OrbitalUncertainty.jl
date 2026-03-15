@@ -1,5 +1,12 @@
+# OrbitalUncertainty.jl (c) tatjam 2026
+# SPDX-License-Identifier: GPL-3.0-or-later
+# ---------------------------------------------
 module OrbitalUncertainty
 
-greet() = print("Hello World!")
+using SatelliteToolbox
+using StaticArrays
+using LinearAlgebra
+
+include("dynamics/ForceModel.jl")
 
 end # module OrbitalUncertainty
