@@ -6,17 +6,12 @@
 
 """
     TwoBodyForce(μ)
-    TwoBodyForce() 
 
 Force due to a central body at the origin of the coordinate system, with gravitational
 parameter `μ`.
-
-Default constructor uses the earth's gravitational parameter from SatelliteToolbox.
 """
 struct TwoBodyForce
     μ :: Float64
-
-    TwoBodyForce() = new(SatelliteToolboxBase.GM_EARTH)
 end
 
 """Newton's law of universal gravitation"""
@@ -41,7 +36,7 @@ end
 J2 perturbation, Vallado page 594 formula.
 """ 
 function acceleration(f::J2Force, r, _v, _t)
-    common = - 3.0 * f.J2 * f.μ * f.R^2 / (2.0 * norm(r)^2) 
+    common = - 3.0 * f.J2 * f.μ * f.R^2 / (2.0 * norm(r)^5) 
     zrel = 5 * r[3] ^ 2 / norm(r)^2
     xy_term = 1.0 - zrel
     z_term = 3.0 - zrel
@@ -93,17 +88,15 @@ end
 
 """
 
-netwon_model!(du, u, p::ForceModel, t)
+    netwon_model(u, p::ForceModel, t)
 
-Newton's equation for a ForceModel. Computes (in-place) du, given u,
+Newton's equation for a ForceModel. Computes du, given u,
 the force model, and the time.
 """
-function newton_model!(du, u, p::ForceModel, t)
+function newton_model(u, p::ForceModel, t)
     r = SA[u[1], u[2], u[3]]
     v = SA[u[4], u[5], u[6]]
     a = acceleration(p, r, v, t)
-    du[1:3] .= v[1:3]
-    du[4:6] .= a
 
-    return nothing
+    return SA[v[1], v[2], v[3], a[1], a[2], a[3]]
 end
