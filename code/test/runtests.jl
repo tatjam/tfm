@@ -3,6 +3,6 @@ using OrbitalUncertainty
 using Test
 
 @testset "Dynamics" begin
-    @test true
+    @include("test_dynamics.jl")
 end
 

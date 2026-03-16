@@ -4,7 +4,15 @@
 # Generalized forces to make the propagator easily configurable,
 # using a compile-time Tuple for high performance dispatch.
 
-"""Force due to a central body at the origin of the coordinate system"""
+"""
+    TwoBodyForce(μ)
+    TwoBodyForce() 
+
+Force due to a central body at the origin of the coordinate system, with gravitational
+parameter `μ`.
+
+Default constructor uses the earth's gravitational parameter from SatelliteToolbox.
+"""
 struct TwoBodyForce
     μ :: Float64
 
@@ -16,14 +24,22 @@ function acceleration(f::TwoBodyForce, r, _v, _t)
     -f.μ / norm(r)^3 * r
 end
 
-"""J2 perturbation due to a central body at the origin of the coordinate system"""
+"""
+    J2Force(μ, R, J2)
+
+J2 perturbation due to a central body at the origin of the coordinate system
+"""
 struct J2Force
     μ :: Float64
     R :: Float64
     J2 :: Float64 
 end
 
-"""J2 perturbation, Vallado page 594""" 
+"""
+    acceleration(f::J2Force, r, _, _)
+
+J2 perturbation, Vallado page 594 formula.
+""" 
 function acceleration(f::J2Force, r, _v, _t)
     common = - 3.0 * f.J2 * f.μ * f.R^2 / (2.0 * norm(r)^2) 
     zrel = 5 * r[3] ^ 2 / norm(r)^2
@@ -33,22 +49,39 @@ function acceleration(f::J2Force, r, _v, _t)
 end
 
 
-"""A full gravity model from SatelliteToolbox, including the two body force"""
+"""
+
+A full gravity model from SatelliteToolbox, including the two body force
+"""
 struct GravityModel
     # TODO
 end
 
-"""An atmospheric model from SatelliteToolbox"""
+"""
+
+An atmospheric model from SatelliteToolbox
+"""
 struct AtmosphericModel
     # TODO
 end
 
-"""A generic force model, that applies forces sequentially"""
+"""
+
+    ForceModel(forces)
+
+A generic force model, that applies forces sequentially. The `forces` argument is a tuple
+of various forces, fixed at compile-time for optimal execution.
+"""
 struct ForceModel{F <: Tuple}
     forces::F
 end
 
-"""Computes the acceleration due to all forces in the model sequentially"""
+"""
+
+    acceleration(fm::ForceModel, r, v, t)
+
+Computes the acceleration due to all forces in the model sequentially
+"""
 function acceleration(fm::ForceModel, r, v, t)
     a = SA[0.0, 0.0, 0.0]
     for force in fm.forces
@@ -58,7 +91,13 @@ function acceleration(fm::ForceModel, r, v, t)
     return a
 end
 
-"""Newton's equation for a ForceModel"""
+"""
+
+netwon_model!(du, u, p::ForceModel, t)
+
+Newton's equation for a ForceModel. Computes (in-place) du, given u,
+the force model, and the time.
+"""
 function newton_model!(du, u, p::ForceModel, t)
     r = SA[u[1], u[2], u[3]]
     v = SA[u[4], u[5], u[6]]

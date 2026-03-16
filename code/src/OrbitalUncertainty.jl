@@ -7,6 +7,11 @@ using SatelliteToolbox
 using StaticArrays
 using LinearAlgebra
 
+# ForceModel
 include("dynamics/ForceModel.jl")
+export ForceModel, TwoBodyForce, J2Force
+export acceleration, newton_model!
+
+
 
 end # module OrbitalUncertainty
