@@ -15,10 +15,10 @@
     orbit2_u1 = SA[-5887.78600842, -1753.87582895, -2850.77957146, 3.75779874, -4.36422534, -5.06992635] .* 1e3
 
     orbit3_u0 = SA[63389.0685, 0, 0, 0, 1.9076657, 2.4068751] .* 1e3
-    orbit3_u1 = SA[-80225.31330281,  67593.3242276, 85279.58309128, -1.64801759, -0.11879248, -0.14990463] .* 1e3
+    orbit3_u1 = SA[-80225.31330281, 67593.3242276, 85279.58309128, -1.64801759, -0.11879248, -0.14990463] .* 1e3
 
-    @test propagate_orbit(fm, orbit1_u0, 90.0 * 60.0) ≈ orbit1_u1 rtol=1e-8
-    @test propagate_orbit(fm, orbit2_u0, 1440.0 * 60.0) ≈ orbit2_u1 rtol=1e-6
-    @test propagate_orbit(fm, orbit3_u0, 1440.0 * 60.0) ≈ orbit3_u1 rtol=1e-8
+    @test propagate_orbit(fm, orbit1_u0, 90.0 * 60.0) ≈ orbit1_u1 rtol = 1e-8
+    @test propagate_orbit(fm, orbit2_u0, 1440.0 * 60.0) ≈ orbit2_u1 rtol = 1e-6
+    @test propagate_orbit(fm, orbit3_u0, 1440.0 * 60.0) ≈ orbit3_u1 rtol = 1e-8
 
 end
