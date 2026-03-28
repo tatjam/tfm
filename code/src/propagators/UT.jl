@@ -8,6 +8,17 @@
 # Note that we don't implement a full Kalman filter, merely the unscented transform part,
 # as we do not intermediate corrections or anything like that.
 
+
+"""
+    nearest_pd_matrix(mat)
+
+Obtains the nearest positive definite matrix to mat, by clamping the eigen values
+"""
+function nearest_pd_matrix(mat)
+    λ, V = eigen(Symmetric(mat))
+    return Symmetric(V * Diagonal(max.(λ, 1e-6 * maximum(λ))) * V')
+end
+
 """
     SigmaVectors(χ, W, W0m)
 """
@@ -92,8 +103,8 @@ function run_ut(
     dx = reduce(hcat, endpoints) .- μend
     W = [sigma.W0c; sigma.W[2:end]]
 
-    Pend = dx * Diagonal(W) * dx'
+    Pend = nearest_pd_matrix(dx * Diagonal(W) * dx')
 
-    return MvNormal(μend, Symmetric(Pend))
+    return MvNormal(μend, Pend)
 
 end
