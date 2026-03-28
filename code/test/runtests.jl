@@ -1,6 +1,8 @@
 using Test
 using StaticArrays
 using DifferentialEquations
+using Distributions
+using LinearAlgebra
 
 using OrbitalUncertainty
 
@@ -12,3 +14,6 @@ end
     include("test_monte_carlo.jl")
 end
 
+@testset "Unscented Transform" begin
+    include("test_ut.jl")
+end
