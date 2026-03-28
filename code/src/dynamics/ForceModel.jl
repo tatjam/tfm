@@ -100,3 +100,24 @@ function newton_model(u, p::ForceModel, t)
 
     return SA[v[1], v[2], v[3], a[1], a[2], a[3]]
 end
+"""
+
+    propagate_orbit(fm::ForceModel, u0, t; reltol, abstol)
+
+Newton's equation for a ForceModel. Computes du, given u,
+the force model, and the time.
+"""
+function propagate_orbit(
+    fm::ForceModel,
+    u0::SVector{6, <:Real},
+    t::Real;
+    reltol=1e-10,
+    abstol=1e-10
+    )
+
+    tspan = (zero(t), t)
+    prob = ODEProblem(newton_model, u0, tspan, fm)
+    sol = solve(prob, Tsit5(); reltol, abstol)
+
+    return last(sol.u)
+end

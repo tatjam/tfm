@@ -8,3 +8,7 @@ using OrbitalUncertainty
     include("test_dynamics.jl")
 end
 
+@testset "Monte Carlo" begin
+    include("test_monte_carlo.jl")
+end
+

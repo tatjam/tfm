@@ -1,10 +1,3 @@
-function propagate_orbit(fm::ForceModel, u0, t)
-    tspan = (0.0, t)
-    prob = ODEProblem(newton_model, u0, tspan, fm)
-    sol = solve(prob, Tsit5(), reltol=1e-10, abstol=1e-10)
-    SA[sol[1,end], sol[2,end], sol[3,end], sol[4,end], sol[5,end], sol[6,end]]
-end
-
 @testset "J2 compare against poliastro" begin
     μ = 398600441800000.0
     j2 = 0.00108263

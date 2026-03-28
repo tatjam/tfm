@@ -2,7 +2,7 @@
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "8edc2bae96986c1829bf419b178f842634261990"
+project_hash = "a6a08ed30ea7678a5d712d4e224100df2ef909e0"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "f7304359109c768cf32dc5fa2d371565bb63b68a"
@@ -1264,7 +1264,7 @@ uuid = "fbd9d27c-2d1c-5c1c-99f2-7497d746985d"
 version = "1.0.0"
 
 [[deps.OrbitalUncertainty]]
-deps = ["LinearAlgebra", "SatelliteToolbox", "StaticArrays", "Test"]
+deps = ["DifferentialEquations", "LinearAlgebra", "SatelliteToolbox", "StaticArrays", "Test"]
 path = "."
 uuid = "a9a1a3d1-c457-4620-9d4d-81bb393a3c57"
 version = "0.1.0"
