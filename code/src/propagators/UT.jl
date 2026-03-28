@@ -21,27 +21,25 @@ struct SigmaVectors{T<:Real}
 end
 
 """
-    SigmaVectors(dist, α, κ, β)
+    SigmaVectors(μ, P, α, κ, β)
 
-Generates the sigma-vectors and weights for an UT given the distribution and scaling parameters.
+Generates the sigma-vectors and weights for an UT given the distribution mean and covariance matrix, 
+and scaling parameters α, κ and β.
 """
-function SigmaVectors(dist::MultivariateDistribution, α, κ, β)
-    T = eltype(dist)
-
+function SigmaVectors(μ::AbstractVector{T}, P::AbstractMatrix{T}, α, κ, β) where {T}
     L = 6
     χ = @MMatrix zeros(6, 2 * L + 1)
     W = @MVector zeros(2 * L + 1)
 
     λ = α^2 * (L + κ) - L
 
-    μ = mean(dist)
     χ[:, 1] = μ
     W[1] = λ / (L + λ)
 
     # The "special" weight for mean propagation
     W0c = λ / (L + λ) + (1 - α^2 + β)
 
-    S = sqrt((L + λ) * cov(dist))
+    S = sqrt((L + λ) * P)
 
     # Symmetric L sigma-vectors
     for i in 2:(L+1)
@@ -56,28 +54,28 @@ function SigmaVectors(dist::MultivariateDistribution, α, κ, β)
 end
 
 """
-    run_ut(p::ForceModel, dist::MultivariateDistribution, Δt; reltol, abstol, α, κ, β)
+    run_ut(p::ForceModel, μ, P, Δt; reltol, abstol, α, κ, β)
 
 Runs the UT propagation for the given distribution, interval of time Δt,
 and α, κ and β scaling parameters (according to "The Unscented Kalman Filter for Nonlinear Estimation").
 Note this doesn't implement a full UKF, just the unscented transform part.
 
-Returns the resulting multivariate normal distribution. Note that wathever non-Gaussian dist was used,
-the result is always Gaussian!
+Returns the resulting multivariate normal distribution.
 """
 function run_ut(
     p::ForceModel,
-    dist::MultivariateDistribution,
+    μ::AbstractVector{T},
+    P::AbstractMatrix{T},
     Δt,
     reltol=1e-10,
     abstol=1e-10,
     α=1e-3,
     κ=0,
     β=2
-)
+) where {T}
 
     L = 6
-    sigma = SigmaVectors(dist, α, κ, β)
+    sigma = SigmaVectors(μ, P, α, κ, β)
 
     # The sigma-vectors are propagated through the non-linear function 
     Threads.@threads for i in 1 .. (2 * L + 1)
