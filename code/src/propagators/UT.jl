@@ -77,19 +77,23 @@ function run_ut(
     L = 6
     sigma = SigmaVectors(μ, P, α, κ, β)
 
+    endpoints = Vector{SVector{6,T}}(undef, 2 * L + 1)
+
     # The sigma-vectors are propagated through the non-linear function 
-    Threads.@threads for i in 1 .. (2 * L + 1)
-        sigma.χ[:, i] = propagate_orbit(p, sigma.χ[:, i], Δt, reltol=reltol, abstol=abstol)
+    Threads.@threads for i in 1:(2*L+1)
+        endpoints[i] = propagate_orbit(p, sigma.χ[:, i], Δt, reltol=reltol, abstol=abstol)
     end
 
     # Mean is computed as simply the mean of all points
-    μ = sum(sigma.χ[:, i] * sigma.W[i] for i in 1:(2*L+1))
+    μend = sum(endpoints[i] * sigma.W[i] for i in 1:(2*L+1))
 
     # Covariance matrix can be computed from the deviation matrix, but we have to use 
     # the special weight for the mean point
-    dx = sigma.χ .- μ
-    P = dx * Diagonal([sigma.W0c; sigma.W[2:end]]) * dx'
+    dx = reduce(hcat, endpoints) .- μend
+    W = [sigma.W0c; sigma.W[2:end]]
 
-    return MvNormal(μ, P)
+    Pend = dx * Diagonal(W) * dx'
+
+    return MvNormal(μend, Symmetric(Pend))
 
 end
