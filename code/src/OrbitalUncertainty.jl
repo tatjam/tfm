@@ -12,7 +12,7 @@ using Distributions
 # ForceModel
 include("dynamics/ForceModel.jl")
 export ForceModel, TwoBodyForce, J2Force
-export acceleration, newton_model, propagate_orbit
+export acceleration, force_model, propagate_orbit
 
 include("propagators/MonteCarlo.jl")
 export run_monte_carlo
@@ -23,7 +23,9 @@ export SigmaVectors, run_ut
 include("propagators/STM.jl")
 
 # Utils 
-EARTH_FM_WITH_J2 = ForceModel((TwoBodyForce(GM_EARTH), J2Force(GM_EARTH, EARTH_EQUATORIAL_RADIUS, EGM_1996_J2)))
-export EARTH_FM_WITH_J2
+EARTH_FM_WITH_J2_TUPLE = (TwoBodyForce(GM_EARTH), J2Force(GM_EARTH, EARTH_EQUATORIAL_RADIUS, EGM_1996_J2))
+EARTH_FM_WITH_J2_NEWTON = ForceModel(EARTH_FM_WITH_J2_TUPLE, Val(true))
+EARTH_FM_WITH_J2_KEPLER = ForceModel(EARTH_FM_WITH_J2_TUPLE, Val(false))
+export EARTH_FM_WITH_J2_NEWTON, EARTH_FM_WITH_J2_KEPLER
 
 end # module OrbitalUncertainty

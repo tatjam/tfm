@@ -5,10 +5,10 @@
         SA[1555.0, 5555.0, 5555.0, 1234.0, 1234.0, 0.0],
     ]
 
-    results = run_monte_carlo(EARTH_FM_WITH_J2, samples, 1000)
+    results = run_monte_carlo(EARTH_FM_WITH_J2_NEWTON, samples, 1000)
 
     for i in eachindex(samples)
-        ind_result = propagate_orbit(EARTH_FM_WITH_J2, samples[i], 1000)
+        ind_result = propagate_orbit(EARTH_FM_WITH_J2_NEWTON, samples[i], 1000)
         @test ind_result ≈ results[i] rtol = 1e-14
     end
 end

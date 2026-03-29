@@ -47,7 +47,7 @@ end
     covmatnospeed = Diagonal([ones(3); fill(1e-10, 3)])
 
     @testset "Empty force function alongside static point doesn't change the mean nor covariance" begin
-        fm = ForceModel(())
+        fm = ForceModel((), Val(true))
         dist = run_ut(fm, x0nospeed, covmatnospeed, 1000)
         @test mean(dist) ≈ x0nospeed
         # Note, because we can't set velocity uncertainty to 0, we have some growth here
@@ -55,7 +55,7 @@ end
     end
 
     @testset "Empty force function doesn't change the covariance nor speed" begin
-        fm = ForceModel(())
+        fm = ForceModel((), Val(true))
 
         dist = run_ut(fm, x0, covmat, 1000)
         @test mean(dist)[4:end] ≈ x0[4:end]
@@ -63,7 +63,7 @@ end
     end
 
     @testset "Keplerian propagation changes the distribution" begin
-        fm = ForceModel(())
+        fm = ForceModel((), Val(true))
 
         dist = run_ut(fm, x0, covmat, 1000)
         @test norm(mean(dist) - x0) > 1000.0
@@ -76,13 +76,13 @@ end
         nsamples = 100000
 
         # A sufficiently short Keplerian problem looks very linear
-        dist = run_ut(EARTH_FM_WITH_J2, x0, covmat, Δt)
+        dist = run_ut(EARTH_FM_WITH_J2_NEWTON, x0, covmat, Δt)
 
         # Monte-Carlo samples
         start_dist = MvNormal(x0, covmat)
         samples = rand(start_dist, nsamples)
         samples_svec = reinterpret(SVector{6,eltype(samples)}, vec(samples))
-        samples_mc = run_monte_carlo(EARTH_FM_WITH_J2, samples_svec, Δt)
+        samples_mc = run_monte_carlo(EARTH_FM_WITH_J2_NEWTON, samples_svec, Δt)
 
         # Flatten to a conventional matrix 
         samples_mc_mat = reduce(hcat, samples_mc)
