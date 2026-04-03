@@ -88,6 +88,7 @@ function param_variation(fm::J2Force, p, f, g, h, k, L, _t)
     # Potential gradient (formula 11, with TYPO fix!)
     dRdp = 3 * fm.μ / (w * r^2) * cterm * Pn
     # TYPO on formula 11, dRdf is missing, it's the symmetrical to dRdg
+    # See ERRATA for the Walker et al paper (https://link.springer.com/article/10.1007/BF01238929)
     dRdf = -3 * fm.μ * cosL / (w * r) * cterm * Pn
 
     dRdg = -3 * fm.μ * sinL / (w * r) * cterm * Pn
