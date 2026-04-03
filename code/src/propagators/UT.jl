@@ -20,13 +20,13 @@ function nearest_pd_matrix(mat)
 end
 
 """
-    SigmaVectors(χ, W, W0m)
+    SigmaVectors(χ, W, W0c)
 """
-struct SigmaVectors{T<:Real}
-    # 6-dimensional, 13 sigma points
-    χ::SMatrix{6,13,T}
+struct SigmaVectors{L, N, T<:Real}
+    # L-dimensional, 2L+1 sigma points
+    χ::SMatrix{L, N, T}
     # One weight for each sigma point
-    W::SVector{13,T}
+    W::SVector{N, T}
     # Additional weight for average sigma point
     W0c::T
 end
@@ -38,10 +38,10 @@ Generates the sigma-vectors and weights for an UT given the distribution mean an
 and scaling parameters α, κ and β.
 """
 function SigmaVectors(μ::AbstractVector{T}, P::AbstractMatrix{T}, α, κ, β) where {T}
-    L = 6
-    χ = @MMatrix zeros(6, 2 * L + 1)
-    W = @MVector zeros(2 * L + 1)
-
+    L = length(μ)
+    N = 2 * L + 1
+    χ = @MMatrix zeros(L, N)
+    W = @MVector zeros(N)
     λ = α^2 * (L + κ) - L
 
     χ[:, 1] = μ
@@ -54,14 +54,12 @@ function SigmaVectors(μ::AbstractVector{T}, P::AbstractMatrix{T}, α, κ, β) w
 
     # Symmetric L sigma-vectors
     for i in 2:(L+1)
-        χ[:, i] = μ + S[:, i-1]
+        χ[:, i]   = μ + S[:, i-1]
         χ[:, i+L] = μ - S[:, i-1]
-
-        W[i] = 1 / (2 * (L + λ))
+        W[i]   = 1 / (2 * (L + λ))
         W[i+L] = W[i]
     end
-
-    return SigmaVectors{T}(SMatrix(χ), SVector(W), W0c)
+    return SigmaVectors{L, N, T}(SMatrix(χ), SVector(W), W0c)
 end
 
 """
@@ -86,18 +84,16 @@ function run_ut(
 ) where {T}
 
     L = 6
+    N = 2 * L + 1
     sigma = SigmaVectors(μ, P, α, κ, β)
-
-    endpoints = Vector{SVector{6,T}}(undef, 2 * L + 1)
-
+    endpoints = Vector{SVector{L, T}}(undef, N)
     # The sigma-vectors are propagated through the non-linear function 
-    Threads.@threads for i in 1:(2*L+1)
+    Threads.@threads for i in 1:N
         endpoints[i] = propagate_orbit(p, sigma.χ[:, i], Δt, reltol=reltol, abstol=abstol)
     end
 
     # Mean is computed as simply the mean of all points
-    μend = sum(endpoints[i] * sigma.W[i] for i in 1:(2*L+1))
-
+    μend = sum(endpoints[i] * sigma.W[i] for i in 1:N)
     # Covariance matrix can be computed from the deviation matrix, but we have to use 
     # the special weight for the mean point
     dx = reduce(hcat, endpoints) .- μend
@@ -106,5 +102,4 @@ function run_ut(
     Pend = nearest_pd_matrix(dx * Diagonal(W) * dx')
 
     return MvNormal(μend, Pend)
-
 end
