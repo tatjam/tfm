@@ -23,21 +23,51 @@
 
 end
 
+@testset "Keplerian to MEE elements" begin
+    @testset "Equatorial circular orbit" begin
+        kepler = SA[1000.0*1e3, 0, 0, 0, 0, 0]
+        mee = kepler_to_mee(kepler...)
+        kepler2 = mee_to_kepler(mee...)
+        @testset for i = 1:2
+            @test kepler2[i] ≈ kepler[i]
+        end
+        @testset for i = 3:6
+            @test isapprox_angle.(kepler2[i], kepler[i])
+        end
+    end
+
+    @testset "Polar circular orbit" begin
+        kepler = SA[1000.0*1e3, 0, π/4, 0, 0, 0]
+        mee = kepler_to_mee(kepler...)
+        kepler2 = mee_to_kepler(mee...)
+        @info kepler
+        @info kepler2
+        @testset for i = 1:2
+            @test kepler2[i] ≈ kepler[i]
+        end
+        @testset for i = 3:6
+            @test isapprox_angle.(kepler2[i], kepler[i])
+        end
+    end
+
+    @testset "Random orbit" begin
+        euclidean = SA[6771.358863, 1313.0, 1314.43, 0.3, 4.76807358, 6.01581168] .* 1e3
+        kepler = kepler_to_array(rv_to_kepler(euclidean[1:3], euclidean[4:6], GM_EARTH))
+        mee = kepler_to_mee(kepler...)
+        kepler2 = mee_to_kepler(mee...)
+        @info kepler
+        @info kepler2
+        @testset for i = 1:2
+            @test kepler2[i] ≈ kepler[i]
+        end
+        @testset for i = 3:6
+            @test isapprox_angle.(kepler2[i], kepler[i])
+        end
+    end
+end
+
 @testset "J2 kepler vs newton" begin
+    orbit1_u0 = SA[6771.358863, 0, 0, 0, 4.76807358, 6.01581168] .* 1e3
 
 end
 
-@testset "J2 paper test case" begin
-    # The paper includes J3, J4, J5 and J6, but we only simulate with J2, 
-    # results are relatively nearby either way
-    μ = 398603.2
-    R = 6378.165
-    J2 = 0.00108263
-
-    # Keplerian starting elements [a, e, i, ω, Ω, ν]
-    s0_kepler = SA[24419.205, 0.72, deg2rad(27.0), 0, 0, 0]
-    # Keplerian final elements [a, e, i, ω, Ω, ν]
-    s1_kepler = SA[24331.443, 0.72557888, 26.988272, 1.199160, deg2rad(359.280136), deg2rad(186.307367)]
-
-
-end

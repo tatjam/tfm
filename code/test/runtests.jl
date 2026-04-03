@@ -3,6 +3,7 @@ using StaticArrays
 using DifferentialEquations
 using Distributions
 using LinearAlgebra
+using SatelliteToolbox
 
 using OrbitalUncertainty
 

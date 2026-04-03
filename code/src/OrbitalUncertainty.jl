@@ -11,8 +11,10 @@ using Distributions
 
 # ForceModel
 include("dynamics/ForceModel.jl")
+include("dynamics/utils.jl")
 export ForceModel, TwoBodyForce, J2Force
 export acceleration, force_model, propagate_orbit
+export kepler_to_mee, mee_to_kepler, kepler_to_array, isapprox_angle
 
 include("propagators/MonteCarlo.jl")
 export run_monte_carlo

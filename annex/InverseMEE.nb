@@ -1,0 +1,209 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["\<\
+DANGER! In Wolfram, it\[CloseCurlyQuote]s written Arctan[x, y], in Julia \
+atan(y, x)!!!\
+\>", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"p", "[",
+     RowBox[{"a_", ",", " ", "e_"}], "]"}], " ", ":=", " ",
+    RowBox[{"a", "*",
+     RowBox[{"(",
+      RowBox[{"1", " ", "-", " ", "e\.b2"}], ")"}]}]}], ";"}], " "}], "\n",
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"f", "[",
+     RowBox[{"e_", ",", " ", "\[Omega]_", ",", " ", "\[CapitalOmega]_"}],
+     "]"}], " ", ":=", " ",
+    RowBox[{"e", "*",
+     RowBox[{"Cos", "[",
+      RowBox[{"\[Omega]", " ", "+", " ", "\[CapitalOmega]"}], "]"}]}]}],
+   ";"}], " "}], "\n",
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"g", "[",
+     RowBox[{"e_", ",", " ", "\[Omega]_", ",", " ", "\[CapitalOmega]_"}],
+     "]"}], " ", ":=", " ",
+    RowBox[{"e", "*",
+     RowBox[{"Sin", "[",
+      RowBox[{"\[Omega]", " ", "+", " ", "\[CapitalOmega]"}], "]"}]}]}],
+   ";"}], " "}], "\n",
+ RowBox[{
+  RowBox[{
+   RowBox[{"h", "[",
+    RowBox[{"i_", ",", " ", "\[CapitalOmega]_"}], "]"}], " ", ":=", " ",
+   RowBox[{
+    RowBox[{"Tan", "[",
+     FractionBox["i", "2"], "]"}], "*",
+    RowBox[{"Cos", "[", "\[CapitalOmega]", "]"}]}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{
+   RowBox[{"k", "[",
+    RowBox[{"i_", ",", "\[CapitalOmega]_"}], "]"}], ":=",
+   RowBox[{
+    RowBox[{"Tan", "[",
+     FractionBox["i", "2"], "]"}], "*",
+    RowBox[{"Sin", "[", "\[CapitalOmega]", "]"}]}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{
+   RowBox[{"L", "[",
+    RowBox[{"\[Omega]_", ",", "\[CapitalOmega]_", ",", "\[Nu]_"}], "]"}], ":=",
+   RowBox[{"\[Omega]", "+", "\[CapitalOmega]", "+", "\[Nu]"}]}],
+  ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*",
+  RowBox[{
+  "First", " ", "we", " ", "solve", " ", "to", " ", "obtain", " ", "e", " ",
+   "and", " ", "\[Omega]"}], "*)"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Solve", "[",
+   RowBox[{
+    RowBox[{"{",
+     RowBox[{
+      RowBox[{"f", "==",
+       RowBox[{"f", "[",
+        RowBox[{"e", ",", "\[Omega]", ",", "\[CapitalOmega]"}], "]"}]}], ",",
+
+      RowBox[{"g", "==",
+       RowBox[{"g", "[",
+        RowBox[{"e", ",", "\[Omega]", ",", "\[CapitalOmega]"}], "]"}]}]}],
+     "}"}], ",",
+    RowBox[{"{",
+     RowBox[{"e", ",", "\[Omega]"}], "}"}]}], "]"}], "//",
+  "FullSimplify"}]], "Input"]
+}]],
+
+Cell[BoxData[
+ RowBox[{"(*", " ",
+  RowBox[{
+  "a", " ", "can", " ", "be", " ", "written", " ", "in", " ", "function", " ",
+    "of", " ", "p", " ", "and", " ", "e"}], "*)"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Solve", "[",
+  RowBox[{
+   RowBox[{"p", "==",
+    RowBox[{"p", "[",
+     RowBox[{"a", ",", "e"}], "]"}]}], ",", "a"}], "]"}]], "Input"]
+}]],
+
+Cell[BoxData[
+ RowBox[{"(*", " ",
+  RowBox[{
+  "We", " ", "can", " ", "obtain", " ", "i", " ", "and", " ",
+   "\[CapitalOmega]", " ", "too"}], "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"FullSimplify", "[",
+  RowBox[{"Solve", "[",
+   RowBox[{
+    RowBox[{"{",
+     RowBox[{
+      RowBox[{"h", "==",
+       RowBox[{"h", "[",
+        RowBox[{"i", ",", "\[CapitalOmega]"}], "]"}]}], ",",
+      RowBox[{"k", "==",
+       RowBox[{"k", "[",
+        RowBox[{"i", ",", "\[CapitalOmega]"}], "]"}]}]}], "}"}], ",",
+    RowBox[{"{",
+     RowBox[{"i", ",", "\[CapitalOmega]"}], "}"}]}], "]"}], "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"{",
+  RowBox[{
+   RowBox[{"{",
+    RowBox[{
+     RowBox[{"i", "\[Rule]",
+      TemplateBox[{
+        RowBox[{
+          RowBox[{
+            RowBox[{"-", "2"}], " ",
+            RowBox[{"ArcTan", "[",
+              SqrtBox[
+               RowBox[{
+                 SuperscriptBox["h", "2"], "+",
+                 SuperscriptBox["k", "2"]}]], "]"}]}], "+",
+          RowBox[{"2", " ", "\[Pi]", " ",
+            TemplateBox[{"2"}, "C"]}]}],
+        RowBox[{
+          TemplateBox[{"2"}, "C"], "\[Element]",
+          TemplateBox[{}, "Integers"]}]},
+       "ConditionalExpression"]}], ",",
+     RowBox[{"\[CapitalOmega]", "\[Rule]",
+      TemplateBox[{
+        RowBox[{
+          RowBox[{"2", " ", "\[Pi]", " ",
+            TemplateBox[{"1"}, "C"]}], "-",
+          RowBox[{"\[ImaginaryI]", " ",
+            RowBox[{"Log", "[",
+              RowBox[{"-",
+                FractionBox[
+                 RowBox[{"h", "+",
+                   RowBox[{"\[ImaginaryI]", " ", "k"}]}],
+                 SqrtBox[
+                  RowBox[{
+                    SuperscriptBox["h", "2"], "+",
+                    SuperscriptBox["k", "2"]}]]]}], "]"}]}]}],
+        RowBox[{
+          TemplateBox[{"1"}, "C"], "\[Element]",
+          TemplateBox[{}, "Integers"]}]},
+       "ConditionalExpression"]}]}], "}"}], ",",
+   RowBox[{"{",
+    RowBox[{
+     RowBox[{"i", "\[Rule]",
+      TemplateBox[{
+        RowBox[{"2", " ",
+          RowBox[{"(",
+            RowBox[{"j", "+",
+              RowBox[{"\[Pi]", " ",
+                TemplateBox[{"2"}, "C"]}]}], ")"}]}],
+        RowBox[{
+          TemplateBox[{"2"}, "C"], "\[Element]",
+          TemplateBox[{}, "Integers"]}]},
+       "ConditionalExpression"]}], ",",
+     RowBox[{"\[CapitalOmega]", "\[Rule]",
+      TemplateBox[{
+        RowBox[{
+          RowBox[{"ArcTan", "[",
+            RowBox[{"h", ",", "k"}], "]"}], "+",
+          RowBox[{"2", " ", "\[Pi]", " ",
+            TemplateBox[{"1"}, "C"]}]}],
+        RowBox[{
+          TemplateBox[{"1"}, "C"], "\[Element]",
+          TemplateBox[{}, "Integers"]}]},
+       "ConditionalExpression"]}]}], "}"}]}], "}"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*", " ",
+  RowBox[{"\[Nu]", " ", "is", " ", "trivial"}], " ", "*)"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Solve", "[",
+  RowBox[{
+   RowBox[{"L", "==",
+    RowBox[{"L", "[",
+     RowBox[{"\[Omega]", ",", "\[CapitalOmega]", ",", "\[Nu]"}], "]"}]}], ",",
+    "\[Nu]"}], "]"}]], "Input"]
+}]]
+}]]
+}]
+(* End of Notebook Content *)
