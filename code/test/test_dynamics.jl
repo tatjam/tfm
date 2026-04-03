@@ -40,8 +40,6 @@ end
         kepler = SA[1000.0*1e3, 0, π/4, 0, 0, 0]
         mee = kepler_to_mee(kepler...)
         kepler2 = mee_to_kepler(mee...)
-        @info kepler
-        @info kepler2
         @testset for i = 1:2
             @test kepler2[i] ≈ kepler[i]
         end
@@ -55,8 +53,6 @@ end
         kepler = kepler_to_array(rv_to_kepler(euclidean[1:3], euclidean[4:6], GM_EARTH))
         mee = kepler_to_mee(kepler...)
         kepler2 = mee_to_kepler(mee...)
-        @info kepler
-        @info kepler2
         @testset for i = 1:2
             @test kepler2[i] ≈ kepler[i]
         end
@@ -66,8 +62,38 @@ end
     end
 end
 
-@testset "J2 kepler vs newton" begin
-    orbit1_u0 = SA[6771.358863, 0, 0, 0, 4.76807358, 6.01581168] .* 1e3
+@testset "Twobody kepler vs newton" begin
+    orbit_u0 = SA[6771.358863, 0, 0, 0, 4.76807358, 6.01581168] .* 1e3
 
+    # NEWTON propagation
+    orbit_u1 = propagate_orbit(EARTH_FM_NEWTON, orbit_u0, 3600.0)
+
+    # KEPLER propagation
+    orbit_u0_kepler = kepler_to_array(rv_to_kepler(orbit_u0[1:3], orbit_u0[4:6], GM_EARTH))
+    orbit_u0_mee = kepler_to_mee(orbit_u0_kepler...)
+
+    orbit_u1_mee = propagate_orbit(EARTH_FM_KEPLER, orbit_u0_mee, 3600.0)
+    orbit_u1_mee_kepler = mee_to_kepler(orbit_u1_mee...)
+    orbit_u1_mee_euclid = kepler_to_euclid(orbit_u1_mee_kepler..., GM_EARTH)
+
+    @test orbit_u1 ≈ orbit_u1_mee_euclid rtol=1e-6
+end
+
+
+@testset "J2 kepler vs newton" begin
+    orbit_u0 = SA[6771.358863, 0, 0, 0, 4.76807358, 6.01581168] .* 1e3
+
+    # NEWTON propagation
+    orbit_u1 = propagate_orbit(EARTH_FM_WITH_J2_NEWTON, orbit_u0, 3600.0)
+
+    # KEPLER propagation
+    orbit_u0_kepler = kepler_to_array(rv_to_kepler(orbit_u0[1:3], orbit_u0[4:6], GM_EARTH))
+    orbit_u0_mee = kepler_to_mee(orbit_u0_kepler...)
+
+    orbit_u1_mee = propagate_orbit(EARTH_FM_WITH_J2_KEPLER, orbit_u0_mee, 3600.0)
+    orbit_u1_mee_kepler = mee_to_kepler(orbit_u1_mee...)
+    orbit_u1_mee_euclid = kepler_to_euclid(orbit_u1_mee_kepler..., GM_EARTH)
+
+    @test orbit_u1 ≈ orbit_u1_mee_euclid rtol=1e-6
 end
 

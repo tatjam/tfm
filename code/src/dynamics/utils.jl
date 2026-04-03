@@ -67,5 +67,39 @@ function kepler_to_array(ke::KeplerianElements)
     return SA[ke.a, ke.e, ke.i, ke.ω, ke.Ω, ke.f]
 end
 
+"""
+    kepler_to_euclid(a, e, i, ω, Ω, ν, μ)
+
+    Converts kepler elements to euclidean array [x1, x2, x3, v1, v2, v3]
+
+    Implementation is copied from SatelliteToolbox, only big change is that
+    the fixed GM_EARTH constant is now passable externally for coherency. 
+"""
+function kepler_to_euclid(a, e, i, ω, Ω, ν, μ)
+    !(0 <= e < 1) && throw(ArgumentError("Eccentricity must be in the interval [0,1)."))
+
+    sin_ν, cos_ν = sincos(ν)
+    e2 = e * e
+
+    r = a * (1 - e2) / (1 + e * cos_ν)
+
+    r_o = SA[r * cos_ν, r * sin_ν, 0]
+
+    n₀  = √(μ / a^3)
+    v_o = n₀ * a / sqrt(1 - e2) * SA[-sin_ν, e + cos_ν, 0]
+
+    D_i_o = angle_to_dcm(-ω, -i, -Ω, :ZXZ)
+
+    r_i = D_i_o * r_o
+    v_i = D_i_o * v_o
+
+    return SA[r_i..., v_i...]
+end
+
+"""
+   isapprox_angle(a, b; atol=1e-8)
+
+   Compare two angles knowing they live in the circle
+"""
 isapprox_angle(a, b; atol=1e-8) = abs(rem2pi(a - b, RoundNearest)) < atol
 

@@ -27,13 +27,13 @@ function acceleration(f::TwoBodyForce, r, _v, _t)
 end
 
 """
-    param_variation(fm::TwoBodyForce, p, f, g, _, _, L, _)
+    param_variation(fm::TwoBodyForce, p, f, g, h, k, L, t)
 
     "A set of modified equinoctial orbit elements", Walker et al 1985, formula 9
     with all perturbations set to 0
 
 """
-function param_variation(fm::TwoBodyForce, p, f, g, _, _, L, _)
+function param_variation(fm::TwoBodyForce, p, f, g, _h, _k, L, _t)
     w = 1 + f * cos(L) + g * sin(L)
 
     # Central force merely makes L increase
@@ -54,7 +54,7 @@ struct J2Force
 end
 
 """
-    acceleration(f::J2Force, r, _, _)
+    acceleration(f::J2Force, r, v, t)
 
 J2 newtonian perturbation, Vallado page 594 formula.
 """
@@ -67,13 +67,13 @@ function acceleration(f::J2Force, r, _v, _t)
 end
 
 """
-    param_variation(fm::J2Force, p, f, g, h, k, L, _)
+    param_variation(fm::J2Force, p, f, g, h, k, L, t)
 
     "A set of modified equinoctial orbit elements", Walker et al 1985, formula 8
     and formula 11 particularized for J2 only
 
 """
-function param_variation(fm::J2Force, p, f, g, h, k, L, _)
+function param_variation(fm::J2Force, p, f, g, h, k, L, _t)
     sinL, cosL = sincos(L)
     w = 1 + f * cosL + g * sinL
     s = sqrt(1 + h^2 + k^2)
@@ -85,9 +85,11 @@ function param_variation(fm::J2Force, p, f, g, h, k, L, _)
     dPn = 3 * sinϕ
     cterm = fm.J2 * (fm.R / r)^2
 
-    # Potential gradient (formula 11)
+    # Potential gradient (formula 11, with TYPO fix!)
     dRdp = 3 * fm.μ / (w * r^2) * cterm * Pn
-    dRdf = 0.0
+    # TYPO on formula 11, dRdf is missing, it's the symmetrical to dRdg
+    dRdf = -3 * fm.μ * cosL / (w * r) * cterm * Pn
+
     dRdg = -3 * fm.μ * sinL / (w * r) * cterm * Pn
     dRdh = -2 * fm.μ / (r * s^4) * ((1 - h^2 + k^2) * sinL + 2 * h * k * cosL) * cterm * dPn
     dRdk = 2 * fm.μ / (r * s^4) * ((1 + h^2 - k^2) * cosL + 2 * h * k * sinL) * cterm * dPn
@@ -106,7 +108,9 @@ function param_variation(fm::J2Force, p, f, g, h, k, L, _)
     dg = 1 / sqrtμp * (dg1 + dg2)
     dh = 0.5 * s^2 / sqrtμp * (h * (g * dRdf - f * dRdg - dRdL) - 0.5 * s^2 * dRdk)
     dk = 0.5 * s^2 / sqrtμp * (k * (g * dRdf - f * dRdg - dRdL) + 0.5 * s^2 * dRdh)
-    dL = sqrtμp * (w / p)^2 + 0.5 * s^2 / sqrtμp * (h * dRdh + k * dRdk)
+
+    # note the two-body term was removed from dL
+    dL = 0.5 * s^2 / sqrtμp * (h * dRdh + k * dRdk)
 
     return SA[dp, df, dg, dh, dk, dL]
 end
@@ -158,6 +162,20 @@ end
 
 """
 
+    param_variation(fm::ForceModel, r, v, t)
+
+Computes the variation in MEE parameters given the force model.
+"""
+function param_variation(fm::ForceModel{F,false}, u, t) where {F}
+    du = SA[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    for force in fm.forces
+        du += param_variation(force, u..., t)
+    end
+    return du
+end
+
+"""
+
     force_model(u, p::ForceModel{True}, t)
 
 Propagation equations for a Newtonian ForceModel. Computes du, given u,
@@ -179,7 +197,7 @@ Propagation equations for a Keplerian ForceModel. Computes du, given u,
 the force model, and the time.
 """
 function force_model(u, p::ForceModel{F,false}, t) where {F}
-    # TODO
+    return param_variation(p, u, t)
 end
 
 
