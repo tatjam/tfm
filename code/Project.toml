@@ -4,18 +4,26 @@ version = "0.1.0"
 authors = ["tatjam <tatjam02@gmail.com>"]
 
 [deps]
+DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 ReferenceFrameRotations = "74f56ac7-18b3-5285-802d-d4bd4f104033"
 SatelliteToolbox = "6ac157d9-b43d-51bb-8fab-48bf53814f4a"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
+DiffResults = "1.1.0"
 DifferentialEquations = "7.17.0"
 Distributions = "0.25.123"
+ForwardDiff = "1.3.3"
+GLMakie = "0.13.9"
 LinearAlgebra = "1.12.0"
+Makie = "0.24.9"
 ReferenceFrameRotations = "3.2.0"
 SatelliteToolbox = "1.0.0"
 StaticArrays = "1.9.18"

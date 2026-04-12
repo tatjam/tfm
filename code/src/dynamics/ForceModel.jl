@@ -211,14 +211,15 @@ Propagates a ForceModel. Computes du, given u, the force model, and the time.
 """
 function propagate_orbit(
     fm::ForceModel,
-    u0::SVector{6,<:Real},
+    u0::AbstractVector{<:Real},
     t::Real;
     reltol=1e-10,
     abstol=1e-10
 )
+    u0_static = SVector{6}(u0)
 
     tspan = (zero(t), t)
-    prob = ODEProblem(force_model, u0, tspan, fm)
+    prob = ODEProblem(force_model, u0_static, tspan, fm)
     sol = solve(prob, Tsit5(); reltol, abstol)
 
     return last(sol.u)
