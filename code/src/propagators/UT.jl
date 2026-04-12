@@ -16,7 +16,15 @@ Obtains the nearest positive definite matrix to mat, by clamping the eigen value
 """
 function nearest_pd_matrix(mat)
     λ, V = eigen(Symmetric(mat))
-    return Symmetric(V * Diagonal(max.(λ, 1e-6 * maximum(λ))) * V')
+    # minλ = 1e-6 * maximum(λ)
+    minλ = 1e-9
+
+    for λi in λ
+        if λi < minλ
+            @warn "Very small eigen value $(λi) clamped to $(minλ)"
+        end
+    end
+    return Symmetric(V * Diagonal(max.(λ, minλ)) * V')
 end
 
 """
