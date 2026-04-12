@@ -21,9 +21,10 @@ include("propagators/MonteCarlo.jl")
 export run_monte_carlo
 
 include("propagators/UT.jl")
-export SigmaVectors, run_ut
+export SigmaVectors, ut_propagate, run_ut
 
 include("propagators/STM.jl")
+export run_stm
 
 # Utils 
 EARTH_FM_TUPLE = (TwoBodyForce(GM_EARTH),)

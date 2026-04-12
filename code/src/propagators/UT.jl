@@ -63,6 +63,41 @@ function SigmaVectors(μ::AbstractVector{T}, P::AbstractMatrix{T}, α, κ, β) w
 end
 
 """
+   ut_propagate(f, μ, P; α, κ, β) 
+
+Propagates a normal distribution through function f, and reconstruct the normal distribution
+at the other side by means of the Unscented Transform.
+"""
+function ut_propagate(
+    f,
+    μ::AbstractVector{T},
+    P::AbstractMatrix{T};
+    α=1e-3,
+    κ=0,
+    β=2
+) where {T}
+    L = length(μ)
+    N = 2 * L + 1
+    sigma = SigmaVectors(μ, P, α, κ, β)
+    endpoints = Vector{SVector{L, T}}(undef, N)
+    # The sigma-vectors are propagated through the non-linear function 
+    Threads.@threads for i in 1:N
+        endpoints[i] = f(sigma.χ[:, i])
+    end
+
+    # Mean is computed as simply the mean of all points
+    μend = sum(endpoints[i] * sigma.W[i] for i in 1:N)
+    # Covariance matrix can be computed from the deviation matrix, but we have to use 
+    # the special weight for the mean point
+    dx = reduce(hcat, endpoints) .- μend
+    W = [sigma.W0c; sigma.W[2:end]]
+
+    Pend = nearest_pd_matrix(dx * Diagonal(W) * dx')
+
+    return MvNormal(μend, Pend)
+end
+
+"""
     run_ut(p::ForceModel, μ, P, Δt; reltol, abstol, α, κ, β)
 
 Runs the UT propagation for the given distribution, interval of time Δt,
@@ -82,24 +117,12 @@ function run_ut(
     κ=0,
     β=2
 ) where {T}
-
-    L = 6
-    N = 2 * L + 1
-    sigma = SigmaVectors(μ, P, α, κ, β)
-    endpoints = Vector{SVector{L, T}}(undef, N)
-    # The sigma-vectors are propagated through the non-linear function 
-    Threads.@threads for i in 1:N
-        endpoints[i] = propagate_orbit(p, sigma.χ[:, i], Δt, reltol=reltol, abstol=abstol)
-    end
-
-    # Mean is computed as simply the mean of all points
-    μend = sum(endpoints[i] * sigma.W[i] for i in 1:N)
-    # Covariance matrix can be computed from the deviation matrix, but we have to use 
-    # the special weight for the mean point
-    dx = reduce(hcat, endpoints) .- μend
-    W = [sigma.W0c; sigma.W[2:end]]
-
-    Pend = nearest_pd_matrix(dx * Diagonal(W) * dx')
-
-    return MvNormal(μend, Pend)
+    return ut_propagate(
+        v -> propagate_orbit(p, v, Δt, reltol=reltol, abstol=abstol),
+        μ,
+        P,
+        α=α,
+        κ=κ,
+        β=β
+    )
 end
