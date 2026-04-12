@@ -50,7 +50,7 @@ end
 
     @testset "Random orbit" begin
         euclidean = SA[6771.358863, 1313.0, 1314.43, 0.3, 4.76807358, 6.01581168] .* 1e3
-        kepler = kepler_to_array(rv_to_kepler(euclidean[1:3], euclidean[4:6], GM_EARTH))
+        kepler = euclid_to_kepler(euclidean..., GM_EARTH)
         mee = kepler_to_mee(kepler...)
         kepler2 = mee_to_kepler(mee...)
         @testset for i = 1:2
@@ -69,7 +69,7 @@ end
     orbit_u1 = propagate_orbit(EARTH_FM_NEWTON, orbit_u0, 3600.0)
 
     # KEPLER propagation
-    orbit_u0_kepler = kepler_to_array(rv_to_kepler(orbit_u0[1:3], orbit_u0[4:6], GM_EARTH))
+    orbit_u0_kepler = euclid_to_kepler(orbit_u0..., GM_EARTH)
     orbit_u0_mee = kepler_to_mee(orbit_u0_kepler...)
 
     orbit_u1_mee = propagate_orbit(EARTH_FM_KEPLER, orbit_u0_mee, 3600.0)
@@ -87,7 +87,7 @@ end
     orbit_u1 = propagate_orbit(EARTH_FM_WITH_J2_NEWTON, orbit_u0, 3600.0)
 
     # KEPLER propagation
-    orbit_u0_kepler = kepler_to_array(rv_to_kepler(orbit_u0[1:3], orbit_u0[4:6], GM_EARTH))
+    orbit_u0_kepler = euclid_to_kepler(orbit_u0..., GM_EARTH)
     orbit_u0_mee = kepler_to_mee(orbit_u0_kepler...)
 
     orbit_u1_mee = propagate_orbit(EARTH_FM_WITH_J2_KEPLER, orbit_u0_mee, 3600.0)

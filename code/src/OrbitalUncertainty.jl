@@ -15,7 +15,7 @@ include("dynamics/ForceModel.jl")
 include("dynamics/utils.jl")
 export ForceModel, TwoBodyForce, J2Force
 export acceleration, force_model, propagate_orbit
-export kepler_to_mee, mee_to_kepler, kepler_to_array, kepler_to_euclid, isapprox_angle
+export kepler_to_mee, mee_to_kepler, kepler_to_array, kepler_to_euclid, euclid_to_kepler, isapprox_angle
 
 include("propagators/MonteCarlo.jl")
 export run_monte_carlo
