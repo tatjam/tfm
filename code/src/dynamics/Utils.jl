@@ -1,6 +1,7 @@
 # Utils.jl (c) tatjam 2026
 # SPDX-License-Identifier: GPL-3.0-or-later
-# 
+# NOTE:
+# euclid_to_mee and mee_to_euclid (c) Jacob Williams 2021
 # ---------------------------------------------
 # Utils for dynamics code 
 
@@ -232,7 +233,8 @@ a the Keplerian singularities
 Returns an array [p, f, g, h, k, L].
 
 Adapted from: https://degenerateconic.com/modified-equinoctial-elements.html
- (Jacob Williams 2021)
+ (c) Jacob Williams 2021 under the BSD-3-Clause license
+
 """
 function euclid_to_mee(x1, x2, x3, v1, v2, v3, μ)
     r = SA[x1, x2, x3]
@@ -288,7 +290,7 @@ Converts from MEE elements to Euclidean elements directly, avoiding
 singularities
 
 Adapted from: https://degenerateconic.com/modified-equinoctial-elements.html
- (Jacob Williams 2021)
+ (c) Jacob Williams 2021 under the BSD-3-Clause license
 """
 function mee_to_euclid(p, f, g, h, k, L, μ)
     kk = k * k
