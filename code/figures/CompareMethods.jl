@@ -37,9 +37,9 @@ function run_animation(fm, starting_dist, t1, Δt, filename="animation.mp4")
         stm_dist = run_stm(fm, μ₀, P₀, t)
 
         mc = stack(current_samples)
-        scatter!(ax, mc[1,:], mc[2,:], color=(:orange, 0.05))
-        plot_ellipse(ut_dist, 1, 2, color=(:blue, 0.5))
-        plot_ellipse(stm_dist, 1, 2, color=(:red, 0.5))
+        scatter!(ax, mc[1,:], mc[2,:], color=(:orange, 0.05), label="MC")
+        plot_ellipse(ut_dist, 1, 2, color=(:blue, 0.5), label="UT")
+        plot_ellipse(stm_dist, 1, 2, color=(:red, 0.5), label="STM")
 
         # ut_samples = stack(rand(ut_dist, 10000))
         # stm_samples = stack(rand(stm_dist, 10000))
@@ -51,8 +51,10 @@ function run_animation(fm, starting_dist, t1, Δt, filename="animation.mp4")
         # center = [2000e3, 0e3, 0]
         xlims!(ax, center[1] - r, center[1] + r)
         ylims!(ax, center[2] - r, center[2] + r)
+
+        axislegend(ax)
         @info t
     end
 end
 
-run_animation(fm, starting_dist, 14400, 60)
+run_animation(fm, starting_dist, 7200, 20)
