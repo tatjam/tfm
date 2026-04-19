@@ -223,6 +223,110 @@ function euclid_to_kepler(x1::T, x2::T, x3::T, v1::T, v2::T, v3::T, μ::T) where
 end
 
 """
+    euclid_to_mee(x1, x2, x3, v1, v2, v3, μ)
+
+Converts from euclidean elements directly to MEE elements, avoiding
+a the Keplerian singularities
+
+Returns an array [p, f, g, h, k, L].
+
+Adapted from: https://degenerateconic.com/modified-equinoctial-elements.html
+ (Jacob Williams 2021)
+"""
+function euclid_to_mee(x1, x2, x3, v1, v2, v3, μ)
+    r = SA[x1, x2, x3]
+    v = SA[v1, v2, v3]
+
+    rdv = dot(r, v)
+    rmag = norm(r)
+    rhat = r / rmag
+
+    hvec = cross(r, v)
+    hmag = norm(hvec)
+    hhat = hvec / hmag
+
+    vhat = (rmag * v - rdv*rhat) / hmag
+    p = hmag*hmag / μ
+
+    k = hhat[1]/(1.0 + hhat[3])
+    kk = k * k
+
+    h = -hhat[2]/(1.0 + hhat[3])
+    hh = h * h
+
+    s2 = 1.0 + hh + kk
+    tkh = 2.0 * k * h
+    ecc = cross(v, hvec) / μ - rhat
+
+    fhat = SA[
+        1.0 - kk + hh,
+        tkh,
+        -2.0 * k
+    ]
+
+    ghat = SA[
+        tkh,
+        1.0 + kk - hh,
+        2.0 * h
+    ]
+
+    fhat = fhat/s2
+    ghat = ghat/s2
+
+    f = dot(ecc, fhat)
+    g = dot(ecc, ghat)
+    L = atan(rhat[2]-vhat[1],rhat[1]+vhat[2])
+
+    return SA[p, f, g, h, k, L]
+end
+
+"""
+    mee_to_euclid(p, f, g, h, k, L)
+
+Converts from MEE elements to Euclidean elements directly, avoiding
+singularities
+
+Adapted from: https://degenerateconic.com/modified-equinoctial-elements.html
+ (Jacob Williams 2021)
+"""
+function mee_to_euclid(p, f, g, h, k, L, μ)
+    kk = k * k
+    hh = h * h
+    tkh = 2.0 * k * h
+    s2 = 1.0 + hh + kk
+    cL = cos(L)
+    sL = sin(L)
+    w = 1.0 + f * cL + g * sL
+    r = p / w
+
+    smp = sqrt(μ/p)
+    fhat = SA[
+        1.0 - kk + hh,
+        tkh,
+        -2.0 * k
+    ]
+
+    ghat = SA[
+        tkh,
+        1.0 + kk - hh,
+        2.0 * h
+    ]
+
+    fhat = fhat/s2
+    ghat = ghat/s2
+
+    x = r*cL
+    y = r*sL
+    xdot = -smp * (g + sL)
+    ydot = smp * (f + cL)
+
+    r = x * fhat + y * ghat
+    v = xdot * fhat + ydot*ghat
+    
+    return SA[r[1], r[2], r[3], v[1], v[2], v[3]]
+end
+
+"""
    isapprox_angle(a, b; atol=1e-8)
 
    Compare two angles knowing they live in the circle
