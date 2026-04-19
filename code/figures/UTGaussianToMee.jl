@@ -12,7 +12,7 @@ using SatelliteToolbox
 include("Utils.jl")
 
 μ = [9000e3, 0, 0, 0, 6620, 0]
-σ = Diagonal([100e3, 1000e3, 1000e3, 1.0, 100.0, 1.0])
+σ = Diagonal([2000e3, 10e3, 10e3, 1.0, 100.0, 1.0])
 
 starting_dist = MvNormal(μ, σ^2)
 
@@ -22,12 +22,13 @@ function mee_and_back(dist)
         v -> euclid_to_mee(v..., GM_EARTH),
         μ,
         σ^2,
+        α=1e-1
     )
 
     starting_dist_back = ut_propagate(
         v -> mee_to_euclid(v...,GM_EARTH),
         mean(starting_dist_mee),
-        cov(starting_dist_mee),
+        cov(starting_dist_mee)
     )
 
     fig = Figure(size=(1920, 1080))
@@ -36,10 +37,7 @@ function mee_and_back(dist)
 
     i = 1
     j = 2
-
-    samples = rand(starting_dist, 10000)
-    # scatter!(ax, samples[i,:], samples[j,:], color=(:red, 0.05))
-    plot_ellipse(starting_dist, i, j, color=(:red, 1))
+    # plot_ellipse(starting_dist, i, j, color=(:red, 1))
 
     samples_mee = rand(starting_dist_mee, 10000)
     # scatter!(ax, samples_mee[i,:], samples_mee[j,:], color=(:orange, 0.05))
@@ -52,7 +50,7 @@ function mee_and_back(dist)
     end
     samples_mee_back = reduce(hcat, results)
 
-    scatter!(ax, samples_mee_back[i,:], samples_mee_back[j,:], color=(:blue, 0.05))
+    scatter!(ax, samples_mee_back[i,:], samples_mee_back[j,:], color=(:orange, 0.05))
 
     plot_ellipse(starting_dist_back, i, j, color=(:blue, 1))
 
