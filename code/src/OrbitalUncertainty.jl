@@ -12,19 +12,25 @@ using Distributions
 
 # ForceModel
 include("dynamics/ForceModel.jl")
-include("dynamics/utils.jl")
+include("dynamics/Utils.jl")
 export ForceModel, TwoBodyForce, J2Force
 export acceleration, force_model, propagate_orbit
-export kepler_to_mee, mee_to_kepler, kepler_to_array, kepler_to_euclid, euclid_to_kepler, isapprox_angle
+export kepler_to_euclid, kepler_to_array, euclid_to_kepler
+export kepler_to_mee, mee_to_kepler
+export euclid_to_mee, mee_to_euclid
+export isapprox_angle
 
 include("propagators/MonteCarlo.jl")
 export run_monte_carlo
 
 include("propagators/UT.jl")
-export SigmaVectors, ut_propagate, run_ut
+export SigmaVectors, ut_propagate, run_ut, nearest_pd_matrix
 
 include("propagators/STM.jl")
 export run_stm
+
+include("statistics/GVM.jl")
+include("propagators/GVM.jl")
 
 # Utils 
 EARTH_FM_TUPLE = (TwoBodyForce(GM_EARTH),)

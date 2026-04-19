@@ -17,7 +17,7 @@ Obtains the nearest positive definite matrix to mat, by clamping the eigen value
 function nearest_pd_matrix(mat)
     λ, V = eigen(Symmetric(mat))
     # minλ = 1e-6 * maximum(λ)
-    minλ = 1e-9
+    minλ = eps(eltype(mat)) * maximum(λ)
 
     for λi in λ
         if λi < minλ
