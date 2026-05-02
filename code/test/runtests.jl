@@ -18,3 +18,7 @@ end
 @testset "Unscented Transform" begin
     include("test_ut.jl")
 end
+
+@testset "GMV Distribution" begin
+    include("test_gvm_dist.jl")
+end

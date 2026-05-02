@@ -1,8 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.12.5"
+julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "d3571ed8c39ddd1ca5d408239a52b4b702c9b479"
+project_hash = "3c9c44d95653100c8ba83a7e818361d0aad2a81d"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "f7304359109c768cf32dc5fa2d371565bb63b68a"
@@ -1874,7 +1874,7 @@ uuid = "91d4177d-7536-5919-b921-800302f37372"
 version = "1.6.1+0"
 
 [[deps.OrbitalUncertainty]]
-deps = ["DiffResults", "DifferentialEquations", "Distributions", "ForwardDiff", "LinearAlgebra", "Makie", "ReferenceFrameRotations", "SatelliteToolbox", "StaticArrays", "Test"]
+deps = ["DiffResults", "DifferentialEquations", "Distributions", "ForwardDiff", "GLMakie", "LinearAlgebra", "Makie", "ReferenceFrameRotations", "SatelliteToolbox", "StaticArrays", "Test"]
 path = "."
 uuid = "a9a1a3d1-c457-4620-9d4d-81bb393a3c57"
 version = "0.1.0"

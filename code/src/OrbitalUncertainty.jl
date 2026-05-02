@@ -9,6 +9,7 @@ using StaticArrays
 using LinearAlgebra
 using DifferentialEquations
 using Distributions
+using Random
 
 # ForceModel
 include("dynamics/ForceModel.jl")
@@ -30,6 +31,7 @@ include("propagators/STM.jl")
 export run_stm
 
 include("statistics/GVM.jl")
+export GaussVonMises
 include("propagators/GVM.jl")
 
 # Utils 
