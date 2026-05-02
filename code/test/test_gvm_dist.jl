@@ -43,7 +43,7 @@ end
          0.3 1.2 0.1]
     κ = 0.1
 
-    n = 100000
+    n = 1000000
 
     @testset "Marginal on x is Gaussian" begin
         gvm = GaussVonMises(μ, P, α, β, Γ, κ)

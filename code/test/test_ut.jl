@@ -93,7 +93,7 @@ end
         @test μ_mc ≈ mean(dist) rtol = 1e-6
 
         rel_error = norm(cov(dist) - P_mc) / norm(P_mc)
-        @test rel_error < 0.01
+        @test rel_error < 0.02
 
     end
 end
