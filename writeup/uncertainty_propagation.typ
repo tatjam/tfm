@@ -4,7 +4,7 @@
 
 == Conceptos de estadística en el lenguaje geométrico
 
-Consideremos un punto aleatorio $x in X tilde.equiv RR^n$, cuya función de distribución de probabilidad es $p : X -> RR$, cumpliendo que $p(x) >= 0$ y que #footnote[La integral es n-dimensional, no unidimensional, pero usamos el símbolo de integral simple por simplicidad notacional.]
+Consideremos un punto aleatorio $x in X tilde.equiv RR^n$, cuya función de densidad de probabilidad es $p : X -> RR$, cumpliendo que $p(x) >= 0$ y que #footnote[La integral es n-dimensional, no unidimensional, pero usamos el símbolo de integral simple por simplicidad notacional.]
 
 $
   integral p(x) dd(x) = 1.
@@ -22,7 +22,7 @@ $
   EE[x - mu] = integral (x - mu) p(x) dd(x) = integral x p(x) dd(x) - mu integral p(x) dd(x) = mu - mu = 0.
 $
 
-Consideremos también una 1-forma no nula $alpha: T^* X$, actuando sobre $(x - mu)$. Su valor esperado es también nulo, ya que por linealidad
+Consideremos también una 1-forma no nula $alpha in T^* X$, actuando sobre $(x - mu)$. Su valor esperado es también nulo, ya que por linealidad
 
 $
   EE[alpha(x - mu)] = integral alpha(x - mu) p(x) dd(x) = alpha (integral (x - mu) p(x) dd(x)) = alpha(0) = 0
@@ -46,7 +46,7 @@ $
   P(alpha, beta) = EE[alpha(x - mu) beta(x - mu)].
 $
 
-Este objeto es conocido como el (2,0)-tensor de covarianza, ya que consume un par de 1-formas. #footnote[Este mismo concepto se puede generalizar para mayor cantidad de 1-formas. Considerando 3, obtenemos el (3, 0)-tensor de asimetría, y utilizando 4, el (4, 0)-tensor de curtosis. Por desgracia, para distribuciones de varias variables, estos no se pueden escribir fácilmente sobre el papel; el tensor de asimetría requiere un "cubo" de números, y el de curtosis un hipercubo.] Es fácil demostrar, utilizando la linealidad de las 1-formas y el operador $EE$ que $P$ es bilinear, es decir,
+Este objeto es conocido como el (2,0)-tensor de covarianza, ya que consume un par de 1-formas. #footnote[Este mismo concepto se puede generalizar para mayor cantidad de 1-formas. Considerando 3, obtenemos el (3, 0)-tensor de asimetría, y utilizando 4, el (4, 0)-tensor de curtosis. Por desgracia, para distribuciones de varias variables, estos no se pueden escribir fácilmente sobre el papel; el tensor de asimetría requiere un "cubo" de números, y el de curtosis un hipercubo.] Es fácil demostrar, utilizando la linealidad de las 1-formas y el operador $EE$ que $P$ es bilineal, es decir,
 
 $
   P(lambda alpha_1 + alpha_2, beta) = lambda P(alpha_1, beta) + P(alpha_2, beta) \
@@ -54,13 +54,13 @@ $
 $
 
 
-Podemos obtener la expresión matricial del tensor, $vb(P)$ evaluandolo contra todos los pares de una base de 1-formas, por ejemplo $dd(x_1), dd(x_2), ... dd(x_n)$:
+Podemos obtener la expresión matricial del tensor, $vb(P)$ evaluándolo contra todos los pares de una base de 1-formas, por ejemplo $dd(x_1), dd(x_2), ... dd(x_n)$:
 
 $
   vb(P) = mat(
     P(dd(x_1), dd(x_1)), ..., P(dd(x_1), dd(x_n));
     dots.v, dots.v, dots.v;
-    P(dd(x_n), dd(x_1)), ..., P(dd(x_n) dd(x_n))
+    P(dd(x_n), dd(x_1)), ..., P(dd(x_n), dd(x_n))
   )
 $
 
@@ -87,7 +87,7 @@ $
                                   )
   $
 
-  Por la bilinearidad de $P$, tenemos que
+  Por la bilinealidad de $P$, tenemos que
 
   $
     P(dd(x_1), dd(x_1)) beta_1 + P(dd(x_1), dd(x_2)) beta_2 =
@@ -114,7 +114,7 @@ $
     alpha_1 P(dd(x_1), beta) + alpha_2 P(dd(x_2), beta) =
   $
 
-  que, de nuevo, por bilinearidad de $P$,
+  que, de nuevo, por bilinealidad de $P$,
 
   $
     = P(alpha_1 dd(x_1) + alpha_2 dd(x_2), beta) = P(alpha, beta).
@@ -123,12 +123,12 @@ $
 ]
 
 
-En adelante, utilizaremos esta notación, dónde el símbolo sin negrita representa un expresión libre de coordenadas, y el símbolo con negrita un objecto con coordenadas en una base implícita.
+En adelante, utilizaremos esta notación, donde el símbolo sin negrita representa un expresión libre de coordenadas, y el símbolo con negrita un objecto con coordenadas en una base implícita.
 
 
 === Mapas afines sobre una distribución
 
-La ventaja de introducir la nomenclatura de la geometría diferencial y evitar asumir coordenadas es la claridad notacional que se puede conseguir. Este apartado busca recordar los pushforward y pullbacks previamente definidos, y enclarecer su utilidad.
+La ventaja de introducir la nomenclatura de la geometría diferencial y evitar asumir coordenadas es la claridad notacional que se puede conseguir. Este apartado busca recordar los pushforward y pullbacks previamente definidos, y esclarecer su utilidad.
 
 Supongamos que tenemos un mapa afín $cal(A): X -> X$, y consideremos $tilde(x) = cal(A)(x)$. La realización con coordenadas más general de este mapa es $L(vb(x)) = vb(A) vb(x) + vb(b)$, siendo $vb(A)$ una matriz y $vb(b)$ un vector.
 
@@ -136,30 +136,44 @@ La media de $tilde(x)$ se obtiene directamente gracias a la afinidad de este, $t
 
 Por su parte, consideremos un vector $v in T X$, y consideremos su transformación bajo el mapa. Al tratarse de un vector, definimos que este se transforma a través del pushforward $dd(cal(A)) : T X -> T X$, es decir, $tilde(v)= dd(cal(A)) (v)$. Con coordenadas escribiríamos, $vb(tilde(v)) = vb(A) vb(v)$, siempre que escribamos los vectores como vectores columna.
 
-De forma similar, consideremos una 1-forma $alpha in T^* X$, e impongamos que exista una 1-forma $tilde(alpha)$ tal que $tilde(alpha)(v) = alpha(tilde(v))$. Ya que $tilde(v) = dd(cal(A))(v)$, la anterior igualdad implica que
+De forma similar, consideremos una 1-forma $alpha in T^* X$, e impongamos que exista una 1-forma $tilde(alpha)$ tal que $tilde(alpha)(tilde(v)) = alpha(v)$. Ya que $tilde(v) = dd(cal(A))(v)$, la anterior igualdad implica que
 
 $
-  tilde(alpha) = alpha comp dd(cal(A)).
+  tilde(alpha) comp dd(cal(A)) = alpha
 $
 
-Este mapa que nos lleva de $alpha$ a $tilde(alpha)$ lo denominamos el "pullback" y lo escribimos $dd(cal(A))^*: T^* X -> T^* X$, tal que $tilde(alpha) = dd(cal(A))^*(alpha)$. En coordenadas, buscamos que $vb(tilde(alpha)) vb(v) = vb(alpha) vb(A) vb(v)$. Identificando términos, escribimos $vb(tilde(alpha)) = vb(alpha) vb(A)$, siempre que escribamos las 1-formas como vectores fila.
+Este mapa que nos lleva de $tilde(alpha)$ a $alpha$ lo denominamos el "pullback" y lo escribimos $dd(cal(A))^*: T^* X -> T^* X$, tal que $dd(cal(A))^*(tilde(alpha)) = alpha$. En coordenadas, buscamos que $vb(tilde(alpha)) tilde(vb(v)) = vb(tilde(alpha)) vb(A) vb(v) = vb(alpha) vb(v)$. Identificando términos, escribimos $vb(tilde(alpha)) vb(A) = vb(alpha)$, siempre que escribamos las 1-formas como vectores fila.
 
 Finalmente, con estas construcciones, estamos listos para transformar el tensor de covarianza. Intuitivamente, definimos que
 
 $
-  tilde(P)(alpha, beta) = EE[alpha(tilde(x) - tilde(mu)) beta(tilde(x) - tilde(mu))].
+  tilde(P)(tilde(alpha), tilde(beta)) = EE[tilde(alpha)(tilde(x) - tilde(mu)) tilde(beta)(tilde(x) - tilde(mu))],
 $
 
-A su vez, ya que $cal(A)$ es afín, podemos afirmar que $tilde(x) - tilde(mu) = dd(cal(A))(x - mu)$. Esto implica mediante el pullback que $alpha(tilde(x) - tilde(mu)) = tilde(alpha) (x - mu)$ = $dd(cal(A))^* alpha (x - mu)$, y equivalentemente para $beta$. Por lo tanto,
+pero estamos interesados en evaluar $tilde(P)$ en función de las 1-formas originales (en esencia, para obtener su nueva forma matricial). Ya que $cal(A)$ es afín, podemos afirmar que $tilde(x) - tilde(mu) = dd(cal(A))(x - mu)$. Por lo tanto, podemos escribir
 
 $
-  tilde(P)(alpha, beta) = P(tilde(alpha), tilde(beta)) = P(dd(cal(A))^* alpha, dd(cal(A))^* beta).
+  tilde(P)(tilde(alpha), tilde(beta)) = EE[alpha(x - mu), beta(x - mu)] = P(alpha, beta).
 $
 
-Expresando en coordenadas,
+A su vez, recordamos que $dd(cal(A))^*(tilde(alpha)) = alpha$, y análogamente para $beta$, lo que nos permite escribir
 
 $
-  vb(alpha) vb(tilde(P)) vb(beta)^TT = vb(tilde(alpha)) vb(P) vb(tilde(beta))^TT = (vb(alpha) vb(A)) vb(P) (vb(beta) vb(A))^TT = vb(alpha) ( vb(A) vb(P) vb(A^TT)) vb(beta)^TT,
+  tilde(P)(tilde(alpha), tilde(beta)) = P(alpha, beta) = P(dd(cal(A))^*(tilde(alpha)), dd(cal(A))^*(tilde(beta))).
+$
+
+Equivalentemente a las 1-formas, definimos la actuación del pullback en este como una propiedad distributiva del pullback dentro del tensor, es decir,
+
+$
+  tilde(P)(tilde(alpha), tilde(beta)) = dd(cal(A))^* P(alpha, beta) = P(dd(cal(A))^* alpha, dd(cal(A))^* beta).
+$
+
+Expresando las anteriores igualdades en coordenadas,
+
+$
+  vb(tilde(alpha)) vb(tilde(P)) vb(tilde(beta))^TT
+  = vb(alpha) vb(P) vb(beta)^TT
+  = (vb(tilde(alpha)) vb(A)) vb(P) (vb(tilde(beta)) vb(A))^TT = vb(tilde(alpha)) ( vb(A) vb(P) vb(A^TT)) vb(tilde(beta))^TT,
 $
 
 identificando términos, $vb(tilde(P)) = vb(A) vb(P) vb(A)^TT$, una expresión que usaremos abundantemente en la implementación numérica.
@@ -189,19 +203,20 @@ Consideremos un mapa $Psi: X^n -> X^n$, tal que $tilde(x) = Psi(x)$, y asumamos 
 
 === Matriz de transición de estado (STM)
 
-El método de la matriz de transición de estado consiste en notar que la distribución normal es cerrada en cuanto a mapas afines, es decir, sí
+El método de la matriz de transición de estado consiste en notar que la distribución normal es cerrada en cuanto a mapas afines, es decir, si
 
 $
-  cal(A)_b : X -> X, quad cal(A)_b (x) = tilde(x) = A x + b,
+  cal(A)_b : X -> X, quad cal(A)_b (vb(x)) = tilde(vb(x)) = vb(A) vb(x) + vb(b),
 $
 
-siendo $A$ una matriz y $b$ un vector, podemos afirmar que, sí $p(x) = distN(x, mu, P)$, entonces
+y $p(vb(x)) = distN(vb(x), vb(mu), vb(P))$, entonces
 
 $
-  p(tilde(x)) = distN(tilde(x), tilde(mu), tilde(P)),
+  p(vb(tilde(x))) = distN(vb(tilde(x)), vb(tilde(mu)), vb(tilde(P))),
 $
 
-dónde $tilde(mu) = A mu + b$ y $tilde(P) = A P A^TT$.
+donde $vb(tilde(mu)) = vb(A) vb(mu) + vb(b)$ y $vb(tilde(P)) = vb(A) vb(P) vb(A)^TT$ como previamente hemos demostrado.
+
 
 
 
@@ -253,7 +268,7 @@ $
 Notamos que
 
 $
-  1 / (2 pi) integral_(-pi)^pi e^(kappa cos (theta - alpha)) dd(theta) = integral_(-pi)^pi e^(kappa cos theta cos alpha + sin theta sin alpha)dd(theta) =
+  1 / (2 pi) integral_(-pi)^pi e^(kappa cos (theta - alpha)) dd(theta) = integral_(-pi)^pi e^(kappa cos theta cos alpha + kappa sin theta sin alpha)dd(theta) =
 $
 
 Esta última integral es conocida @ListIntegralsExponential2026, y toma por valor
@@ -272,19 +287,19 @@ Esto, junto con $p(theta) >= 0 med thick forall med theta$ y la periodicidad, co
 
 === Distribución Gauss-Von Mises canónica
 
-Consideremos las variables aleatorias $(z, phi)$ dónde $z in Z subset.eq RR^n$, $phi in S^1$. Denominaremos a ambas variables como distribuidas conjuntamente bajo una distribución Gauss-Von Mises canónica sí cumplen que
+Consideremos las variables aleatorias $(z, phi)$ donde $z in Z subset.eq RR^n$, $phi in S^1$. Denominaremos a ambas variables como distribuidas conjuntamente bajo una distribución Gauss-Von Mises canónica sí cumplen que
 
 $
   p(z, phi) = distN(z, 0, I) med distVM(phi, 0, kappa),
 $
 
-dónde $distN(x, 0, I)$ es una distribución normal canónica y $distVM(theta, 0, kappa)$ es una distribución Von Mises con media angular nula y "afilamiento" $kappa$.
+donde $distN(x, 0, I)$ es una distribución normal canónica y $distVM(theta, 0, kappa)$ es una distribución Von Mises con media angular nula y "afilamiento" $kappa$.
 
 Notamos que, bajo esta distribución canónica, ya que no existe acoplamiento entre $z$ y $phi$, el marginal en $z$ de la distribución es la propia distribución normal, y el marginal en $phi$ es la propia distribución de Von Mises.
 
 === Distribución Gauss-Von Mises general
 
-Consideremos el mapa afín $cal(C)_mu : Z -> X subset.eq RR^n$, tal que $cal(C)_mu (z) = x = C z + mu$, dónde $C$ es una matriz triangular inferior. Observamos que, si $z$ se distribuye según $distN(z, 0, I)$, $x$ a su vez se distribuye siguiendo $distN(x, mu, P)$, con $P = C C^TT$. El mapa inverso es $z = C^(-1) (x - mu)$ y lo denominaremos $cal(C)_mu^(-1): X -> Z$.
+Consideremos el mapa afín $cal(C)_mu : Z -> X subset.eq RR^n$, tal que $cal(C)_mu (z) = x = C z + mu$, donde $C$ es una matriz triangular inferior. Observamos que, si $z$ se distribuye según $distN(z, 0, I)$, $x$ a su vez se distribuye siguiendo $distN(x, mu, P)$, con $P = C C^TT$. El mapa inverso es $z = C^(-1) (x - mu)$ y lo denominaremos $cal(C)_mu^(-1): X -> Z$.
 
 Por otra parte, consideremos la familia de funciones $cal(Theta)_(alpha, beta, Gamma) : Z -> RR$ generadas por
 
@@ -292,7 +307,7 @@ $
   Theta_(alpha, beta, Gamma)(z) = alpha + beta(z) + Gamma(z, z),
 $
 
-dónde $alpha in RR$, $beta: Z -> RR$ es una 1-forma y $Gamma: Z times Z -> RR$ es una 2-forma simétrica y bilineal, y construyamos la siguiente distribución
+donde $alpha in RR$, $beta: Z -> RR$ es una 1-forma y $Gamma: Z times Z -> RR$ es una 2-forma simétrica y bilineal, y construyamos la siguiente distribución
 
 #let distGVM(x, theta, mu, p, alpha, beta, Gamma, kappa) = {
   $cal(G V M)(#x, #theta\; med med #mu, #p, #alpha, #beta, #Gamma, #kappa)$
@@ -328,7 +343,7 @@ $
   (tilde(x), tilde(theta)) = Psi(x, theta),
 $
 
-dónde $(x, theta)$ están conjuntamente ditribuidos siguiendo Gauss-Von Mises.
+donde $(x, theta)$ están conjuntamente distribuidos siguiendo Gauss-Von Mises.
 
 Ya que el mapa $Psi$ es arbitrario, $(tilde(x), tilde(theta))$, en general, tan solo estarán aproximadamente distribuidos según Gauss Von-Mises. Nuestro objetivo es entonces encontrar una distribución Gauss Von-Mises justificadamente correcta.
 
