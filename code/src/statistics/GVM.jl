@@ -11,11 +11,19 @@
 # coordinates are to be considered Gaussian.
 
 struct GaussVonMises{T<:Real,V<:AbstractVector{T},M<:AbstractMatrix{T}}
+    # μ mean vector for the Gaussian in Euclidean space
     μ::V
+    # α mean vector for the Von Mises (scalar)
     α::T
+    # β is a 1-form: ℝⁿ -> ℝ, acting on vectors via dot(β, v)
+    # It maps each vector to the effect it has on the angular input to VM
     β::V
+    # Γ is a symmetric bilinear form, inducing a quadratic form ℝⁿ -> ℝ, via dot(v, Γ, v)
     Γ::M
+    # κ is a scalar that shapes the Von Mises transform, it's non geometric
     κ::T
+    # A is a linear map: ℝⁿ -> ℝⁿ, acting on vectors via the matrix product A*v,
+    # mapping a "canonical unit sphere" to a "real ellipsoid" for the Gaussian 
     A::LowerTriangular{T}
 end
 
@@ -56,7 +64,7 @@ function decanonicalize(dist::GaussVonMises{T, V, M}, v::AbstractVector{T}) wher
     euc = dist.μ + dist.A * ceuc
     ang = cang + dist.α + dot(dist.β, ceuc) + 0.5 * dot(ceuc, dist.Γ, ceuc)
 
-    hcat(euc, ang)
+    SA[euc..., ang]
 end
 
 """
@@ -65,10 +73,14 @@ end
 Sample a GaussVonMises distribution, returning the (x, θ) sample
 """
 function Base.rand(rng::AbstractRNG, d::GaussVonMises)
-    # x is distributed as N(μ, P)
-    x = d.μ + d.A * randn(rng, eltype(d.μ), length(d.μ))
-    z = d.A \ (x .- d.μ)
+    # z is distributed as N(0, Id), thus is in our "canonical" space
+    z = randn(rng, eltype(d.μ), length(d.μ))
+    # x is distributed as N(μ, P), using A to go from canonical to real coordinates
+    x = d.μ + d.A * z
+
+    # θ is constructed from α, the action of β on z, and the action of Γ in z
     Θ = d.α + dot(z, d.β) + 0.5 * dot(z, d.Γ, z)
+
     # Note: Distributions.jl VonMises is always centered on the mean, so
     # we "unwrap" so it lives on [-π, π)
     vm = mod(rand(rng, VonMises(Θ, d.κ)) + π, 2 * π) - π

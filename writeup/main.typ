@@ -35,6 +35,6 @@
 #include "mechanics.typ"
 
 
-= Propagación de incertidumbre
+= Propagación de incertidumbres
 
 #include "uncertainty_propagation.typ"

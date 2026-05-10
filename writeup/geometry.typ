@@ -370,7 +370,7 @@ Comencemos esta sección con un ejemplo introductorio, que sentará la motivaci�
 
 ]
 
-#definition[Una *1-forma* o *covector* es una transformación lineal que lleva de un espacio vectorial a los reales, es decir, #box[$omega: RR^n -> RR$] #cite_mech(163).] <def:1form>
+#definition[Una *1-forma* o *covector* es una transformación lineal que lleva de un espacio vectorial a los reales, es decir, #box[$omega_1: RR^n -> RR$] #cite_mech(163).] <def:1form>
 
 #note[Las 1-formas forman un espacio vectorial][
   Si definimos la suma de dos 1-formas $omega_1$ y $omega_2$, aplicadas a cierto vector $vb(v)$, como $(omega_1 + omega_2)(vb(v)) = omega_1(vb(v)) + omega_2(vb(v))$ y la multiplicación por un escalar #box[$(lambda omega)(vb(v)) = lambda omega(vb(v))$], podemos considerar que las 1-formas presentan estructura de espacio vectorial de tantas dimensiones como los vectores sobre los que se aplican #cite_mech(163).
@@ -519,4 +519,23 @@ De forma análoga al espacio tangente, podemos construir una variedad diferencia
 
   Como apreciamos, ambos mapas son compatibles y hemos demostrado que el fibrado cotangente es también una variedad diferencial.
 ]
+
+El desarrollo para la esfera es muy similar, utilizando Jacobianos, y no lo incluimos por brevedad.
+
+Por último, es importante introducir una definición más, que ha quedado casi implícita en los anteriores ejemplos.
+
+#definition[Una *1-forma diferencial* definida sobre una variedad $M$ es una asignación suave de 1-formas a cada punto de $M$, es decir, $omega: M -> T^* M.$ tal que $omega(p) in T^*_p M$ para $p in M$ #cite_mech(175).] <def:differential_1form>
+
+== 2-formas y el producto exterior
+
+Consideremos ahora la siguiente definición:
+
+#definition[Una *2-forma* es una transformación bilineal y antisimétrica que lleva a dos vectores del mismo espacio vectorial a los reales, es decir, #box[$alpha: RR^n times RR^n -> RR$] #cite_mech(164).] <def:2form>
+
+== Integración de formas
+
+== La derivada exterior
+
+== La forma simplética
+
 

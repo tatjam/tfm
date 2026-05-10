@@ -91,27 +91,92 @@ function GVMSigmaVectors(dist::GaussVonMises{T}) where {T}
 end
 
 
-function gvm_propagate(f, dist::GaussVonMises{T,V,M}) where {T,V,M}
+function gvm_propagate(
+    f,
+    dist::GaussVonMises{T,V,M}
+) where {T,V,M}
+
     n = length(dist.μ)
     L = n + 1
     N = 2 * L + 1
 
     # Step 1: generate the sigma vectors and propagate them
     sigma = GVMSigmaVectors(dist)
-    endpoints = Vector{SVector{L, T}}(undef, N)
+    endpoints = Vector{SVector{L,T}}(undef, N)
 
     Threads.@threads for i in 1:N
         endpoints[i] = f(sigma.χ[:, i])
     end
 
-    # Step 2: GVM cuadrature on the resulting sigma-vectors
+    # Step 2: GVM cuadrature on the resulting sigma-vectors for the
+    #         euclidean part of the distribution
+    end_μ = sum(endpoints .* sigma.W)
+    dx = reduce(hcat, endpoints) .- end_μ
+    end_P = nearest_pd_matrix(dx * Diagonal(sigma.W) * dx')
+    end_A = cholesky(Symmetric(end_P)).L
 
     # Step 3: Estimate hα, hβ, hΓ using derivatives of f
     # RESEARCH: It would be wise to experiment using the derivatives that
     # can be inferred from the endpoints instead of a full forward diff of f.
 
+    # δf[i, j] = δfᵢ/δxⱼ, so we have...
+    δf = ForwardDiff.jacobian(f, sigma.N[:, 1])
+    δₓfx = δf[1:(L-1), 1:(L-1)]
+    δₓfα = δf[L, 1:(L-1)]
+
+    # δ²fθ[i, j] = δ²f / δxᵢδxⱼ
+    δ²fα = ForwardDiff.hessian(x -> f(x)[L], sigma.N[:, 1])
+    δ²ₓfα = δ²fα[1:(L-1), 1:(L-1)]
+
+    # end_α = f_α(μ, α), that's one of the points we propagate so trivial
+    end_α = endpoints[1][L]
+
+    # Total uncertainty in angular coordinates is contributed by original uncertainty β and
+    # the new linear contribution from f, after we bring it into canonical coordinates
+    # Note that δfₓfα is a 1-form so it transforms by the transpose!
+    Δβ = dist.A' * δfₓfα
+
+    # Both dist.β and Δβ are 1-forms that act on the original canonical space, thus they can be
+    # added together just fine.
+    end_β_original_coords = (β + Δβ)
+
+    # Now, we wish to find the transformation that goes from 1-forms in the canonical space before "f", to
+    # 1-forms in the canonical space after "f", as a linear approximation of course.
+    # We note that δₓfx * ◌ maps vectors from real space before x to real space after x, thus
+    # δₓfx * A * ◌ maps a vector in canonical space before x, to a vector in real space after x,
+    # and thus (end_A)⁻¹ * δₓfx * A * ◌ maps a vector in canonical space before x, to a vector in canonical space after x.
+    canon_δₓfx = inv(end_A) * δₓfx * dist.A
+
+    end_β = inv(end_A) * δₓfx * dist.A * (β + Δβ)
+    # Intuitively:
+    #   δₓfx represents the linear approximation of f on the euclidean distribution
+    #   end_A⁻¹ finally brings everything to the new canonical coordinates
+
+    canon_δₓfx = inv(end_A) * δₓfx * dist.A
+    # Intuitively:
+    #    let m1 = δₓfx * dist.A * ◌ : δx (canonical coordinates) -> δ̂x (real coordinates) 
+    #    let m2 = inv(end_A) * ◌ : δ̂x (real coordinates) -> δ̂x (canonical coordinates) by inverse definition of A
+    # then
+    #    m * ◌ = m2 ∘ m1 : δx (canonical coordinates ) -> δ̂x (canonical coordinates)
+    # i.e. m: ℝⁿ -> ℝⁿ maps a perturbation δx, written in canonical coordinates, to the perturbation in f(x), written in
+    #      canonical coordinates of the resulting Gauissian. It's precisely the canonicalized Jacobian.
+
+    # Now lets consider the form Γ: ℝⁿ -> ℝⁿ -> ℝ, how does it transform under f? Note that Γ acts on canonical vectors.
+    # To understand it, consider another bilinear symmetric form, the Hessian, interpreting it as a
+    # quadratic form Q(δ²ₓfα, ◌) = ◌ᵀ δ²ₓfα ◌ : ℝⁿ -> ℝ, that maps each perturbation δx(real coordinates) to a increase δα.
+    # The mapping is NOT a 1-form as it's not linear, but we can derive an expression that allows it to act on δx (canonical coordinates).
+    # To do so, consider Q(δ²ₓfα, A δx) = (A δx)ᵀ (δ²ₓfα) (A δx) = (δxᵀ Aᵀ) (δ²ₓfα) (A δx),
+    # by associativity of matrix multiplication, we can write δxᵀ (Aᵀ δ²ₓfα A) δx, thus this is precisely the canonicalized Hessian:
+    canon_δ²ₓfα = dist.A' + δ²ₓfα  * dist.A 
+
+    # Thus assuming linearized behaviour, ΔΓ = canon_δ²ₓfα, but we must express this
+    # "end_Γ" = dist.Γ + ΔΓ in the new coordinates, which is achieved by action of the canonicalized Jacobian 
+    end_Γ = canon_δₓfx * (dist.Γ + canon_δ²ₓfα) * canon_δₓfx'
+
+
     # Step 4: Solve least square problem to refine hα, hβ, hΓ
     # RESEARCH: If we set Γ=0, do we drop the need for least squares?
+    # TODO
 
 end
 
