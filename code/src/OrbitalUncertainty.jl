@@ -9,6 +9,7 @@ using StaticArrays
 using LinearAlgebra
 using DifferentialEquations
 using Distributions
+using Bessels
 using Random
 
 # ForceModel
@@ -31,8 +32,9 @@ include("propagators/STM.jl")
 export run_stm
 
 include("statistics/GVM.jl")
-export GaussVonMises
+export GaussVonMises, decanonicalize
 include("propagators/GVM.jl")
+export GVMSigmaVectors, b12
 
 # Utils 
 EARTH_FM_TUPLE = (TwoBodyForce(GM_EARTH),)

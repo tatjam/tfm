@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["tatjam <tatjam02@gmail.com>"]
 
 [deps]
+Bessels = "0e736298-9ec6-45e8-9647-e4fc86a2fe38"
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -20,6 +21,7 @@ GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 
 [compat]
+Bessels = "0.2.8"
 DiffResults = "1.1.0"
 DifferentialEquations = "7.17.0"
 Distributions = "0.25.123"

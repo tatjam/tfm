@@ -42,6 +42,24 @@ function GaussVonMises(μ::V, P::M, α::T, β::V, Γ::M, κ::T) where {T<:Real,V
 end
 
 """
+    decanonicalize(dist, v)
+
+Transforms a random vector distributed under a canonical GVM (i.e. GVM(0, I, 0, 0, 0, κ)) to its corresponding non-canonical GVM dist, with same κ.
+
+The vector is of the form [euclidean part..., angular value]!
+"""
+function decanonicalize(dist::GaussVonMises{T, V, M}, v::AbstractVector{T}) where {T, V, M}
+
+    ceuc = v[1:(length(v) - 1)]
+    cang = v[length(v)]
+
+    euc = dist.μ + dist.A * ceuc
+    ang = cang + dist.α + dot(dist.β, ceuc) + 0.5 * dot(ceuc, dist.Γ, ceuc)
+
+    hcat(euc, ang)
+end
+
+"""
     rand(rng, d::GaussVonMises)
 
 Sample a GaussVonMises distribution, returning the (x, θ) sample
