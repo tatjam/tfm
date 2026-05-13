@@ -357,7 +357,7 @@ Comencemos esta sección con un ejemplo introductorio, que sentará la motivaci�
   es decir,
 
   $
-    omega^V = omega^U med upright(J)(tau)^(-1) = (upright(J)(tau)^TT)^(-1) omega^U
+    omega^V = omega^U med upright(J)(tau)^(-1)
   $
 
   Notamos que, por contraparte, los vectores tangentes se transforman según

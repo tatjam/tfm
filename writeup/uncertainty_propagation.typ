@@ -307,7 +307,7 @@ $
   Theta_(alpha, beta, Gamma)(z) = alpha + beta(z) + Gamma(z, z),
 $
 
-donde $alpha in RR$, $beta: Z -> RR$ es una 1-forma y $Gamma: Z times Z -> RR$ es una 2-forma simétrica y bilineal, y construyamos la siguiente distribución
+donde $alpha in RR$, $beta: Z -> RR$ es una 1-forma y $Gamma: Z -> RR$ es una forma cuadrática, y construyamos la siguiente distribución
 
 #let distGVM(x, theta, mu, p, alpha, beta, Gamma, kappa) = {
   $cal(G V M)(#x, #theta\; med med #mu, #p, #alpha, #beta, #Gamma, #kappa)$
