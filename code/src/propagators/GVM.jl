@@ -134,11 +134,11 @@ function gvm_propagate(
     # Total uncertainty in angular coordinates is contributed by original uncertainty β and
     # the new linear contribution from f, after we bring it into canonical coordinates
     # Note that δfₓfα is a 1-form so it transforms by the transpose!
-    Δβ = dist.A' * δfₓfα
+    Δβ = dist.A' * δₓfα
 
     # Both dist.β and Δβ are 1-forms that act on the original canonical space, thus they can be
     # added together just fine.
-    end_β_original_coords = (β + Δβ)
+    end_β_original_coords = (dist.β + Δβ)
 
     # Now, we wish to find the transformation that goes from 1-forms in the canonical space before "f", to
     # 1-forms in the canonical space after "f", as a linear approximation of course.
@@ -147,7 +147,7 @@ function gvm_propagate(
     # and thus (end_A)⁻¹ * δₓfx * A * ◌ maps a vector in canonical space before x, to a vector in canonical space after x.
     canon_δₓfx = inv(end_A) * δₓfx * dist.A
 
-    end_β = inv(end_A) * δₓfx * dist.A * (β + Δβ)
+    end_β = inv(end_A) * δₓfx * dist.A * (dist.β + Δβ)
     # Intuitively:
     #   δₓfx represents the linear approximation of f on the euclidean distribution
     #   end_A⁻¹ finally brings everything to the new canonical coordinates

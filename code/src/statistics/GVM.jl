@@ -90,3 +90,22 @@ end
 function Base.rand(rng::AbstractRNG, d::GaussVonMises, dims::NTuple{N, Int}) where N
     reshape([rand(rng, d) for _ in 1:prod(dims)], dims)
 end
+
+function mahalanobis(x::V, θ::T, dist::GaussVonMises{T, V, M})
+    where {T<:Real,V<:AbstractVector{T},M<:AbstractMatrix{T}}
+
+    deuclid = x - dist.μ
+    z = dist.A \ deuclid 
+
+    # Alternative way to cheaply compute (x-μ)ᵀ(AAᵀ)⁻¹(x-μ)
+    # z = A⁻¹ (x-μ), thus
+    # zᵀz = (x-μ)ᵀ A⁻ᵀ A⁻¹ (x-μ) = (x-μ)ᵀ(AAᵀ)⁻¹(x-μ)
+    euclid_term = dot(z, z)
+
+    expected_ang =  dist.α + dot(dist.β, z) + 0.5 * dot(z, dist.Γ, z)
+    dang = θ - expected_ang
+    t1 = sin(0.5 * dang)
+    ang_term = T(4.0) * dist.κ * t1 * t1
+
+    return euclid_term + ang_term
+end
