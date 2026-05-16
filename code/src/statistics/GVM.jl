@@ -24,6 +24,7 @@ struct GaussVonMises{T<:Real,V<:AbstractVector{T},M<:AbstractMatrix{T}}
     κ::T
     # A is a linear map: ℝⁿ -> ℝⁿ, acting on vectors via the matrix product A*v,
     # mapping a "canonical unit sphere" to a "real ellipsoid" for the Gaussian 
+    # It's the (lower) Cholesky factor of P
     A::LowerTriangular{T}
 end
 
