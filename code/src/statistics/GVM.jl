@@ -53,7 +53,7 @@ function GaussVonMises(μ, α, β, Γ, κ; P=nothing, A=nothing)
     elseif isnothing(A)
         error("Must provide either P or A")
     end
-    GaussVonMises(μ, α, β, Γ, κ, A)
+    GaussVonMises(μ, α, β, Symmetric((Γ + Γ') / 2), κ, A)
 end
 
 """
