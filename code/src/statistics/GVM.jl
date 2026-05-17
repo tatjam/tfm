@@ -10,7 +10,8 @@
 # appropriate, but careful choice of i = ω = Ω = 0 has to be done if these
 # coordinates are to be considered Gaussian.
 
-struct GaussVonMises{T<:Real,V<:AbstractVector{T},M<:AbstractMatrix{T}}
+# TODO: The type parameters could be made SMatrix for higher performance
+struct GaussVonMises{T<:Real,V<:AbstractVector{T}}
     # μ mean vector for the Gaussian in Euclidean space
     μ::V
     # α mean vector for the Von Mises (scalar)
@@ -19,7 +20,7 @@ struct GaussVonMises{T<:Real,V<:AbstractVector{T},M<:AbstractMatrix{T}}
     # It maps each vector to the effect it has on the angular input to VM
     β::V
     # Γ is a symmetric bilinear form, inducing a quadratic form ℝⁿ -> ℝ, via dot(v, Γ, v)
-    Γ::M
+    Γ::Symmetric{T}
     # κ is a scalar that shapes the Von Mises transform, it's non geometric
     κ::T
     # A is a linear map: ℝⁿ -> ℝⁿ, acting on vectors via the matrix product A*v,
@@ -29,9 +30,10 @@ struct GaussVonMises{T<:Real,V<:AbstractVector{T},M<:AbstractMatrix{T}}
 end
 
 """
-    GaussVonMises(μ, P, α, β, Γ, κ)
+    GaussVonMises(μ, α, β, Γ, κ; P or A)
 
 Create a Gauss Von Mises distribution for n Euclidean dimensions and a single angular dimension.
+You may pass either the covariance matrix P, or the pre-factored lower triangular matrix A = cholesky(P).L
 The distribution is defined as N(μ, P) × VM(α + β'z + 1/2 z'Γz, κ). A z = x - μ,
 where A is the lower triangular Cholesky decomposition of P, and:
 
@@ -45,9 +47,13 @@ where A is the lower triangular Cholesky decomposition of P, and:
 The distribution assigns probabilities to a random tuple (x, θ), where x is the euclidean random variable and θ is the angular random variable.
     
 """
-function GaussVonMises(μ::V, P::M, α::T, β::V, Γ::M, κ::T) where {T<:Real,V<:AbstractVector{T},M<:AbstractMatrix{T}}
-    chol = cholesky(Symmetric(P)).L
-    GaussVonMises(μ, α, β, Γ, κ, chol)
+function GaussVonMises(μ, α, β, Γ, κ; P=nothing, A=nothing)
+    if !isnothing(P)
+        A = cholesky(Symmetric(P)).L
+    elseif isnothing(A)
+        error("Must provide either P or A")
+    end
+    GaussVonMises(μ, α, β, Γ, κ, A)
 end
 
 """
@@ -57,7 +63,7 @@ Transforms a random vector distributed under a canonical GVM (i.e. GVM(0, I, 0, 
 
 The vector is of the form [euclidean part..., angular value]!
 """
-function decanonicalize(dist::GaussVonMises{T, V, M}, v::AbstractVector{T}) where {T, V, M}
+function decanonicalize(dist::GaussVonMises{T, V}, v::AbstractVector{T}) where {T, V}
 
     ceuc = v[1:(length(v) - 1)]
     cang = v[length(v)]
@@ -92,21 +98,35 @@ function Base.rand(rng::AbstractRNG, d::GaussVonMises, dims::NTuple{N, Int}) whe
     reshape([rand(rng, d) for _ in 1:prod(dims)], dims)
 end
 
-function mahalanobis(x::V, θ::T, dist::GaussVonMises{T, V, M})
-    where {T<:Real,V<:AbstractVector{T},M<:AbstractMatrix{T}}
+"""
+   mahalanobis(x, θ, dist)
 
+Computes the Mahalanobis-Von Mises distance of the point (x, θ) to the distribution:
+    (x-μ)ᵀP⁻¹(x-μ) + 4κ sin²(0.5 (θ - dist.θ(x)))
+
+Implemented for efficiency as
+    zᵀz + 4κ sin² (0.5 (θ - dist.θ(z)))
+
+Essentially, the sum of euclidean distance in canonical space (to the origin) and chord distance in
+the angular coordinate, weighted by κ.
+"""
+function mahalanobis(x::V, θ::T, dist::GaussVonMises{T, V}) where {T<:Real,V<:AbstractVector{T}}
     deuclid = x - dist.μ
     z = dist.A \ deuclid 
 
+    expected_ang = dist.α + dot(dist.β, z) + 0.5 * dot(z, dist.Γ, z)
+    ϕ = θ - expected_ang
+
+    return canon_mahalanobis(z, ϕ, dist.κ)
+end
+
+function canon_mahalanobis(z::V, ϕ::T, κ::T) where {T<:Real, V<:AbstractVector{T}}
     # Alternative way to cheaply compute (x-μ)ᵀ(AAᵀ)⁻¹(x-μ)
     # z = A⁻¹ (x-μ), thus
     # zᵀz = (x-μ)ᵀ A⁻ᵀ A⁻¹ (x-μ) = (x-μ)ᵀ(AAᵀ)⁻¹(x-μ)
-    euclid_term = dot(z, z)
+   euclid_term = dot(z, z) 
+   t1 = sin(0.5 * ϕ)
+   ang_term = T(4.0) * κ * t1 * t1
 
-    expected_ang =  dist.α + dot(dist.β, z) + 0.5 * dot(z, dist.Γ, z)
-    dang = θ - expected_ang
-    t1 = sin(0.5 * dang)
-    ang_term = T(4.0) * dist.κ * t1 * t1
-
-    return euclid_term + ang_term
+   return euclid_term + ang_term
 end

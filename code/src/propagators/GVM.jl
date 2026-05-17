@@ -3,6 +3,7 @@
 # ---------------------------------------------
 # Gauss Von-Mises propagator, essentially the unscented transform adapted to GVM distribution.
 # Implemented according to 
+using NLLSsolver: NLLSInternal
 # "Gauss von Mises Distribution for Improved Uncertainty Realism in
 #  Space Situational Awareness", Joshua T. Horwood and Aubrey B. Poore, 2014.
 # 
@@ -90,93 +91,177 @@ function GVMSigmaVectors(dist::GaussVonMises{T}) where {T}
     GVMSigmaVectors(χ, w)
 end
 
+"""
+GVMLeastSquares{L, N, S, T}(lₑ, end_σ, κ)
+
+Construct a GVMLeastSquares problem given the Mahalanobis distance of each starting sigma-point,
+the ending sigma-points end_σ (in ambient space) and κ, assumed to be conserved.
+
+Type parameters:
+    L = Dimensionality of the sigma points (n + 1)
+    N = Number of sigma points, N = 2L + 1
+    S = Number of free parameters in Γ, ½L(L - 1) elements:
+        Γ is a symmetrirc n×n matrix, thus it has ½n(n+1), in terms of L
+        we can write n = (L - 1), thus it has ½((L-1)² + (L-1)) = ½(L² + 1 - 2L + L - 1) = ½(L² - L) = ½L(L - 1)
+
+Let (xᵢ,θᵢ) be our starting sigma points, and (end_xᵢ,end_θᵢ) our transformed sigma points.
+The idea is to find end_α, end_β, end_Γ such that
+    ∑ᵢ(lₑ(xᵢ,θᵢ; μ, P, α, β, Γ, κ) - lₐ(end_xᵢ,end_θᵢ; end_μ, end_P, end_α, end_β, end_Γ, end_κ))²
+is minimum (assuming end_κ = κ).
+lₑ and lₐ are the Mahalanobis distances of the starting and ending points respectively.
+
+Intuitively, we want to find the GVM distribution that's most similar to the original in terms of
+the "likelyhood" of the sigma-points being samples of said distribution.
+"""
+struct GVMLeastSquares{L, N, S, T} <: NLLSsolver.AbstractResidual
+    # lₑ, starting Mahalanobis distances of the sigma-points, precomputed
+    lₑ::SVector{N, T}
+    # (end_xᵢ,end_θᵢ), N ending sigma-points in ambient space
+    end_σ::SMatrix{L, N, T}
+    # Assumed equal before and after transformation
+    κ::T
+    # Ending μ from quadrature
+    end_μ::AbstractVector{T}
+    # Ending A from quadrature
+    end_A::LowerTriangular{T}
+end
+
+# Boiler plate for NLLSsolver...
+Base.eltype(::GVMLeastSquares{L, N, S, T}) where {L, N, S, T} = T
+# Number of variables we optimize, 3 as we have {end_α, end_β, end_Γ}
+NLLSsolver.ndeps(::GVMLeastSquares{L, N, S, T}) where {L, N, S, T} = static(3)
+# We have a single residual 
+NLLSsolver.nres(::GVMLeastSquares{L, N, S, T}) where {L, N, S, T} = static(1)
+# We store each of the variables at indices 1 2 and 3 
+NLLSsolver.varindices(::GVMLeastSquares{L, N, S, T}) where {L, N, S, T} = SVector(1, 2, 3)
+# Fetch the variables
+NLLSsolver.getvars(::GVMLeastSquares{L, N, S, T}, vars::Vector) where {L, N, S, T} = (
+    vars[1]::NLLSsolver.EuclideanVector{1, T}, # end_α
+    vars[2]::NLLSsolver.EuclideanVector{N, T}, # end_β
+    vars[3]::NLLSsolver.EuclideanVector{S, T}, # end_Γ, stored as the independent elements
+)
+
+# Residual is the cost function which will be minimized
+function NLLSsolver.computeresidual(res::GVMLeastSquares{L, N, S, T}, end_α, end_β, end_Γ_vec) where {L, N, S, T}
+    n_Γ = (L-1)
+    end_Γ = let
+        tmp = zeros(n_Γ, n_Γ)
+        tmp[axes(tmp, 1) .>= axes(tmp, 2)'] = end_Γ_vec
+        Symmetric(tmp)
+    end
+
+    end_dist = GaussVonMises(res.end_μ, end_α, end_β, end_Γ, res.κ, A=res.end_A)
+    sum(zip(lₑᵢ, eachcol(end_σᵢ))) do
+        lₐᵢ = mahalanobis(end_σᵢ[1:(L-1)], end_σᵢ[L], end_dist)
+        r = lₑᵢ + lₐᵢ
+
+        return r * r
+    end
+end
 
 function gvm_propagate(
     f,
-    dist::GaussVonMises{T,V,M}
-) where {T,V,M}
+    dist::GaussVonMises{T,V}
+) where {T,V}
 
     n = length(dist.μ)
     L = n + 1
     N = 2 * L + 1
 
     # Step 1: generate the sigma vectors and propagate them
-    sigma = GVMSigmaVectors(dist)
-    endpoints = Vector{SVector{L,T}}(undef, N)
+    sigma, endpoints = let
+        sigma = GVMSigmaVectors(dist)
+        endpoints = Vector{SVector{L,T}}(undef, N)
 
-    Threads.@threads for i in 1:N
-        endpoints[i] = f(sigma.χ[:, i])
+        Threads.@threads for i in 1:N
+            endpoints[i] = f(sigma.χ[:, i])
+        end
+
+        sigma, endpoints
     end
 
     # Step 2: GVM cuadrature on the resulting sigma-vectors for the
     #         euclidean part of the distribution
-    end_μ = sum(endpoints .* sigma.W)
-    dx = reduce(hcat, endpoints) .- end_μ
-    end_P = nearest_pd_matrix(dx * Diagonal(sigma.W) * dx')
-    end_A = cholesky(Symmetric(end_P)).L
+    end_P, end_A = let
+        end_μ = sum(endpoints .* sigma.W)
+        dx = reduce(hcat, endpoints) .- end_μ
+        end_P = nearest_pd_matrix(dx * Diagonal(sigma.W) * dx')
+        end_A = cholesky(Symmetric(end_P)).L
+        end_P, end_A
+    end
 
     # Step 3: Estimate hα, hβ, hΓ using derivatives of f
     # RESEARCH: It would be wise to experiment using the derivatives that
     # can be inferred from the endpoints instead of a full forward diff of f.
+    end_α, end_β, end_Γ = let
 
-    # δf[i, j] = δfᵢ/δxⱼ, so we have...
-    δf = ForwardDiff.jacobian(f, sigma.N[:, 1])
-    δₓfx = δf[1:(L-1), 1:(L-1)]
-    δₓfα = δf[L, 1:(L-1)]
+        # δf[i, j] = δfᵢ/δxⱼ, so we have...
+        δf = ForwardDiff.jacobian(f, sigma.N[:, 1])
+        δₓfx = δf[1:(L-1), 1:(L-1)]
+        δₓfα = δf[L, 1:(L-1)]
 
-    # δ²fθ[i, j] = δ²f / δxᵢδxⱼ
-    δ²fα = ForwardDiff.hessian(x -> f(x)[L], sigma.N[:, 1])
-    δ²ₓfα = δ²fα[1:(L-1), 1:(L-1)]
+        # δ²fθ[i, j] = δ²f / δxᵢδxⱼ
+        δ²fα = ForwardDiff.hessian(x -> f(x)[L], sigma.N[:, 1])
+        δ²ₓfα = δ²fα[1:(L-1), 1:(L-1)]
 
-    # end_α = f_α(μ, α), that's one of the points we propagate so trivial
-    end_α = endpoints[1][L]
+        # Written so they act on canonical vectors
+        canon_δₓfx = inv(end_A) * δₓfx * dist.A
+        canon_δₓfx = inv(end_A) * δₓfx * dist.A
+        canon_δ²ₓfα = dist.A' * δ²ₓfα  * dist.A 
 
-    # Total uncertainty in angular coordinates is contributed by original uncertainty β and
-    # the new linear contribution from f, after we bring it into canonical coordinates
-    # Note that δfₓfα is a 1-form so it transforms by the transpose!
-    Δβ = dist.A' * δₓfα
-
-    # Both dist.β and Δβ are 1-forms that act on the original canonical space, thus they can be
-    # added together just fine.
-    end_β_original_coords = (dist.β + Δβ)
-
-    # Now, we wish to find the transformation that goes from 1-forms in the canonical space before "f", to
-    # 1-forms in the canonical space after "f", as a linear approximation of course.
-    # We note that δₓfx * ◌ maps vectors from real space before x to real space after x, thus
-    # δₓfx * A * ◌ maps a vector in canonical space before x, to a vector in real space after x,
-    # and thus (end_A)⁻¹ * δₓfx * A * ◌ maps a vector in canonical space before x, to a vector in canonical space after x.
-    canon_δₓfx = inv(end_A) * δₓfx * dist.A
-
-    end_β = inv(end_A) * δₓfx * dist.A * (dist.β + Δβ)
-    # Intuitively:
-    #   δₓfx represents the linear approximation of f on the euclidean distribution
-    #   end_A⁻¹ finally brings everything to the new canonical coordinates
-
-    canon_δₓfx = inv(end_A) * δₓfx * dist.A
-    # Intuitively:
-    #    let m1 = δₓfx * dist.A * ◌ : δx (canonical coordinates) -> δ̂x (real coordinates) 
-    #    let m2 = inv(end_A) * ◌ : δ̂x (real coordinates) -> δ̂x (canonical coordinates) by inverse definition of A
-    # then
-    #    m * ◌ = m2 ∘ m1 : δx (canonical coordinates ) -> δ̂x (canonical coordinates)
-    # i.e. m: ℝⁿ -> ℝⁿ maps a perturbation δx, written in canonical coordinates, to the perturbation in f(x), written in
-    #      canonical coordinates of the resulting Gauissian. It's precisely the canonicalized Jacobian.
-
-    # Now lets consider the form Γ: ℝⁿ -> ℝⁿ -> ℝ, how does it transform under f? Note that Γ acts on canonical vectors.
-    # To understand it, consider another bilinear symmetric form, the Hessian, interpreting it as a
-    # quadratic form Q(δ²ₓfα, ◌) = ◌ᵀ δ²ₓfα ◌ : ℝⁿ -> ℝ, that maps each perturbation δx(real coordinates) to a increase δα.
-    # The mapping is NOT a 1-form as it's not linear, but we can derive an expression that allows it to act on δx (canonical coordinates).
-    # To do so, consider Q(δ²ₓfα, A δx) = (A δx)ᵀ (δ²ₓfα) (A δx) = (δxᵀ Aᵀ) (δ²ₓfα) (A δx),
-    # by associativity of matrix multiplication, we can write δxᵀ (Aᵀ δ²ₓfα A) δx, thus this is precisely the canonicalized Hessian:
-    canon_δ²ₓfα = dist.A' + δ²ₓfα  * dist.A 
-
-    # Thus assuming linearized behaviour, ΔΓ = canon_δ²ₓfα, but we must express this
-    # "end_Γ" = dist.Γ + ΔΓ in the new coordinates, which is achieved by action of the canonicalized Jacobian 
-    end_Γ = canon_δₓfx * (dist.Γ + canon_δ²ₓfα) * canon_δₓfx'
+        Δβ = dist.A' * δₓfα
+        end_β_original_coords = (dist.β + Δβ)
 
 
-    # Step 4: Solve least square problem to refine hα, hβ, hΓ
-    # RESEARCH: If we set Γ=0, do we drop the need for least squares?
-    # TODO
+        # Initial estimates of α, β and Γ
+        end_α = endpoints[1][L]
+        end_β = inv(end_A) * δₓfx * dist.A * end_β_original_coords
+        end_Γ = canon_δₓfx * (dist.Γ + canon_δ²ₓfα) * canon_δₓfx'
+
+        end_α, end_β, end_Γ
+    end
+
+
+    # Step 4: Solve least square problem to refine end_α, end_β, end_Γ.
+    # We do so in the "log space", as min(log(x)) = min(x) by monotonicity of log.
+    # RESEARCH: Any clever way to avoid using least squares?
+    end_α, end_β, end_Γ = let
+        # Precompute lₑ at the starting sigma-points
+        lₑ = map(sigma) do
+            mahalanobis(sigma[1:L-1], sigma[L], dist)
+        end
+
+        # Note, we pass the EuclideanVector thing to set the base type only
+        problem = NLLSsolver.NLLSProblem(
+            NLLSsolver.EuclideanVector{1, T},
+            GVMLeastSquares{L, N, (L * (L-1))÷2, T}
+        )
+        # end_α
+        NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(zero(T)))
+        # end_β
+        NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(zeros(T, N)...))
+        # end_Γ
+        NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(zeros(T, S)...))
+        # Instantiate the cost-computer
+        NLLSsolver.addcost!(problem, GVMLeastSquares(lₑ, endpoints, dist.κ, end_μ, end_A))
+
+        result = NLLSsolver.optimize!(problem, NLLSsolver.NLLSOptions())
+
+        end_α = problem.variables[1][1]
+        end_β = problem.variables[2]
+        end_Γ_vec = problem.variables[3]
+
+        end_Γ = let
+            tmp = zeros(n_Γ, n_Γ)
+            tmp[axes(tmp, 1) .>= axes(tmp, 2)'] = end_Γ_vec
+            Symmetric(tmp)
+        end
+
+        return end_α, end_β, end_Γ
+
+    end
+
+    
 
 end
 

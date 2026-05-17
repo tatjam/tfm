@@ -11,6 +11,7 @@ using DifferentialEquations
 using Distributions
 using Bessels
 using Random
+using NLLSsolver
 
 # ForceModel
 include("dynamics/ForceModel.jl")
@@ -32,7 +33,7 @@ include("propagators/STM.jl")
 export run_stm
 
 include("statistics/GVM.jl")
-export GaussVonMises, decanonicalize
+export GaussVonMises, decanonicalize, mahalanobis
 include("propagators/GVM.jl")
 export GVMSigmaVectors, b12
 
