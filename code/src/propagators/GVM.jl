@@ -36,7 +36,7 @@ Returns the pair as it's more computationally efficient to compute all Bessel fu
 """
 function b12(κ::T) where {T}
     bessels = Bessels.besseli(0:2, κ)
-    return (1 - bessels[2] / bessels[1], 1 - bessels[3] / bessels[1])
+    return (T(1) - bessels[2] / bessels[1], T(1) - bessels[3] / bessels[1])
 end
 
 """
@@ -182,12 +182,12 @@ function gvm_propagate(
 
     # Step 2: GVM cuadrature on the resulting sigma-vectors for the
     #         euclidean part of the distribution
-    end_P, end_A = let
+    end_μ, end_P, end_A = let
         end_μ = sum(endpoints .* sigma.W)
         dx = reduce(hcat, endpoints) .- end_μ
         end_P = nearest_pd_matrix(dx * Diagonal(sigma.W) * dx')
         end_A = cholesky(Symmetric(end_P)).L
-        end_P, end_A
+        end_μ, end_P, end_A
     end
 
     # Step 3: Estimate hα, hβ, hΓ using derivatives of f
@@ -262,6 +262,7 @@ function gvm_propagate(
     end
 
     
+    return GaussVonMises(end_μ, end_α, end_β, end_Γ, dist.κ, A=end_A)
 
 end
 
