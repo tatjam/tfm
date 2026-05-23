@@ -85,7 +85,9 @@ function Base.rand(rng::AbstractRNG, d::GaussVonMises)
 
     # Note: Distributions.jl VonMises is always centered on the mean, so
     # we "unwrap" so it lives on [-π, π)
-    vm = mod(rand(rng, VonMises(Θ, d.κ)) + π, 2π) - π
+    # TODO: Not sure if unwrapping is needed?
+    # vm = mod(rand(rng, VonMises(Θ, d.κ)) + π, 2π) - π
+    vm = rand(rng, VonMises(Θ, d.κ))
     return SA[x...; vm]
 end
 

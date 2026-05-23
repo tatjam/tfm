@@ -82,6 +82,7 @@ Type parameters:
     - M: Number of euclidean dimensions (n)
 """
 struct GVMLeastSquares{S, L, N, M, T} <: NLLSsolver.AbstractResidual
+    # Initial mahalanobis distance of each sigma-point
     lₑ::SVector{N, T}
     end_σ::SMatrix{L, N, T}
     κ::T
@@ -179,6 +180,10 @@ function gvm_propagate(f, dist::GaussVonMises{T}) where {T}
         β_est = inv(end_A) * δₓfx * dist.A * β_orig
         Γ_est = canon_δₓfx * (dist.Γ + canon_δ²ₓfα) * canon_δₓfx'
 
+        # TEST? The original transforms don't make sense?
+        β_est = inv(canon_δₓfx)' * β_orig
+        Γ_est = inv(canon_δₓfx)' * (dist.Γ + canon_δ²ₓfα) * inv(canon_δₓfx)
+
         α_est, β_est, Γ_est
     end
 
@@ -186,12 +191,12 @@ function gvm_propagate(f, dist::GaussVonMises{T}) where {T}
     end_α, end_β, end_Γ = let
         lₑ = [mahalanobis(s, dist) for s in eachcol(sigma.χ)]
 
-        # Bug fixed: Adjusted type parameter layouts to explicitly prevent inversion crashes
         problem = NLLSsolver.NLLSProblem(Any, GVMLeastSquares{S, L, N, n, T})
         
-        NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(zero(T)))
-        NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(zeros(T, n)...))
-        NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(zeros(T, S)...))
+        Γ_vec = end_Γ[triu(ones(Bool, n, n))]
+        NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(end_α))
+        NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(end_β...))
+        NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(Γ_vec...))
         
         cost_function = GVMLeastSquares{S, L, N, n, T}(
             SVector(lₑ), 

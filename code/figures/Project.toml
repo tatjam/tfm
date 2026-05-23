@@ -1,0 +1,7 @@
+[deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+OrbitalUncertainty = "a9a1a3d1-c457-4620-9d4d-81bb393a3c57"
+SatelliteToolbox = "6ac157d9-b43d-51bb-8fab-48bf53814f4a"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"

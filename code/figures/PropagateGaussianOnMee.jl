@@ -35,25 +35,31 @@ function run_animation(fm_eucl, fm_kepl, starting_dist, starting_dist_mee, t1, �
 
     fig = Figure(size=(1366, 768))
     ax = Axis(fig[1,1])
+    ax_state = Axis(fig[1,2])
+    state_x = 1
+    state_y = 6
 
     record(fig, filename, 0:Δt:t1, framerate=15, px_per_unit=2) do t
         t == 0 && return
         empty!(ax)
+        empty!(ax_state)
 
         current_samples = run_monte_carlo(fm_eucl, current_samples, Δt)
         current_samples_mee = run_monte_carlo(fm_kepl, current_samples_mee, Δt)
         # Ut always in MEE
-        ut_dist = run_ut(fm, μ₀, P₀, t)
+        ut_dist = run_ut(fm_kepl, μ₀, P₀, t)
 
 
         mc_euclidean = stack(current_samples)
         scatter!(ax, mc_euclidean[1,:], mc_euclidean[2,:], color=(:red, 0.1), label="MC (MEE) 1000 samples")
 
         mee_mc = stack(current_samples_mee)
+        scatter!(ax_state, mee_mc[state_x,:],rem2pi.(mee_mc[state_y,:], RoundNearest), color=(:orange, 0.1))
         mee_mc_euclidean = mapslices(v -> mee_to_euclid.(v..., GM_EARTH), mee_mc, dims=1)
         scatter!(ax, mee_mc_euclidean[1,:], mee_mc_euclidean[2,:], color=(:orange, 0.1), label="MC (Euclidean) 1000 samples")
 
         ut = rand(ut_dist, 1000)
+        scatter!(ax_state, ut[state_x,:], rem2pi.(ut[state_y,:], RoundNearest), color=(:blue, 0.1))
         ut_euclidean = mapslices(v -> mee_to_euclid.(v..., GM_EARTH), ut, dims=1)
         scatter!(ax, ut_euclidean[1,:], ut_euclidean[2,:], color=(:blue, 0.1), label = "UT 1000 samples")
         
@@ -69,4 +75,4 @@ function run_animation(fm_eucl, fm_kepl, starting_dist, starting_dist_mee, t1, �
     end
 end
 
-run_animation(fm_eucl, fm_kepl, starting_dist, starting_dist_mee, 7200, 20)
+run_animation(fm_eucl, fm_kepl, starting_dist, starting_dist_mee, 100000, 1000)
