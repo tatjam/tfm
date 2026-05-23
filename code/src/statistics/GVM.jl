@@ -94,9 +94,9 @@ function Base.rand(rng::AbstractRNG, d::GaussVonMises, dims::NTuple{N, Int}) whe
 end
 
 """
-    mahalanobis(x, θ, dist)
+    mahalanobis(x, dist)
 
-Computes the Mahalanobis-Von Mises distance of the point (x, θ) to the distribution:
+Computes the Mahalanobis-Von Mises distance of the point x = [euclidean; θ] to the distribution:
     (x-μ)ᵀP⁻¹(x-μ) + 4κ sin²(0.5 (θ - dist.θ(x)))
 
 Implemented for efficiency as
@@ -105,12 +105,12 @@ Implemented for efficiency as
 Essentially, the sum of euclidean distance in canonical space (to the origin) and chord distance in
 the angular coordinate, weighted by κ.
 """
-function mahalanobis(x::AbstractVector, θ::Real, dist::GaussVonMises)
-    deuclid = x - dist.μ
+function mahalanobis(x::AbstractVector, dist::GaussVonMises)
+    deuclid = x[1:end-1] - dist.μ
     z = dist.A \ deuclid 
 
     expected_ang = dist.α + dot(dist.β, z) + 0.5 * dot(z, dist.Γ, z)
-    ϕ = θ - expected_ang
+    ϕ = x[end] - expected_ang
 
     return canon_mahalanobis(z, ϕ, dist.κ)
 end

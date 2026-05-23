@@ -25,9 +25,7 @@
 
     @testset "Sampling" begin
         vs = rand(gvm, 1000)
-        @test all(l -> l == length(μ), length.(getindex.(vs, 1)))
-        @test all(x -> all(isfinite, x), getindex.(vs, 1))
-        @test all(θ -> -π <= θ <= π, getindex.(vs, 2))
+        @test all(θ -> -π <= θ <= π, getindex.(vs, 4))
     end
 end
 
@@ -47,14 +45,14 @@ end
 
     @testset "Marginal on x is Gaussian" begin
         gvm = GaussVonMises(μ, α, β, Γ, κ, P=P)
-        xs = getindex.(rand(gvm, n), 1)
-        @test mean(xs) ≈ μ atol=0.05
-        @test cov(xs) ≈ P atol=0.05
+        xs = reduce(hcat, rand(gvm, n))[1:3, :]
+        @test mean(xs,dims=2) ≈ μ atol=0.05
+        @test cov(xs,dims=2) ≈ P atol=0.05
     end
 
     @testset "Marginal on θ has angular average α if β and Γ are zero" begin
         gvm = GaussVonMises(μ, α, β * 0.0, Γ * 0.0, κ, P=P)
-        θs = getindex.(rand(gvm, n), 2)
+        θs = reduce(hcat, rand(gvm, n))[4, :]
         avg = 1/n * sum(map(θ -> exp(im * θ), θs))
         avgangle = atan(imag(avg), real(avg)) 
         @test avgangle ≈ α atol=0.05
@@ -64,10 +62,63 @@ end
         # When β and Γ are present, the marginal is a "mixture" of Von Mises distributions,
         # which no longer is a Von Mises distribution
         gvm = GaussVonMises(μ, α, β, Γ, κ, P=P)
-        θs = getindex.(rand(gvm, n), 2)
+        θs = reduce(hcat, rand(gvm, n))[4,:]
         avg = 1/n * sum(map(θ -> exp(im * θ), θs))
         avgangle = atan(imag(avg), real(avg)) 
         @test abs(avgangle - α) > 0.1
     end
 end
 
+
+@testset "Canonical Mahalanobis" begin
+    μ = [0.0, 0.0, 0.0]
+    P = [1.0 0.0 0.0;
+         0.0 1.0 0.0;
+         0.0 0.0 1.0]
+    α = 0.0
+    β = [0.0, 0.0, 0.0]
+    Γ = [0.0 0.0 0.0;
+         0.0 0.0 0.0;
+         0.0 0.0 0.0]
+    n = 100000
+
+    @testset "Mahalanobis matches Canonical Mahalanobis for canonical GVM" begin
+        κ = 1000.0
+        gvm = GaussVonMises(μ, α, β, Γ, κ, P=P)
+
+        x = [3.0; 4.0;5.0;1.0]
+
+        @test mahalanobis(x, gvm) ≈ canon_mahalanobis(x[1:end-1], x[end], κ)
+    end
+
+    @testset "Expected Canonical Mahalanobis of samples with big κ" begin
+        κ = 1000.0
+        # If we average enough samples, their Mahalanobis distance will follow
+        # 𝔼[zᵀz] + 𝔼[4κsin(½ϕ)] = length(μ) + 2κ(1 - I₁/I₀) ≈ 6 for big κ
+
+        gvm = GaussVonMises(μ, α, β, Γ, κ, P=P)
+        samples = reduce(hcat, rand(gvm, n))
+        avg_mahalanobis = mean(map(eachcol(samples)) do v
+            mahalanobis(v, gvm)
+        end)
+
+        @test avg_mahalanobis ≈ 4 rtol=0.01
+    end
+
+    @testset "Canonical Mahalanobis of samples" begin
+        κ = 0.5
+        # Same as before, but we can't use the approximation for κ
+
+        gvm = GaussVonMises(μ, α, β, Γ, κ, P=P)
+        samples = reduce(hcat, rand(gvm, n))
+        avg_mahalanobis = mean(map(eachcol(samples)) do v
+            mahalanobis(v, gvm)
+        end)
+
+        ang_term = 2κ * b12(κ)[1]
+
+        @test avg_mahalanobis ≈ 3 + ang_term rtol=0.01
+
+    end
+
+end

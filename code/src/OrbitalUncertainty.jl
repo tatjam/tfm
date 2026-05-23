@@ -34,7 +34,7 @@ include("propagators/STM.jl")
 export run_stm
 
 include("statistics/GVM.jl")
-export GaussVonMises, decanonicalize, mahalanobis
+export GaussVonMises, decanonicalize, mahalanobis, canon_mahalanobis
 include("propagators/GVM.jl")
 export GVMSigmaVectors, b12, gvm_propagate, run_gvm
 

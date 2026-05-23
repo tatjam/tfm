@@ -125,7 +125,7 @@ function NLLSsolver.computeresidual(res::GVMLeastSquares{S, L, N, M, T}, end_α,
     end_dist = GaussVonMises(μ_ad, α_scalar, end_β, end_Γ, κ_ad, A=A_ad)
     
     return sum(zip(res.lₑ, eachcol(res.end_σ))) do (lₑᵢ, end_σᵢ)
-        lₐᵢ = mahalanobis(end_σᵢ[1:n_Γ], end_σᵢ[L], end_dist)
+        lₐᵢ = mahalanobis(end_σᵢ, end_dist)
         r = T_AD(lₑᵢ) - lₐᵢ
         return r * r
     end
@@ -184,7 +184,7 @@ function gvm_propagate(f, dist::GaussVonMises{T}) where {T}
 
     # Step 4: Run Least Squares Refinement in Log Space
     end_α, end_β, end_Γ = let
-        lₑ = [mahalanobis(s[1:n], s[L], dist) for s in eachcol(sigma.χ)]
+        lₑ = [mahalanobis(s, dist) for s in eachcol(sigma.χ)]
 
         # Bug fixed: Adjusted type parameter layouts to explicitly prevent inversion crashes
         problem = NLLSsolver.NLLSProblem(Any, GVMLeastSquares{S, L, N, n, T})
