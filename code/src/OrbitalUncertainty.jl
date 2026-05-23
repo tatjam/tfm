@@ -35,7 +35,7 @@ export run_stm
 include("statistics/GVM.jl")
 export GaussVonMises, decanonicalize, mahalanobis
 include("propagators/GVM.jl")
-export GVMSigmaVectors, b12
+export GVMSigmaVectors, b12, gvm_propagate, run_gvm
 
 # Utils 
 EARTH_FM_TUPLE = (TwoBodyForce(GM_EARTH),)

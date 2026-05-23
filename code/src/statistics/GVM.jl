@@ -49,7 +49,7 @@ The distribution assigns probabilities to a random tuple (x, θ), where x is the
 """
 function GaussVonMises(μ, α, β, Γ, κ; P=nothing, A=nothing)
     if !isnothing(P)
-        A = cholesky(Symmetric(P)).L
+        A = LowerTriangular(cholesky(Symmetric(P)).L)
     elseif isnothing(A)
         error("Must provide either P or A")
     end

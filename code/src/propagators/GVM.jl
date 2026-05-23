@@ -3,11 +3,11 @@
 # ---------------------------------------------
 # Gauss Von-Mises propagator, essentially the unscented transform adapted to GVM distribution.
 # Implemented according to 
-using NLLSsolver: NLLSInternal
 # "Gauss von Mises Distribution for Improved Uncertainty Realism in
 #  Space Situational Awareness", Joshua T. Horwood and Aubrey B. Poore, 2014.
 # 
 
+using Static:static
 
 """
 L-dimensional, 2L+1 sigma points, note that if n is the number of
@@ -83,16 +83,17 @@ function GVMSigmaVectors(dist::GaussVonMises{T}) where {T}
             χbuf[i, idx+n] = -ξc
         end
 
-        decanonicalize.(dist, SMatrix(χbuf))
+        # Ref() to prevent it broadcasting to dist
+        reduce(hcat, decanonicalize.(Ref(dist), eachcol(SMatrix(χbuf))))
     end
 
-    w = SA[wc0, wcη, wcη, (ones(n) * wcξ)...]
+    w = SA[wc0, wcη, wcη, (ones(2*n) * wcξ)...]
 
-    GVMSigmaVectors(χ, w)
+    GVMSigmaVectors(SMatrix(χ), SVector(w))
 end
 
 """
-GVMLeastSquares{L, N, S, T}(lₑ, end_σ, κ)
+GVMLeastSquares{S, L, N, M, T}(lₑ, end_σ, κ)
 
 Construct a GVMLeastSquares problem given the Mahalanobis distance of each starting sigma-point,
 the ending sigma-points end_σ (in ambient space) and κ, assumed to be conserved.
@@ -103,6 +104,7 @@ Type parameters:
     S = Number of free parameters in Γ, ½L(L - 1) elements:
         Γ is a symmetrirc n×n matrix, thus it has ½n(n+1), in terms of L
         we can write n = (L - 1), thus it has ½((L-1)² + (L-1)) = ½(L² + 1 - 2L + L - 1) = ½(L² - L) = ½L(L - 1)
+    M = Dimensionality of Euclidean space, M = n
 
 Let (xᵢ,θᵢ) be our starting sigma points, and (end_xᵢ,end_θᵢ) our transformed sigma points.
 The idea is to find end_α, end_β, end_Γ such that
@@ -113,36 +115,41 @@ lₑ and lₐ are the Mahalanobis distances of the starting and ending points re
 Intuitively, we want to find the GVM distribution that's most similar to the original in terms of
 the "likelyhood" of the sigma-points being samples of said distribution.
 """
-struct GVMLeastSquares{L, N, S, T} <: NLLSsolver.AbstractResidual
-    # lₑ, starting Mahalanobis distances of the sigma-points, precomputed
+struct GVMLeastSquares{S, L, N, M, T} <: NLLSsolver.AbstractResidual
     lₑ::SVector{N, T}
-    # (end_xᵢ,end_θᵢ), N ending sigma-points in ambient space
     end_σ::SMatrix{L, N, T}
-    # Assumed equal before and after transformation
     κ::T
-    # Ending μ from quadrature
-    end_μ::AbstractVector{T}
-    # Ending A from quadrature
-    end_A::LowerTriangular{T}
+    end_μ::SVector{M, T}
+    end_A::LowerTriangular{T, SMatrix{M, M, T}}
+end
+
+function GVMLeastSquares{S}(
+    lₑ::SVector{N, T},
+    end_σ::SMatrix{L, N, T},
+    κ::T,
+    end_μ::SVector{M, T},
+    end_A::LowerTriangular{T, <:SMatrix{M, M, T}}  # <: breaks the nested unification problem
+) where {S, L, N, M, T}
+    GVMLeastSquares{S, L, N, M, T}(lₑ, end_σ, κ, end_μ, end_A)
 end
 
 # Boiler plate for NLLSsolver...
-Base.eltype(::GVMLeastSquares{L, N, S, T}) where {L, N, S, T} = T
+Base.eltype(::GVMLeastSquares{S, L, N, M, T}) where {S, L, N, M, T} = T
 # Number of variables we optimize, 3 as we have {end_α, end_β, end_Γ}
-NLLSsolver.ndeps(::GVMLeastSquares{L, N, S, T}) where {L, N, S, T} = static(3)
+NLLSsolver.ndeps(::GVMLeastSquares{S, L, N, M, T}) where {S, L, N, M, T} = static(3)
 # We have a single residual 
-NLLSsolver.nres(::GVMLeastSquares{L, N, S, T}) where {L, N, S, T} = static(1)
+NLLSsolver.nres(::GVMLeastSquares{S, L, N, M, T}) where {S, L, N, M, T} = static(1)
 # We store each of the variables at indices 1 2 and 3 
-NLLSsolver.varindices(::GVMLeastSquares{L, N, S, T}) where {L, N, S, T} = SVector(1, 2, 3)
+NLLSsolver.varindices(::GVMLeastSquares{S, L, N, M, T}) where {S, L, N, M, T} = SVector(1, 2, 3)
 # Fetch the variables
-NLLSsolver.getvars(::GVMLeastSquares{L, N, S, T}, vars::Vector) where {L, N, S, T} = (
+NLLSsolver.getvars(::GVMLeastSquares{S, L, N, M, T}, vars::Vector) where {S, L, N, M, T} = (
     vars[1]::NLLSsolver.EuclideanVector{1, T}, # end_α
     vars[2]::NLLSsolver.EuclideanVector{N, T}, # end_β
     vars[3]::NLLSsolver.EuclideanVector{S, T}, # end_Γ, stored as the independent elements
 )
 
 # Residual is the cost function which will be minimized
-function NLLSsolver.computeresidual(res::GVMLeastSquares{L, N, S, T}, end_α, end_β, end_Γ_vec) where {L, N, S, T}
+function NLLSsolver.computeresidual(res::GVMLeastSquares{S, L, N, M, T}, end_α, end_β, end_Γ_vec) where {S, L, N, M, T}
     n_Γ = (L-1)
     end_Γ = let
         tmp = zeros(n_Γ, n_Γ)
@@ -183,9 +190,13 @@ function gvm_propagate(
     # Step 2: GVM cuadrature on the resulting sigma-vectors for the
     #         euclidean part of the distribution
     end_μ, end_P, end_A = let
-        end_μ = sum(endpoints .* sigma.W)
-        dx = reduce(hcat, endpoints) .- end_μ
-        end_P = nearest_pd_matrix(dx * Diagonal(sigma.W) * dx')
+        euclid_index = [1, 4:N...]
+
+        end_μ = sum(endpoints .* sigma.W)[1:(n)]
+        dx = reduce(hcat, endpoints)[1:(n),euclid_index] .- end_μ
+        # TODO: reorganize the points so this is not needed
+        euclid_W = sigma.W[euclid_index]
+        end_P = nearest_pd_matrix(dx * Diagonal(euclid_W) * dx')
         end_A = cholesky(Symmetric(end_P)).L
         end_μ, end_P, end_A
     end
@@ -195,17 +206,17 @@ function gvm_propagate(
     # can be inferred from the endpoints instead of a full forward diff of f.
     end_α, end_β, end_Γ = let
 
+        central_point = sigma.χ[:,1]
         # δf[i, j] = δfᵢ/δxⱼ, so we have...
-        δf = ForwardDiff.jacobian(f, sigma.N[:, 1])
+        δf = ForwardDiff.jacobian(f, central_point)
         δₓfx = δf[1:(L-1), 1:(L-1)]
         δₓfα = δf[L, 1:(L-1)]
 
         # δ²fθ[i, j] = δ²f / δxᵢδxⱼ
-        δ²fα = ForwardDiff.hessian(x -> f(x)[L], sigma.N[:, 1])
+        δ²fα = ForwardDiff.hessian(x -> f(x)[L], central_point)
         δ²ₓfα = δ²fα[1:(L-1), 1:(L-1)]
 
         # Written so they act on canonical vectors
-        canon_δₓfx = inv(end_A) * δₓfx * dist.A
         canon_δₓfx = inv(end_A) * δₓfx * dist.A
         canon_δ²ₓfα = dist.A' * δ²ₓfα  * dist.A 
 
@@ -227,23 +238,24 @@ function gvm_propagate(
     # RESEARCH: Any clever way to avoid using least squares?
     end_α, end_β, end_Γ = let
         # Precompute lₑ at the starting sigma-points
-        lₑ = map(sigma) do
+        lₑ = map(eachcol(sigma.χ)) do sigma
             mahalanobis(sigma[1:L-1], sigma[L], dist)
         end
 
         # Note, we pass the EuclideanVector thing to set the base type only
         problem = NLLSsolver.NLLSProblem(
-            NLLSsolver.EuclideanVector{1, T},
-            GVMLeastSquares{L, N, (L * (L-1))÷2, T}
+            Any,
+            GVMLeastSquares{L, N, (L * (L-1))÷2, n, T}
         )
         # end_α
         NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(zero(T)))
         # end_β
         NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(zeros(T, N)...))
         # end_Γ
+        S = (L * (L - 1)) ÷ 2
         NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(zeros(T, S)...))
         # Instantiate the cost-computer
-        NLLSsolver.addcost!(problem, GVMLeastSquares(lₑ, endpoints, dist.κ, end_μ, end_A))
+        NLLSsolver.addcost!(problem, GVMLeastSquares{S}(SVector(lₑ), SMatrix{L, N, T}(reduce(hcat, endpoints)), dist.κ, SVector{n}(end_μ), LowerTriangular(SMatrix{n,n}(end_A))))
 
         result = NLLSsolver.optimize!(problem, NLLSsolver.NLLSOptions())
 
@@ -264,5 +276,26 @@ function gvm_propagate(
     
     return GaussVonMises(end_μ, end_α, end_β, end_Γ, dist.κ, A=end_A)
 
+end
+
+"""
+    run_gvm(p::ForceModel, μ, P, Δt; reltol, abstol, α, κ, β)
+
+Runs the GVM propagation for the given distribution, interval of time Δt.
+Note this doesn't implement a full filter, just the GVM "unscented transform" part.
+
+Returns the resulting GVM distribution.
+"""
+function run_gvm(
+    p::ForceModel,
+    dist::GaussVonMises{T, V},
+    Δt,
+    reltol=1e-10,
+    abstol=1e-10,
+) where {T, V}
+    return gvm_propagate(
+        v -> propagate_orbit(p, v, Δt, reltol=reltol, abstol=abstol),
+        dist
+    )
 end
 

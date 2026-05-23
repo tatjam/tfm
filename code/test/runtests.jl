@@ -19,6 +19,10 @@ end
     include("test_ut.jl")
 end
 
+@testset "GMV" begin
+    include("test_gvm.jl")
+end
+
 @testset "GMV Distribution" begin
     include("test_gvm_dist.jl")
 end
