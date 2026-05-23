@@ -25,10 +25,11 @@ end
    b12(κ) = (1 - I₁ / I₀, 1 - I₂ / I₀)
 
 Evaluates modified Bessel functions of the first kind at κ.
-Returns the pair efficiently by computing them together.
 """
 function b12(κ::T) where {T}
-    bessels = Bessels.besseli(0:2, κ)
+    # Note, because we always compute their division, we can use
+    # the scaled bessel functions which don't explode with κ
+    bessels = map(n -> Bessels.besselix(n, κ), 0:2)
     return (T(1) - bessels[2] / bessels[1], T(1) - bessels[3] / bessels[1])
 end
 
@@ -181,8 +182,8 @@ function gvm_propagate(f, dist::GaussVonMises{T}) where {T}
         Γ_est = canon_δₓfx * (dist.Γ + canon_δ²ₓfα) * canon_δₓfx'
 
         # TEST? The original transforms don't make sense?
-        β_est = inv(canon_δₓfx)' * β_orig
-        Γ_est = inv(canon_δₓfx)' * (dist.Γ + canon_δ²ₓfα) * inv(canon_δₓfx)
+        # β_est = inv(canon_δₓfx)' * β_orig
+        # Γ_est = inv(canon_δₓfx)' * (dist.Γ + canon_δ²ₓfα) * inv(canon_δₓfx)
 
         α_est, β_est, Γ_est
     end
