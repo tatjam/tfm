@@ -12,6 +12,7 @@ using Distributions
 using Bessels
 using Random
 using NLLSsolver
+using Static: static
 
 # ForceModel
 include("dynamics/ForceModel.jl")

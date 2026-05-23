@@ -10,8 +10,7 @@
 # appropriate, but careful choice of i = ω = Ω = 0 has to be done if these
 # coordinates are to be considered Gaussian.
 
-# TODO: The type parameters could be made SMatrix for higher performance
-struct GaussVonMises{T<:Real,V<:AbstractVector{T}}
+struct GaussVonMises{T <: Real, V <: AbstractVector{T}, M <: AbstractMatrix{T}}
     # μ mean vector for the Gaussian in Euclidean space
     μ::V
     # α mean vector for the Von Mises (scalar)
@@ -20,13 +19,13 @@ struct GaussVonMises{T<:Real,V<:AbstractVector{T}}
     # It maps each vector to the effect it has on the angular input to VM
     β::V
     # Γ is a symmetric bilinear form, inducing a quadratic form ℝⁿ -> ℝ, via dot(v, Γ, v)
-    Γ::Symmetric{T}
+    Γ::Symmetric{T, M}
     # κ is a scalar that shapes the Von Mises transform, it's non geometric
     κ::T
     # A is a linear map: ℝⁿ -> ℝⁿ, acting on vectors via the matrix product A*v,
     # mapping a "canonical unit sphere" to a "real ellipsoid" for the Gaussian 
     # It's the (lower) Cholesky factor of P
-    A::LowerTriangular{T}
+    A::LowerTriangular{T, M}
 end
 
 """
@@ -63,15 +62,14 @@ Transforms a random vector distributed under a canonical GVM (i.e. GVM(0, I, 0, 
 
 The vector is of the form [euclidean part..., angular value]!
 """
-function decanonicalize(dist::GaussVonMises{T, V}, v::AbstractVector{T}) where {T, V}
-
-    ceuc = v[1:(length(v) - 1)]
-    cang = v[length(v)]
+function decanonicalize(dist::GaussVonMises, v::AbstractVector)
+    ceuc = @view v[1:end-1]
+    cang = v[end]
 
     euc = dist.μ + dist.A * ceuc
     ang = cang + dist.α + dot(dist.β, ceuc) + 0.5 * dot(ceuc, dist.Γ, ceuc)
 
-    SA[euc..., ang]
+    return SA[euc..., ang]
 end
 
 """
@@ -90,16 +88,16 @@ function Base.rand(rng::AbstractRNG, d::GaussVonMises)
 
     # Note: Distributions.jl VonMises is always centered on the mean, so
     # we "unwrap" so it lives on [-π, π)
-    vm = mod(rand(rng, VonMises(Θ, d.κ)) + π, 2 * π) - π
-    (x, vm)
+    vm = mod(rand(rng, VonMises(Θ, d.κ)) + π, 2π) - π
+    return (x, vm)
 end
 
-function Base.rand(rng::AbstractRNG, d::GaussVonMises, dims::NTuple{N, Int}) where N
-    reshape([rand(rng, d) for _ in 1:prod(dims)], dims)
+function Base.rand(rng::AbstractRNG, d::GaussVonMises, dims::NTuple{N, Int}) where {N}
+    return reshape([rand(rng, d) for _ in 1:prod(dims)], dims)
 end
 
 """
-   mahalanobis(x, θ, dist)
+    mahalanobis(x, θ, dist)
 
 Computes the Mahalanobis-Von Mises distance of the point (x, θ) to the distribution:
     (x-μ)ᵀP⁻¹(x-μ) + 4κ sin²(0.5 (θ - dist.θ(x)))
@@ -110,7 +108,7 @@ Implemented for efficiency as
 Essentially, the sum of euclidean distance in canonical space (to the origin) and chord distance in
 the angular coordinate, weighted by κ.
 """
-function mahalanobis(x::V, θ::T, dist::GaussVonMises{T, V}) where {T<:Real,V<:AbstractVector{T}}
+function mahalanobis(x::AbstractVector, θ::Real, dist::GaussVonMises)
     deuclid = x - dist.μ
     z = dist.A \ deuclid 
 
@@ -120,13 +118,15 @@ function mahalanobis(x::V, θ::T, dist::GaussVonMises{T, V}) where {T<:Real,V<:A
     return canon_mahalanobis(z, ϕ, dist.κ)
 end
 
-function canon_mahalanobis(z::V, ϕ::T, κ::T) where {T<:Real, V<:AbstractVector{T}}
+function canon_mahalanobis(z::AbstractVector, ϕ::Real, κ::Real)
     # Alternative way to cheaply compute (x-μ)ᵀ(AAᵀ)⁻¹(x-μ)
     # z = A⁻¹ (x-μ), thus
     # zᵀz = (x-μ)ᵀ A⁻ᵀ A⁻¹ (x-μ) = (x-μ)ᵀ(AAᵀ)⁻¹(x-μ)
-   euclid_term = dot(z, z) 
-   t1 = sin(0.5 * ϕ)
-   ang_term = T(4.0) * κ * t1 * t1
+    euclid_term = dot(z, z) 
+    t1 = sin(0.5 * ϕ)
+    
+    # Types naturally promote here without needing T(4.0)
+    ang_term = 4 * κ * t1 * t1
 
-   return euclid_term + ang_term
+    return euclid_term + ang_term
 end
