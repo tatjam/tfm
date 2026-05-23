@@ -104,18 +104,29 @@ function NLLSsolver.getvars(::GVMLeastSquares{S, L, N, M, T}, vars::Vector) wher
 end
 
 function NLLSsolver.computeresidual(res::GVMLeastSquares{S, L, N, M, T}, end_α, end_β, end_Γ_vec) where {S, L, N, M, T}
+    # 1. Dynamically find the incoming type (Float64 during evaluation, Dual during AD)
+    T_AD = promote_type(eltype(end_α), eltype(end_β), eltype(end_Γ_vec))
     n_Γ = L - 1
-    end_Γ = let
-        tmp = zeros(T, n_Γ, n_Γ)
+    
+    end_Γ = begin
+        tmp = zeros(T_AD, n_Γ, n_Γ)
         tmp[triu(ones(Bool, n_Γ, n_Γ))] = end_Γ_vec
         Symmetric(tmp)
     end
 
-    end_dist = GaussVonMises(res.end_μ, end_α, end_β, end_Γ, res.κ, A=res.end_A)
+    # 2. Lift the background constants to match the incoming AD type
+    μ_ad = T_AD.(res.end_μ)
+    A_ad = LowerTriangular(T_AD.(res.end_A))
+    κ_ad = T_AD(res.κ)
+
+    # 3. Ensure end_α is treated as a scalar regardless of how NLLSsolver packs it
+    α_scalar = end_α isa AbstractArray ? end_α[1] : end_α
+
+    end_dist = GaussVonMises(μ_ad, α_scalar, end_β, end_Γ, κ_ad, A=A_ad)
     
     return sum(zip(res.lₑ, eachcol(res.end_σ))) do (lₑᵢ, end_σᵢ)
         lₐᵢ = mahalanobis(end_σᵢ[1:n_Γ], end_σᵢ[L], end_dist)
-        r = lₑᵢ - lₐᵢ
+        r = T_AD(lₑᵢ) - lₐᵢ
         return r * r
     end
 end

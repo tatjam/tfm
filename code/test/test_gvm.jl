@@ -18,10 +18,8 @@
         end_dist = run_gvm(EARTH_FM_WITH_J2_KEPLER, dist, Δt)
 
         # Monte-Carlo samples
-        start_dist = MvNormal(x0, covmat)
-        samples = rand(start_dist, nsamples)
-        samples_svec = reinterpret(SVector{6,eltype(samples)}, vec(samples))
-        samples_mc = run_monte_carlo(EARTH_FM_WITH_J2_KEPLER, samples_svec, Δt)
+        samples = rand(dist, nsamples)
+        samples_mc = run_monte_carlo(EARTH_FM_WITH_J2_KEPLER, samples, Δt)
 
         # Flatten to a conventional matrix 
         samples_mc_mat = reduce(hcat, samples_mc)

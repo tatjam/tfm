@@ -10,22 +10,19 @@
 # appropriate, but careful choice of i = ω = Ω = 0 has to be done if these
 # coordinates are to be considered Gaussian.
 
-struct GaussVonMises{T <: Real, V <: AbstractVector{T}, M <: AbstractMatrix{T}}
+struct GaussVonMises{T <: Real, V1 <: AbstractVector{T}, V2 <: AbstractVector{T}, MG <: AbstractMatrix{T}, MA <: AbstractMatrix{T}}
     # μ mean vector for the Gaussian in Euclidean space
-    μ::V
+    μ::V1
     # α mean vector for the Von Mises (scalar)
     α::T
     # β is a 1-form: ℝⁿ -> ℝ, acting on vectors via dot(β, v)
-    # It maps each vector to the effect it has on the angular input to VM
-    β::V
-    # Γ is a symmetric bilinear form, inducing a quadratic form ℝⁿ -> ℝ, via dot(v, Γ, v)
-    Γ::Symmetric{T, M}
-    # κ is a scalar that shapes the Von Mises transform, it's non geometric
+    β::V2
+    # Γ is a symmetric bilinear form
+    Γ::Symmetric{T, MG}
+    # κ is a scalar that shapes the Von Mises transform
     κ::T
-    # A is a linear map: ℝⁿ -> ℝⁿ, acting on vectors via the matrix product A*v,
-    # mapping a "canonical unit sphere" to a "real ellipsoid" for the Gaussian 
-    # It's the (lower) Cholesky factor of P
-    A::LowerTriangular{T, M}
+    # A is the lower Cholesky factor of P
+    A::LowerTriangular{T, MA}
 end
 
 """
@@ -75,7 +72,7 @@ end
 """
     rand(rng, d::GaussVonMises)
 
-Sample a GaussVonMises distribution, returning the (x, θ) sample
+Sample a GaussVonMises distribution, returning the [x...; θ] sample
 """
 function Base.rand(rng::AbstractRNG, d::GaussVonMises)
     # z is distributed as N(0, Id), thus is in our "canonical" space
@@ -89,7 +86,7 @@ function Base.rand(rng::AbstractRNG, d::GaussVonMises)
     # Note: Distributions.jl VonMises is always centered on the mean, so
     # we "unwrap" so it lives on [-π, π)
     vm = mod(rand(rng, VonMises(Θ, d.κ)) + π, 2π) - π
-    return (x, vm)
+    return SA[x...; vm]
 end
 
 function Base.rand(rng::AbstractRNG, d::GaussVonMises, dims::NTuple{N, Int}) where {N}
