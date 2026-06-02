@@ -117,6 +117,57 @@ function param_variation(fm::J2Force, p, f, g, h, k, L, _t)
 end
 
 """
+    EGM96Force(degree, order, t0)
+
+Gravitational force due to earth under the EGM96 model as exposed by SatelliteToolbox, including the central body
+force and perturbation terms. t0 is the date time for t=0 used for the coordinate transformations to ECEF frame, thus
+t is measured in seconds since this epoch.
+
+If degree is negative, the maximum coefficient of EGM96 is used.
+If order is negative, a value equal to degree is used.
+"""
+struct EGM96Force
+    model::SatelliteToolboxGravityModels.IcgemGfcCoefficient{Float64}
+    degree::Int32
+    order::Int32
+    t0::DateTime
+    buffer_P::LowerTriangularStorage{Float64}
+    buffer_dP::LowerTriangularStorage{Float64}
+    function EGM96Force(degree, order, t0)
+        model = GravityModels.load(IcgemFile, fetch_icgem_file(:EGM96))
+
+        if degree < 0
+            degree = GravityModels.maximum_degree(model)
+        end
+        if order < 0
+            order = degree
+        end
+
+        buffer_P = LowerTriangularStorage((degree + 1) * (order +1))
+        buffer_dP = LowerTriangularStorage((degree + 1) * (order +1))
+        new(model, degree, order, t0, buffer_P, buffer_dP)
+    end
+end
+
+"""
+    acceleration(f::EGM96Force, r, v, t)
+
+EGM96 newtonian acceleration.
+"""
+function acceleration(f::EGM96Force, r, _v, _t)
+    # SatelliteToolbox excepts position in ECEF frame, but (r, v) are in inertial frame
+end
+
+"""
+    param_variation(fm::EGM96Force, p, f, g, h, k, L, t)
+
+IGRF acceleration, computed in euclidean coordinates and then transformed.
+"""
+function param_variation(fm::EGM96Force, p, f, g, h, k, L, _t)
+end
+
+
+"""
 
     ForceModel{IsNewton}(forces)
 
