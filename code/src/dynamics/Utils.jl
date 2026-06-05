@@ -357,7 +357,7 @@ function csn_acceleration_to_mee(p, f, g, h, k, L, C, S, N, μ)
 end
 
 """
-    get_csn_basis_from_mee(p, f, g, h, k, L, μ)
+    get_csn_basis(x1, x2, x3, v1, v2, v3)
 
 Returns the basis vectors for the C, S, N coordinate system, each as a column of the returned matrix 'R', thus, if
 R acts by left-multiplication:
@@ -371,11 +371,9 @@ R acts by left-multiplication:
 - N vector is normal to orbital plane, pointing parallel to the angular momentum vector
 
 """
-function get_csn_basis_from_mee(p, f, g, h, k, L, μ)
-    sv = mee_to_euclid(p, f, g, h, k, L, μ)
-    
-    s = normalize(sv[1:3])
-    n = normalize(cross(sv[1:3], sv[4:6]))
+function get_csn_basis(x1, x2, x3, v1, v2, v3)
+    s = normalize(SA[x1, x2, x3])
+    n = normalize(cross(SA[x1, x2, x3], SA[v1, v2, v3]))
     # By the vector triple product identity,
     # (r × v) × r = - (r ⋅ v)r + (r ⋅ r)v =
     #             = |r|² v - (r ⋅ v) r

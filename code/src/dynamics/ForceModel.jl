@@ -186,7 +186,7 @@ function param_variation(fm::EGM96Force, p, f, g, h, k, L, t)
     euclid_state = mee_to_euclid(p, f, g, h, k, L, μ)
     a_eci = egm96_acceleration_eci(fm, euclid_state[1:3], t)
 
-    csn2eci = get_csn_basis_from_mee(p, f, g, h, k, L, μ)
+    csn2eci = get_csn_basis(euclid_state...)
     a_csn = csn2eci' * a_eci
 
     return csn_acceleration_to_mee(p, f, g, h, k, L, a_csn..., μ)
