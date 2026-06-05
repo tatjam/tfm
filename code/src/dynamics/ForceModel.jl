@@ -123,6 +123,8 @@ Gravitational force due to earth under the EGM96 model as exposed by SatelliteTo
 force and perturbation terms. t0 is the date time for t=0 used for the coordinate transformations to ECEF frame, thus
 t is measured in seconds since this epoch.
 
+All coordinates are assumed to be in the GCRF ECI reference frame, to be converted to ITRF for evaluating the gravity model.
+
 If degree is negative, the maximum coefficient of EGM96 is used.
 If order is negative, a value equal to degree is used.
 """
@@ -133,6 +135,7 @@ struct EGM96Force
     t0::DateTime
     buffer_P::LowerTriangularStorage{Float64}
     buffer_dP::LowerTriangularStorage{Float64}
+
     function EGM96Force(degree, order, t0)
         model = GravityModels.load(IcgemFile, fetch_icgem_file(:EGM96))
 
@@ -149,13 +152,27 @@ struct EGM96Force
     end
 end
 
+function egm96_acceleration_eci(f::EGM96Force, r_eci, t)
+    # SatelliteToolbox excepts position in ECEF (ITRF) frame, but (r, v) are in inertial frame (GCRF)
+    # Julian date is just time since epoch in days
+    jd = (t - f.t0) / 86400.0
+    eci2ecef = r_eci_to_ecef(GCRF, ITRF, jd)
+
+    # Note, acc doesn't include rotational terms
+    acc_ecef = gravitational_acceleration(f.model, eci2ecef * r_eci, jd)
+    acc_eci = eci2ecef' * acc_ecef
+
+    return acc_eci
+end
+
 """
     acceleration(f::EGM96Force, r, v, t)
 
 EGM96 newtonian acceleration.
 """
-function acceleration(f::EGM96Force, r, _v, _t)
-    # SatelliteToolbox excepts position in ECEF frame, but (r, v) are in inertial frame
+function acceleration(f::EGM96Force, r_eci, v, t)
+    a = egm96_acceleration_eci(f, r_eci, t)
+    return SA[v[1], v[2], v[3], a[1], a[2], a[3]]
 end
 
 """
@@ -163,7 +180,13 @@ end
 
 IGRF acceleration, computed in euclidean coordinates and then transformed.
 """
-function param_variation(fm::EGM96Force, p, f, g, h, k, L, _t)
+function param_variation(fm::EGM96Force, p, f, g, h, k, L, t)
+    μ = gravity_constant(fm.model)
+
+    euclid_state = mee_to_euclid(p, f, g, h, k, L, μ)
+    a = egm96_acceleration_eci(fm, euclid_state[1:3], t)
+
+    # Project to RTN
 end
 
 

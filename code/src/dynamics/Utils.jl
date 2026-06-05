@@ -330,6 +330,66 @@ function mee_to_euclid(p, f, g, h, k, L, μ)
 end
 
 """
+    mee_variational_perturbation(p, f, g, h, k, L, C, S, N, μ)
+
+Returns the changes to parameters [p, f, g, h, k, L] due to an acceleration [C, S, N] expressed in the
+CSN basis (perpendicular to radius vector in direction of motion, along radius vector outward and normal to orbital plane
+in direction of angular momentum).
+
+Note that [C, S, N] MUST include the two-body force.
+
+Formula (9) of "A set of modified equinoctial orbit elements" with the errata document considered.
+
+"""
+function csn_acceleration_to_mee(p, f, g, h, k, L, C, S, N, μ)
+    w = 1 + f * cos(L) + g * sin(L)
+    s2 = 1 + h * h + k * k
+
+    return [
+        2p * C / w * sqrt(p / μ),
+        sqrt(p / μ) * ( S * sin(L) + ((w + 1) * cos(L) + f) * C / w - g * (h * sin(L) - k * cos(L)) * N / w),
+        sqrt(p / μ) * (-S * cos(L) + ((w + 1) * sin(L) + g) * C / w + f * (h * sin(L) - k * cos(L)) * N / w),
+        sqrt(p / μ) * s2 * N / (2w) * cos(L),
+        sqrt(p / μ) * s2 * N / (2w) * sin(L),
+        # Note: Central body term removed, assumed to be incldued in C, S, N
+        sqrt(p / μ) * (h * sin(L) - k * cos(L)) * N / w
+    ]
+end
+
+"""
+    get_csn_basis_from_mee(p, f, g, h, k, L, μ)
+
+Returns the basis vectors for the C, S, N coordinate system, each as a column of the returned matrix 'R', thus, if
+R acts by left-multiplication:
+    R : v_csn -> v_eci
+    R': v_eci -> v_csn
+
+(R' = R⁻¹ due to CSN and ECI being orthonormal basis!)
+
+- C vector is perpendicular to the radius vector in the direction of velocity
+- S vector is the radius vector, outwards pointing
+- N vector is normal to orbital plane, pointing parallel to the angular momentum vector
+
+"""
+function get_csn_basis_from_mee(p, f, g, h, k, L, μ)
+    sv = mee_to_euclid(p, f, g, h, k, L, μ)
+    
+    s = normalize(sv[1:3])
+    n = normalize(cross(sv[1:3], sv[4:6]))
+    # By the vector triple product identity,
+    # (r × v) × r = - (r ⋅ v)r + (r ⋅ r)v =
+    #             = |r|² v - (r ⋅ v) r
+    # Thus, v ⋅((r × v) × r) =
+    #             = |r|² |v|² - |r ⋅v|²
+    # which by the Cauchy-Schwarz inequality is greater than or equal to 0
+    # Because n × s ∥ (r × v) × r, we affirm that c points in
+    # the direction of velocity if defined as...
+    c = cross(n, s) 
+
+    return hcat(c, s, n)
+end
+
+"""
    isapprox_angle(a, b; atol=1e-8)
 
    Compare two angles knowing they live in the circle
