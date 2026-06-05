@@ -184,9 +184,12 @@ function param_variation(fm::EGM96Force, p, f, g, h, k, L, t)
     μ = gravity_constant(fm.model)
 
     euclid_state = mee_to_euclid(p, f, g, h, k, L, μ)
-    a = egm96_acceleration_eci(fm, euclid_state[1:3], t)
+    a_eci = egm96_acceleration_eci(fm, euclid_state[1:3], t)
 
-    # Project to RTN
+    csn2eci = get_csn_basis_from_mee(p, f, g, h, k, L, μ)
+    a_csn = csn2eci' * a_eci
+
+    return csn_acceleration_to_mee(p, f, g, h, k, L, a_csn..., μ)
 end
 
 
