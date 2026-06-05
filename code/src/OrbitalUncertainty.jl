@@ -17,11 +17,12 @@ using Static: static
 # ForceModel
 include("dynamics/ForceModel.jl")
 include("dynamics/Utils.jl")
-export ForceModel, TwoBodyForce, J2Force
+export ForceModel, TwoBodyForce, J2Force, EGM96Force
 export acceleration, force_model, propagate_orbit
 export kepler_to_euclid, kepler_to_array, euclid_to_kepler
 export kepler_to_mee, mee_to_kepler
 export euclid_to_mee, mee_to_euclid
+export get_csn_basis, csn_acceleration_to_mee
 export isapprox_angle
 
 include("propagators/MonteCarlo.jl")

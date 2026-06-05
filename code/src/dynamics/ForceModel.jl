@@ -123,18 +123,20 @@ Gravitational force due to earth under the EGM96 model as exposed by SatelliteTo
 force and perturbation terms. t0 is the date time for t=0 used for the coordinate transformations to ECEF frame, thus
 t is measured in seconds since this epoch.
 
-All coordinates are assumed to be in the GCRF ECI reference frame, to be converted to ITRF for evaluating the gravity model.
+All coordinates are assumed to be in the J2000 ECI reference frame, to be converted to PEF (Pseudo-Earth fixed, ITRF without polar
+motion) for evaluating the gravity model.
+Could be trivially adapted to use a more precise earth orientation model, because technically PEF is not correct for EGM96
 
 If degree is negative, the maximum coefficient of EGM96 is used.
 If order is negative, a value equal to degree is used.
 """
 struct EGM96Force
-    model::SatelliteToolboxGravityModels.IcgemGfcCoefficient{Float64}
+    model::AbstractGravityModel{Float64}
     degree::Int32
     order::Int32
-    t0::DateTime
-    buffer_P::LowerTriangularStorage{Float64}
-    buffer_dP::LowerTriangularStorage{Float64}
+    t0::Float64
+    buffer_P::LowerTriangularStorage
+    buffer_dP::LowerTriangularStorage
 
     function EGM96Force(degree, order, t0)
         model = GravityModels.load(IcgemFile, fetch_icgem_file(:EGM96))
@@ -153,13 +155,13 @@ struct EGM96Force
 end
 
 function egm96_acceleration_eci(f::EGM96Force, r_eci, t)
-    # SatelliteToolbox excepts position in ECEF (ITRF) frame, but (r, v) are in inertial frame (GCRF)
+    # SatelliteToolbox excepts position in ECEF (PEF) frame, but (r, v) are in inertial frame (J2000)
     # Julian date is just time since epoch in days
     jd = (t - f.t0) / 86400.0
-    eci2ecef = r_eci_to_ecef(GCRF, ITRF, jd)
+    eci2ecef = r_eci_to_ecef(J2000(), PEF(), jd)
 
     # Note, acc doesn't include rotational terms
-    acc_ecef = gravitational_acceleration(f.model, eci2ecef * r_eci, jd)
+    acc_ecef = GravityModels.gravitational_acceleration(f.model, eci2ecef * r_eci, jd)
     acc_eci = eci2ecef' * acc_ecef
 
     return acc_eci
@@ -171,8 +173,7 @@ end
 EGM96 newtonian acceleration.
 """
 function acceleration(f::EGM96Force, r_eci, v, t)
-    a = egm96_acceleration_eci(f, r_eci, t)
-    return SA[v[1], v[2], v[3], a[1], a[2], a[3]]
+    return egm96_acceleration_eci(f, r_eci, t)
 end
 
 """
@@ -181,10 +182,10 @@ end
 IGRF acceleration, computed in euclidean coordinates and then transformed.
 """
 function param_variation(fm::EGM96Force, p, f, g, h, k, L, t)
-    μ = gravity_constant(fm.model)
+    μ = GravityModels.gravity_constant(fm.model)
 
     euclid_state = mee_to_euclid(p, f, g, h, k, L, μ)
-    a_eci = egm96_acceleration_eci(fm, euclid_state[1:3], t)
+    a_eci = egm96_acceleration_eci(fm, euclid_state[SA[1,2,3]], t)
 
     csn2eci = get_csn_basis(euclid_state...)
     a_csn = csn2eci' * a_eci

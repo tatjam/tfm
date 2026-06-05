@@ -1,3 +1,5 @@
+import OrbitalUncertainty: acceleration, param_variation
+
 @testset "J2 compare against poliastro" begin
     μ = 398600441800000.0
     j2 = 0.00108263
@@ -234,3 +236,67 @@ end
     @test orbit_u1 ≈ orbit_u1_mee_euclid rtol=1e-6
 end
 
+struct TestForce
+    μ::Float64
+end
+
+function acceleration(fm::TestForce, r, v, _t)
+    v_mag = norm(v)
+    # Quadratic drag, proportional to v²
+    return -1e-7* v_mag * v
+end
+
+function param_variation(fm::TestForce, p, f, g, h, k, L, t)
+    euclid_state = mee_to_euclid(p, f, g, h, k, L, fm.μ)
+    r = euclid_state[SA[1,2,3]]
+    v = euclid_state[SA[4,5,6]]
+
+    a_eci = acceleration(fm, r, v, t)
+    csn2eci = get_csn_basis(euclid_state...)
+    a_csn = csn2eci' * a_eci
+    return csn_acceleration_to_mee(p, f, g, h, k, L, a_csn..., fm.μ)
+end
+
+@testset "Newtonian perturbation vs Keplerian CSN perturbation " begin
+    tup = (TwoBodyForce(GM_EARTH), TestForce(GM_EARTH))
+    fm_newton = ForceModel(tup, Val(true))
+    fm_kepler = ForceModel(tup, Val(false))
+    
+    orbit_u0 = SA[6771.358863, 0, 0, 0, 4.76807358, 6.01581168] .* 1e3
+    orbit_u0_mee = euclid_to_mee(orbit_u0..., GM_EARTH)
+
+    orbit_u1_newton = propagate_orbit(fm_newton, orbit_u0, 3600.0)
+    orbit_u1_mee_kepler = propagate_orbit(fm_kepler, orbit_u0_mee, 3600.0)
+    orbit_u1_kepler = mee_to_euclid(orbit_u1_mee_kepler..., GM_EARTH)
+
+    @test orbit_u1_newton ≈ orbit_u1_kepler rtol=1e-6
+end
+
+@testset "J2 vs EGM96 2x0 Newton" begin
+    orbit_u0 = SA[6771.358863, 0, 0, 0, 4.76807358, 6.01581168] .* 1e3
+
+    # J2 propagation
+    orbit_u1_j2 = propagate_orbit(EARTH_FM_WITH_J2_NEWTON, orbit_u0, 3600.0)
+
+    # EGM96 propagation
+    tup = (TwoBodyForce(GM_EARTH), EGM96Force(2, 0, 0.0))
+    fm_egm96 = ForceModel(tup, Val(true))
+    orbit_u1_egm96 = propagate_orbit(fm_egm96, orbit_u0, 3600.0)
+
+    @test orbit_u1_j2 ≈ orbit_u1_egm96 rtol=1e-6
+end
+
+@testset "J2 vs EGM96 2x0 Kepler" begin
+    orbit_u0 = SA[6771.358863, 0, 0, 0, 4.76807358, 6.01581168] .* 1e3
+    orbit_u0_mee = euclid_to_mee(orbit_u0..., GM_EARTH)
+
+    # J2 propagation
+    orbit_u1_j2 = propagate_orbit(EARTH_FM_WITH_J2_KEPLER, orbit_u0_mee, 3600.0)
+
+    # EGM96 propagation
+    tup = (TwoBodyForce(GM_EARTH), EGM96Force(2, 0, 0))
+    fm_egm96 = ForceModel(tup, Val(false))
+    orbit_u1_egm96 = propagate_orbit(fm_egm96, orbit_u0_mee, 3600.0)
+
+    @test orbit_u1_j2 ≈ orbit_u1_egm96 rtol=1e-6
+end
