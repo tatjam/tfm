@@ -8,22 +8,21 @@
 # propagation are possible with the same data structures.
 
 """
-    J2Force(μ, R, J2)
+    J2Force(R, J2)
 
 J2 perturbation due to a central body at the origin of the coordinate system
 """
 struct J2Force
-    μ::Float64
     R::Float64
     J2::Float64
 end
 
 """
-    acceleration(f::J2Force, r, v, t)
+    acceleration(f::J2Force, r, v, t, μ)
 
 J2 newtonian perturbation, Vallado page 594 formula.
 """
-function acceleration(f::J2Force, r, _v, _t)
+function acceleration(f::J2Force, r, _v, _t, μ)
     # Note this is slightly incorrect if we assume r is on ECI frame, as J2 is defined in
     # earth relative coordinates, and the pole rotates slightly wrt. to our assumed J2000 ECI frame.
     # For the purpose of this work, it doesn't matter, and would slightly impact performance, but,
@@ -34,7 +33,7 @@ function acceleration(f::J2Force, r, _v, _t)
     # eci2ecef = r_eci_to_ecef(J2000(), PEF(), jd)
     # r = eci2ecef * r
 
-    common = -3.0 * f.J2 * f.μ * f.R^2 / (2.0 * norm(r)^5)
+    common = -3.0 * f.J2 * μ * f.R^2 / (2.0 * norm(r)^5)
     zrel = 5 * r[3]^2 / norm(r)^2
     xy_term = 1.0 - zrel
     z_term = 3.0 - zrel
@@ -48,13 +47,13 @@ function acceleration(f::J2Force, r, _v, _t)
 end
 
 """
-    param_variation(fm::J2Force, p, f, g, h, k, L, t)
+    param_variation(fm::J2Force, p, f, g, h, k, L, t, μ)
 
     "A set of modified equinoctial orbit elements", Walker et al 1985, formula 8
     and formula 11 particularized for J2 only
 
 """
-function param_variation(fm::J2Force, p, f, g, h, k, L, _t)
+function param_variation(fm::J2Force, p, f, g, h, k, L, _t, μ)
     sinL, cosL = sincos(L)
     w = 1 + f * cosL + g * sinL
     s = sqrt(1 + h^2 + k^2)
@@ -67,21 +66,21 @@ function param_variation(fm::J2Force, p, f, g, h, k, L, _t)
     cterm = fm.J2 * (fm.R / r)^2
 
     # Potential gradient (formula 11, with TYPO fix!)
-    dRdp = 3 * fm.μ / (w * r^2) * cterm * Pn
+    dRdp = 3 * μ / (w * r^2) * cterm * Pn
     # TYPO on formula 11, dRdf is missing, it's the symmetrical to dRdg
     # See ERRATA for the Walker et al paper (https://link.springer.com/article/10.1007/BF01238929)
-    dRdf = -3 * fm.μ * cosL / (w * r) * cterm * Pn
+    dRdf = -3 * μ * cosL / (w * r) * cterm * Pn
 
-    dRdg = -3 * fm.μ * sinL / (w * r) * cterm * Pn
-    dRdh = -2 * fm.μ / (r * s^4) * ((1 - h^2 + k^2) * sinL + 2 * h * k * cosL) * cterm * dPn
-    dRdk = 2 * fm.μ / (r * s^4) * ((1 + h^2 - k^2) * cosL + 2 * h * k * sinL) * cterm * dPn
-    dRdL1 = -2 * fm.μ / (r * s^2) * (h * cosL + k * sinL) * cterm * dPn
-    dRdL2 = -3 * fm.μ / (r * w) * (g * cosL - f * sinL) * cterm * Pn
+    dRdg = -3 * μ * sinL / (w * r) * cterm * Pn
+    dRdh = -2 * μ / (r * s^4) * ((1 - h^2 + k^2) * sinL + 2 * h * k * cosL) * cterm * dPn
+    dRdk = 2 * μ / (r * s^4) * ((1 + h^2 - k^2) * cosL + 2 * h * k * sinL) * cterm * dPn
+    dRdL1 = -2 * μ / (r * s^2) * (h * cosL + k * sinL) * cterm * dPn
+    dRdL2 = -3 * μ / (r * w) * (g * cosL - f * sinL) * cterm * Pn
     dRdL = dRdL1 + dRdL2
 
     # Gauss equations (formula 8)
-    sqrtμp = sqrt(fm.μ * p)
-    dp = 2 * sqrt(p / fm.μ) * (-g * dRdf + f * dRdg + dRdL)
+    sqrtμp = sqrt(μ * p)
+    dp = 2 * sqrt(p / μ) * (-g * dRdf + f * dRdg + dRdL)
     df1 = 2 * p * g * dRdp - (1 - f^2 - g^2) * dRdg - 0.5 * g * s^2 * (h * dRdh + k * dRdk)
     df2 = (f + (1 + w) * cosL) * dRdL
     df = 1 / sqrtμp * (df1 + df2)
@@ -143,9 +142,12 @@ function egm96_acceleration_eci(f::EGM96Force, r_eci, t)
     jd = t / 86400.0 + f.jd0
     eci2ecef = r_eci_to_ecef(J2000(), PEF(), jd)
 
-    # Note, acc doesn't include rotational terms
-    acc_ecef = GravityModels.gravitational_acceleration(f.model, eci2ecef * r_eci, jd)
+    # Note, acc doesn't include rotational terms, and time is expected as seconds, not julian date, since J2000
+    acc_ecef = GravityModels.gravitational_acceleration(f.model, eci2ecef * r_eci, jd * 86400.0)
     acc_eci = eci2ecef' * acc_ecef
+
+    # We need to exclude the 2-body term, as it's included by EGM96
+    acc_eci += r_eci * GravityModels.gravity_constant(f.model) / norm(r_eci)^3
 
     return acc_eci
 end
@@ -155,26 +157,22 @@ end
 
 EGM96 newtonian acceleration.
 """
-function acceleration(f::EGM96Force, r_eci, v, t)
+function acceleration(f::EGM96Force, r_eci, _v, t, _μ)
     return egm96_acceleration_eci(f, r_eci, t)
 end
 
 """
-    param_variation(fm::EGM96Force, p, f, g, h, k, L, t)
+    param_variation(fm::EGM96Force, p, f, g, h, k, L, t, μ)
 
 IGRF acceleration, computed in euclidean coordinates and then transformed.
 """
-function param_variation(fm::EGM96Force, p, f, g, h, k, L, t)
-    μ = GravityModels.gravity_constant(fm.model)
-
+function param_variation(fm::EGM96Force, p, f, g, h, k, L, t, μ)
     euclid_state = mee_to_euclid(p, f, g, h, k, L, μ)
     a_eci = egm96_acceleration_eci(fm, euclid_state[SA[1,2,3]], t)
 
     csn2eci = get_csn_basis(euclid_state...)
     a_csn = csn2eci' * a_eci
 
-    @info "a_csn" a_csn
-    @info "mee derivatives" csn_acceleration_to_mee(p, f, g, h, k, L, a_csn..., μ)
     return csn_acceleration_to_mee(p, f, g, h, k, L, a_csn..., μ)
 end
 
@@ -206,8 +204,8 @@ struct ForceModel{F<:Tuple,IsNewton}
     forces::F
 end
 
-ForceModel(forces::F, ::Val{IsNewton}) where {F<:Tuple,IsNewton} =
-    ForceModel{F,IsNewton}(forces)
+ForceModel(μ::Float64, forces::F, ::Val{IsNewton}) where {F<:Tuple,IsNewton} =
+    ForceModel{F,IsNewton}(μ, forces)
 
 
 """
@@ -219,11 +217,11 @@ Computes the acceleration due to all forces in the model sequentially
 function acceleration(fm::ForceModel{F,true}, r, v, t) where {F}
     a = SA[0.0, 0.0, 0.0]
     for force in fm.forces
-        a += acceleration(force, r, v, t)
+        a += acceleration(force, r, v, t, fm.μ)
     end
 
     # 2-body term
-    -fm.μ / norm(r)^3 * r
+    a += -fm.μ / norm(r)^3 * r
 
     return a
 end
@@ -237,12 +235,12 @@ Computes the variation in MEE parameters given the force model.
 function param_variation(fm::ForceModel{F,false}, u, t) where {F}
     du = SA[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     for force in fm.forces
-        du += param_variation(force, u..., t)
+        du += param_variation(force, u..., t, fm.μ)
     end
 
     # 2-body term
     w = 1 + u[2] * cos(u[6]) + u[3] * sin(u[6])
-    du[6] += sqrt(fm.μ * u[1]) * (w / u[1])^2 
+    du += SA[0.0, 0.0, 0.0, 0.0, 0.0, sqrt(fm.μ * u[1]) * (w / u[1])^2] 
 
     return du
 end

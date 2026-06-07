@@ -1,13 +1,17 @@
 import OrbitalUncertainty: acceleration, param_variation
 
+@testset "GM_EARTH is EGM96" begin
+    egm96 = EGM96Force(2, 0, date_to_jd(2000, 1, 1, 0, 0, 0))
+    @test GM_EARTH ≈ GravityModels.gravity_constant(egm96.model) rtol=1e-12
+end
+
 @testset "J2 compare against poliastro" begin
     μ = 398600441800000.0
     j2 = 0.00108263
     r = 6378136.6
 
-    cbf = TwoBodyForce(μ)
-    j2f = J2Force(μ, r, j2)
-    fm = ForceModel((cbf, j2f), Val(true))
+    j2f = J2Force(r, j2)
+    fm = ForceModel(μ, (j2f,), Val(true))
 
     # Data from poliastro, see validation/ folder
     orbit1_u0 = SA[6771.358863, 0, 0, 0, 4.76807358, 6.01581168] .* 1e3
@@ -237,31 +241,30 @@ end
 end
 
 struct TestForce
-    μ::Float64
 end
 
-function acceleration(fm::TestForce, r, v, _t)
+function acceleration(fm::TestForce, r, v, _t, _μ)
     v_mag = norm(v)
     # Quadratic drag, proportional to v²
     return -1e-10 * v_mag * v
 end
 
-function param_variation(fm::TestForce, p, f, g, h, k, L, t)
-    euclid_state = mee_to_euclid(p, f, g, h, k, L, fm.μ)
+function param_variation(fm::TestForce, p, f, g, h, k, L, t, μ)
+    euclid_state = mee_to_euclid(p, f, g, h, k, L, μ)
     r = euclid_state[SA[1,2,3]]
     v = euclid_state[SA[4,5,6]]
 
-    a_eci = acceleration(fm, r, v, t)
+    a_eci = acceleration(fm, r, v, t, μ)
     csn2eci = get_csn_basis(euclid_state...)
     a_csn = csn2eci' * a_eci
-    return csn_acceleration_to_mee(p, f, g, h, k, L, a_csn..., fm.μ)
+    return csn_acceleration_to_mee(p, f, g, h, k, L, a_csn..., μ)
 end
 
 @testset "Newtonian perturbation vs Keplerian CSN perturbation " begin
-    tup = (TwoBodyForce(GM_EARTH), TestForce(GM_EARTH))
-    fm_newton_dummy = ForceModel((TwoBodyForce(GM_EARTH),), Val(true))
-    fm_newton = ForceModel(tup, Val(true))
-    fm_kepler = ForceModel(tup, Val(false))
+    tup = (TestForce(),)
+    fm_newton_dummy = ForceModel(GM_EARTH, (), Val(true))
+    fm_newton = ForceModel(GM_EARTH, tup, Val(true))
+    fm_kepler = ForceModel(GM_EARTH, tup, Val(false))
     
     orbit_u0 = SA[6771.358863, 0, 0, 0, 4.76807358, 6.01581168] .* 1e3
     orbit_u0_mee = euclid_to_mee(orbit_u0..., GM_EARTH)
@@ -284,7 +287,7 @@ end
 
     # EGM96 propagation, note EGM96Force already includes 2-body term
     tup = (EGM96Force(2, 0, date_to_jd(2000, 1, 1, 0, 0, 0)),)
-    fm_egm96 = ForceModel(tup, Val(true))
+    fm_egm96 = ForceModel(GM_EARTH, tup, Val(true))
     orbit_u1_egm96 = propagate_orbit(fm_egm96, orbit_u0, 3600.0)
 
     # Note, because EGM considers real earth orientation, we get a few hundred meters of difference
@@ -301,7 +304,7 @@ end
 
     # EGM96 propagation, note EGM96Force already includes 2-body term
     tup = (EGM96Force(2, 0, date_to_jd(2000, 1, 1, 0, 0, 0)),)
-    fm_egm96 = ForceModel(tup, Val(false))
+    fm_egm96 = ForceModel(GM_EARTH, tup, Val(false))
     orbit_u1_egm96 = propagate_orbit(fm_egm96, orbit_u0_mee, 3600.0)
 
     # See same note as before

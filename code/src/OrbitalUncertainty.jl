@@ -17,7 +17,7 @@ using Static: static
 # ForceModel
 include("dynamics/ForceModel.jl")
 include("dynamics/Utils.jl")
-export ForceModel, TwoBodyForce, J2Force, EGM96Force
+export ForceModel, J2Force, EGM96Force
 export acceleration, force_model, propagate_orbit
 export kepler_to_euclid, kepler_to_array, euclid_to_kepler
 export kepler_to_mee, mee_to_kepler
@@ -40,14 +40,13 @@ include("propagators/GVM.jl")
 export GVMSigmaVectors, b12, gvm_propagate, run_gvm
 
 # Utils 
-EARTH_FM_TUPLE = (TwoBodyForce(GM_EARTH),)
-EARTH_FM_NEWTON = ForceModel(EARTH_FM_TUPLE, Val(true))
-EARTH_FM_KEPLER = ForceModel(EARTH_FM_TUPLE, Val(false))
+EARTH_FM_NEWTON = ForceModel(GM_EARTH, (), Val(true))
+EARTH_FM_KEPLER = ForceModel(GM_EARTH, (), Val(false))
 export EARTH_FM_NEWTON, EARTH_FM_KEPLER
 
-EARTH_FM_WITH_J2_TUPLE = (TwoBodyForce(GM_EARTH), J2Force(GM_EARTH, EARTH_EQUATORIAL_RADIUS, EGM_1996_J2))
-EARTH_FM_WITH_J2_NEWTON = ForceModel(EARTH_FM_WITH_J2_TUPLE, Val(true))
-EARTH_FM_WITH_J2_KEPLER = ForceModel(EARTH_FM_WITH_J2_TUPLE, Val(false))
+EARTH_FM_WITH_J2_TUPLE = (J2Force(EARTH_EQUATORIAL_RADIUS, EGM_1996_J2),)
+EARTH_FM_WITH_J2_NEWTON = ForceModel(GM_EARTH, EARTH_FM_WITH_J2_TUPLE, Val(true))
+EARTH_FM_WITH_J2_KEPLER = ForceModel(GM_EARTH, EARTH_FM_WITH_J2_TUPLE, Val(false))
 export EARTH_FM_WITH_J2_NEWTON, EARTH_FM_WITH_J2_KEPLER
 
 end # module OrbitalUncertainty

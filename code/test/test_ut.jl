@@ -46,24 +46,8 @@ end
     # Velocity uncertainty can't be 0, otherwise the matrix doesn't have sqrt()
     covmatnospeed = Diagonal([ones(3); fill(1e-10, 3)])
 
-    @testset "Empty force function alongside static point doesn't change the mean nor covariance" begin
-        fm = ForceModel((), Val(true))
-        dist = run_ut(fm, x0nospeed, covmatnospeed, 1000)
-        @test mean(dist) ≈ x0nospeed
-        # Note, because we can't set velocity uncertainty to 0, we have some growth here
-        @test cov(dist) ≈ covmatnospeed atol = 1e-3
-    end
-
-    @testset "Empty force function doesn't change the covariance nor speed" begin
-        fm = ForceModel((), Val(true))
-
-        dist = run_ut(fm, x0, covmat, 1000)
-        @test mean(dist)[4:end] ≈ x0[4:end]
-        @test norm(cov(dist) - covmat) > 1.0
-    end
-
     @testset "Keplerian propagation changes the distribution" begin
-        fm = ForceModel((), Val(true))
+        fm = ForceModel(GM_EARTH, (), Val(true))
 
         dist = run_ut(fm, x0, covmat, 1000)
         @test norm(mean(dist) - x0) > 1000.0
