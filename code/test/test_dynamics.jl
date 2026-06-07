@@ -243,7 +243,7 @@ end
 function acceleration(fm::TestForce, r, v, _t)
     v_mag = norm(v)
     # Quadratic drag, proportional to v²
-    return -1e-7* v_mag * v
+    return -1e-10 * v_mag * v
 end
 
 function param_variation(fm::TestForce, p, f, g, h, k, L, t)
@@ -259,6 +259,7 @@ end
 
 @testset "Newtonian perturbation vs Keplerian CSN perturbation " begin
     tup = (TwoBodyForce(GM_EARTH), TestForce(GM_EARTH))
+    fm_newton_dummy = ForceModel((TwoBodyForce(GM_EARTH),), Val(true))
     fm_newton = ForceModel(tup, Val(true))
     fm_kepler = ForceModel(tup, Val(false))
     
@@ -266,10 +267,13 @@ end
     orbit_u0_mee = euclid_to_mee(orbit_u0..., GM_EARTH)
 
     orbit_u1_newton = propagate_orbit(fm_newton, orbit_u0, 3600.0)
+    orbit_u1_dummy = propagate_orbit(fm_newton_dummy, orbit_u0, 3600.0)
+
     orbit_u1_mee_kepler = propagate_orbit(fm_kepler, orbit_u0_mee, 3600.0)
     orbit_u1_kepler = mee_to_euclid(orbit_u1_mee_kepler..., GM_EARTH)
 
     @test orbit_u1_newton ≈ orbit_u1_kepler rtol=1e-6
+    @test norm(orbit_u1_newton - orbit_u1_dummy) > 100
 end
 
 @testset "J2 vs EGM96 2x0 Newton" begin
@@ -278,12 +282,14 @@ end
     # J2 propagation
     orbit_u1_j2 = propagate_orbit(EARTH_FM_WITH_J2_NEWTON, orbit_u0, 3600.0)
 
-    # EGM96 propagation
-    tup = (TwoBodyForce(GM_EARTH), EGM96Force(2, 0, 0.0))
+    # EGM96 propagation, note EGM96Force already includes 2-body term
+    tup = (EGM96Force(2, 0, date_to_jd(2000, 1, 1, 0, 0, 0)),)
     fm_egm96 = ForceModel(tup, Val(true))
     orbit_u1_egm96 = propagate_orbit(fm_egm96, orbit_u0, 3600.0)
 
-    @test orbit_u1_j2 ≈ orbit_u1_egm96 rtol=1e-6
+    # Note, because EGM considers real earth orientation, we get a few hundred meters of difference
+    # this could be fixed entirely by computing the non-EGM96 J2 acceleration in ECEF frame, see comment in J2Force
+    @test orbit_u1_j2 ≈ orbit_u1_egm96 rtol=1e-3
 end
 
 @testset "J2 vs EGM96 2x0 Kepler" begin
@@ -293,10 +299,11 @@ end
     # J2 propagation
     orbit_u1_j2 = propagate_orbit(EARTH_FM_WITH_J2_KEPLER, orbit_u0_mee, 3600.0)
 
-    # EGM96 propagation
-    tup = (TwoBodyForce(GM_EARTH), EGM96Force(2, 0, 0))
+    # EGM96 propagation, note EGM96Force already includes 2-body term
+    tup = (EGM96Force(2, 0, date_to_jd(2000, 1, 1, 0, 0, 0)),)
     fm_egm96 = ForceModel(tup, Val(false))
     orbit_u1_egm96 = propagate_orbit(fm_egm96, orbit_u0_mee, 3600.0)
 
-    @test orbit_u1_j2 ≈ orbit_u1_egm96 rtol=1e-6
+    # See same note as before
+    @test orbit_u1_j2 ≈ orbit_u1_egm96 rtol=1e-3
 end

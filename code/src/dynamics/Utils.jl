@@ -351,7 +351,6 @@ function csn_acceleration_to_mee(p, f, g, h, k, L, C, S, N, μ)
         sqrt(p / μ) * (-S * cos(L) + ((w + 1) * sin(L) + g) * C / w + f * (h * sin(L) - k * cos(L)) * N / w),
         sqrt(p / μ) * s2 * N / (2w) * cos(L),
         sqrt(p / μ) * s2 * N / (2w) * sin(L),
-        # Note: Central body term removed, assumed to be incldued in C, S, N
         sqrt(p / μ) * (h * sin(L) - k * cos(L)) * N / w
     ]
 end

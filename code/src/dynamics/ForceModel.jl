@@ -8,41 +8,6 @@
 # propagation are possible with the same data structures.
 
 """
-    TwoBodyForce(μ)
-
-Force due to a central body at the origin of the coordinate system, with gravitational
-parameter `μ`.
-"""
-struct TwoBodyForce
-    μ::Float64
-end
-
-"""
-    acceleration(f::TwoBodyForce, r, _, _)
-
-Newton's law of universal gravitation
-"""
-function acceleration(f::TwoBodyForce, r, _v, _t)
-    -f.μ / norm(r)^3 * r
-end
-
-"""
-    param_variation(fm::TwoBodyForce, p, f, g, h, k, L, t)
-
-    "A set of modified equinoctial orbit elements", Walker et al 1985, formula 9
-    with all perturbations set to 0
-
-"""
-function param_variation(fm::TwoBodyForce, p, f, g, _h, _k, L, _t)
-    w = 1 + f * cos(L) + g * sin(L)
-
-    # Central force merely makes L increase
-    dL = sqrt(fm.μ * p) * (w / p)^2
-
-    return SA[0, 0, 0, 0, 0, dL]
-end
-
-"""
     J2Force(μ, R, J2)
 
 J2 perturbation due to a central body at the origin of the coordinate system
@@ -59,10 +24,26 @@ end
 J2 newtonian perturbation, Vallado page 594 formula.
 """
 function acceleration(f::J2Force, r, _v, _t)
+    # Note this is slightly incorrect if we assume r is on ECI frame, as J2 is defined in
+    # earth relative coordinates, and the pole rotates slightly wrt. to our assumed J2000 ECI frame.
+    # For the purpose of this work, it doesn't matter, and would slightly impact performance, but,
+    # assumign t is relative to J2000 epoch:
+
+    # jd0 = date_to_jd(2000, 1, 1, 1, 1, 1)
+    # jd = t / 86400.0 + jd0
+    # eci2ecef = r_eci_to_ecef(J2000(), PEF(), jd)
+    # r = eci2ecef * r
+
     common = -3.0 * f.J2 * f.μ * f.R^2 / (2.0 * norm(r)^5)
     zrel = 5 * r[3]^2 / norm(r)^2
     xy_term = 1.0 - zrel
     z_term = 3.0 - zrel
+
+    # Afterwards, the J2 computation is on correct frame, but needs to be transformed back
+    # a = common * (r .* SA[xy_term, xy_term, z_term])
+    # a = eci2ecef' * a
+    # return a
+
     return common * (r .* SA[xy_term, xy_term, z_term])
 end
 
@@ -117,10 +98,10 @@ function param_variation(fm::J2Force, p, f, g, h, k, L, _t)
 end
 
 """
-    EGM96Force(degree, order, t0)
+    EGM96Force(degree, order, jd0)
 
-Gravitational force due to earth under the EGM96 model as exposed by SatelliteToolbox, including the central body
-force and perturbation terms. t0 is the date time for t=0 used for the coordinate transformations to ECEF frame, thus
+Gravitational force due to earth under the EGM96 model as exposed by SatelliteToolbox, NOT including the central body
+force, only perturbation terms. t0 is the date time for t=0 used for the coordinate transformations to ECEF frame, thus
 t is measured in seconds since this epoch.
 
 All coordinates are assumed to be in the J2000 ECI reference frame, to be converted to PEF (Pseudo-Earth fixed, ITRF without polar
@@ -129,16 +110,18 @@ Could be trivially adapted to use a more precise earth orientation model, becaus
 
 If degree is negative, the maximum coefficient of EGM96 is used.
 If order is negative, a value equal to degree is used.
+
+jd0 is the Julian date for t = 0, for example, use date_to_jd(1986, 6, 19, 21, 35, 0)
 """
 struct EGM96Force
     model::AbstractGravityModel{Float64}
     degree::Int32
     order::Int32
-    t0::Float64
+    jd0::Float64
     buffer_P::LowerTriangularStorage
     buffer_dP::LowerTriangularStorage
 
-    function EGM96Force(degree, order, t0)
+    function EGM96Force(degree, order, jd0)
         model = GravityModels.load(IcgemFile, fetch_icgem_file(:EGM96))
 
         if degree < 0
@@ -150,14 +133,14 @@ struct EGM96Force
 
         buffer_P = LowerTriangularStorage((degree + 1) * (order +1))
         buffer_dP = LowerTriangularStorage((degree + 1) * (order +1))
-        new(model, degree, order, t0, buffer_P, buffer_dP)
+        new(model, degree, order, jd0, buffer_P, buffer_dP)
     end
 end
 
 function egm96_acceleration_eci(f::EGM96Force, r_eci, t)
     # SatelliteToolbox excepts position in ECEF (PEF) frame, but (r, v) are in inertial frame (J2000)
     # Julian date is just time since epoch in days
-    jd = (t - f.t0) / 86400.0
+    jd = t / 86400.0 + f.jd0
     eci2ecef = r_eci_to_ecef(J2000(), PEF(), jd)
 
     # Note, acc doesn't include rotational terms
@@ -190,6 +173,8 @@ function param_variation(fm::EGM96Force, p, f, g, h, k, L, t)
     csn2eci = get_csn_basis(euclid_state...)
     a_csn = csn2eci' * a_eci
 
+    @info "a_csn" a_csn
+    @info "mee derivatives" csn_acceleration_to_mee(p, f, g, h, k, L, a_csn..., μ)
     return csn_acceleration_to_mee(p, f, g, h, k, L, a_csn..., μ)
 end
 
@@ -217,6 +202,7 @@ defined as follows
     L = Ω + ω + ν
 """
 struct ForceModel{F<:Tuple,IsNewton}
+    μ::Float64
     forces::F
 end
 
@@ -236,12 +222,15 @@ function acceleration(fm::ForceModel{F,true}, r, v, t) where {F}
         a += acceleration(force, r, v, t)
     end
 
+    # 2-body term
+    -fm.μ / norm(r)^3 * r
+
     return a
 end
 
 """
 
-    param_variation(fm::ForceModel, r, v, t)
+    param_variation(fm::ForceModel, u, t)
 
 Computes the variation in MEE parameters given the force model.
 """
@@ -250,6 +239,11 @@ function param_variation(fm::ForceModel{F,false}, u, t) where {F}
     for force in fm.forces
         du += param_variation(force, u..., t)
     end
+
+    # 2-body term
+    w = 1 + u[2] * cos(u[6]) + u[3] * sin(u[6])
+    du[6] += sqrt(fm.μ * u[1]) * (w / u[1])^2 
+
     return du
 end
 
