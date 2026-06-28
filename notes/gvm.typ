@@ -5,217 +5,144 @@
   title: [Notas sobre Gauss Von Mises],
 )
 
-= Propagación asumiendo la variable angular como si fuese lineal
+= Distribución Gauss Von Mises (GVM)
 
-#box[
-  == Variables del problema
-
-  #abstract[Se introducen los elementos MEE y las ecuaciones que necesitamos de estos para propagar la dinámica del sistema (perturbado, o no) y convertir de vuelta a posiciones euclídeas.]
-]
-
-Consideremos el vector de estado para la propagación orbital en coordenadas MEE (modified equinoctial elements), que en relación a los elementos Keplerianos clásicos se escribe @walkerSetModifiedEquinoctial1985
+Consideremos $n$ variables euclídeas, distribuidas conjuntamente en una normal multivariable, y una variable angular $L$. La distribución GVM es el producto de la normal multivariable y una distribución de Von Mises. La distribución normal tiene función de densidad de probabilidad @horwoodGaussMisesDistribution2014
 
 $
-  va(x) = vec(p, f, g, h, k, L) = vec(a (1 - e^2), e cos(omega + Omega), e sin(omega + Omega), tan(i / 2) cos(Omega), tan(i / 2) sin(Omega), Omega + omega + nu).
+  p^N (va(x)) = 1 / sqrt(det(2 pi P)) exp[-1/2 (va(x) - va(mu))^TT P^(-1) (va(x) - va(mu))],
 $
 
-El vector se puede subdividir en tres grupos:
-
-- Magnitud escalar, la variable $p$ es directamente proporcional al semi-eje mayor y por lo tanto actua como una variable de escala de la órbita
-- Magnitudes "direccionales", las variables $f$, $g$, $h$ y $k$ esencialmente representan direcciones espaciales
-- Magnitud angular, la variable $L$ es claramente un ángulo.
-
-
-La ecuación general de propagación, incluyendo la fuerza del cuerpo central y una perturbación genérica en coordenadas CSN, es @walkerSetModifiedEquinoctial1985 #footnote[Notamos erratas en el manuscrito original, que fueron corregidas en una siguiente publicación de la revista, estas ecuaciones incluyen las correciones]:
+mientras que la Von Mises es @horwoodGaussMisesDistribution2014
 
 $
-  dv(p, t) &= (2 p C) / w sqrt(p / mu) \
-  dv(f, t) &= sqrt(p / mu) (S sin(L) + (((w+1) cos(L) + f) C) / w - (g (h sin(L) - k cos(L)) N) / w) \
-  dv(g, t) &= sqrt(p / mu) (-S cos(L) + (((w+1) sin(L) + g) C) / w - (f (h sin(L) - k cos(L)) N) / w) \
-  dv(h, t) &= sqrt(p / mu) (s^2 N) / (2 w) sin(L) \
-  dv(L, t) &= sqrt(mu p) (w / p)^2 + sqrt(p / mu) ((h sin(L) - k cos(L)) N) / w
+  p^V (va(x), theta) = 1 / (2 pi exp(-kappa) I_0 (kappa)) exp[kappa cos(theta - alpha - va(beta)^TT A^(-1) (va(x) - va(mu)))] ,
 $
 
-dónde $w = 1 + f cos(L) + g sin(L)$ y $s^2 = 1 + h^2 + k^2$, y $C$, $S$ y $N$ son las acceleraciones perturbadoras.
+dónde $A$ es una matriz transformación de blanqueamiento, típicamente la descomposición triangular inferior de $P$, tal que $P = A A^TT$ @horwoodGaussMisesDistribution2014.
 
-En forma vectorial, escribimos las anteriores ecuaciones como
-
-$
-  dv(va(x), t) = F(va(x)) = F(p(t), f(t), g(t), h(t), L(t)).
-$
-
-Finalmente, las ecuaciones que nos permiten convertir $va(x)$ a coordenadas euclideanas son #footnote[En el anexo MEEToEuclid.nb se observa la derivación de estas expresiones] @jacobwilliamsDegenerateConicModified
+La distribución GVM entonces es
 
 $
-  va(x)^e_p = p / (w(1 + h^2 + k^2)) mat(
-    (1 + h^2 - k^2) cos(L) + 2 h k sin(L);
-    (1 - h^2 + k^2) sin(L) + 2 h k cos(L);
-    2(h sin(L) - k cos(L));
-  )\
-  va(x)^e_v = sqrt(mu / p) / (1 + h^2 + k^2) mat(
-    (- & 1 - h^2 + k^2) sin(L) + 2 h k cos(L) + g k^2 + 2 f h k - g (1 + h^2);
-    ( & 1 - h^2 + k^2) cos(L) - 2 h k sin(L) + f k^2 - 2 g h k + f (1 - h^2);
-    & 2(h cos(L) + k sin(L) + f h + g k);
-  )
+  p^"GVM" (va(x), theta) = p^N (va(x)) med p^V (va(x), theta)
 $
 
-separando en dos subvectores la parte de posición y la de velocidad, tal que $va(x)^e = mat(va(x)^e_p; va(x)^e_v)$.
+== Caso con $kappa -> infinity$
 
-Escribimos $va(x)^e = X (va(x))$ para referirnos a esta transformación.
-
-#box[
-  == Equivalencia física de las trayectorias ante desfases de $2 pi$ en $L$
-
-  #abstract[Se demuestra que solucionar el sistema dinámico con un desfase $L' = L + 2 k pi$ para $k in ZZ$ resulta en trayectorias físicamente equivalentes en el espacio euclideo.]
-
-]
-
-Asumamos que el sistema de ecuaciones tiene solución única, y tomemos dos condiciones iniciales, $va(x_0)$ y $va(y_0)$ tal que
-
+Cuando $kappa >> 1$, la distribución de Von Mises tiende a una normal @horwoodGaussMisesDistribution2014
 
 $
-  va(y_0) = va(x_0) + mat(0, 0, 0, 0, 0, 2 k pi)^TT
+  lim_(kappa -> infinity) p^V (va(x), theta) =
+  1 / sqrt((2pi) / kappa) exp[-1/2 kappa (theta - alpha - beta^TT A^(-1) (va(x) - va(mu)))^2],
 $
 
-para $k in ZZ$, es decir, una trayectoria desfasada un múltiplo de $2 pi$ en $L$. Notamos que $F(p(t), f(t), g(t), h(t), k(t), L(t)) = F(p(t), f(t), g(t), h(t), k(t), L(t) + 2 k pi)$ ya que $L$ solo aparece dentro de seno o coseno. Por lo tanto, concluimos que la solución del sistema cumple
+que equivale a una distribución normal con media $alpha - beta^TT A^(-1) (va(x) - va(mu))$ y varianza $1 / kappa$.
+
+Por lo tanto, si consideramos toda la distribución de Gauss Von Mises como una normal multivariable, tendríamos
 
 $
-  va(y)(t) = va(x)(t) + mat(0, 0, 0, 0, 0, 2 k pi).
+  p(va(y)) = 1 / sqrt(det(2 pi Q)) exp[-1/2 (va(y) - va(nu))^TT Q^(-1) (va(x) - va(nu))]
 $
 
-De igual forma, ya que la transformación a coordenadas euclídeas solo depende del coseno o seno de $L$, el desfase en la solución va a representar el mismo estado físico, es decir
+dónde @horwoodGaussMisesDistribution2014
 
 $
-  va(y)^e (t) = va(x)^e (t).
+  va(y) = mat(va(x); alpha) \
+  Q = mat(A A^TT, A beta; beta^TT A^T, beta^TT beta + 1 / kappa). \
 $
 
-#box[
-  == Equivalencia numérica de las trayectorias ante desfases de $2 pi$ en $L$
-
-  #abstract[Se deduce que, sí deseamos utilizar métodos numéricos convencionales (General Linear Methods), no debemos truncar los ángulos $L$, ya que en caso contrario sería posible obtener resultados incorrectos durante la integración. ]
-]
-
-Asumiremos que el sistema numérico respeta
-
-$
-  sin(x + 2 pi k) = sin(x) \
-  cos(x + 2 pi k) = cos(x),
-$
-
-algo que no es cierto en aritmética de punto flotante excepto para $k$ pequeño, pero asumiremos suficientemente cierto para toda aplicación práctica.
+Por lo tanto, sí $kappa$ es grande, la distribución Von Mises es equivalente a considerar la variable angular como otra variable Gaussiana, así como su correlación con el resto de variables y su propia varianza.
 
 
-=== Métodos GLM
+= La distribución marginal en el ángulo
 
-Un GLM (General Lineal Method) es la representación más general de los métodos Runge-Kutta y los métodos multi-paso lineales @butcherGeneralLinearMethods1996. Estos, en su forma más general, utilizan dos conjuntos de vectores
+Investigaremos en este apartado la distribución marginal de una Gauss Von Mises para el ángulo.
 
-- $r$ vectores de estado históricos del sistema ${va(y)_1^"(n)", va(y)_2^"(n)", ..., va(y)_r^"(n)"}$, escritos en forma de vector columna (es un vector de vectores) como
+Para ello, utilizamos la función característica para la distribución (con $Gamma$ nulo), que es @horwoodGaussMisesDistribution2014
 
 $
-  y^"(n)" = mat(va(y)_1^"(n)", va(y)_2^"(n)", ..., va(y)_r^"(n)")^TT.
+  phi^"GVM" (va(xi), m) = (I_(abs(m))(kappa)) / (I_0(kappa)) exp[i (va(mu)^TT va(xi) + m alpha) - 1/2 (A^TT va(xi) + m beta)^TT (A^TT va(xi) + m va(beta))],
 $
 
-- $s$ puntos intermedios ${va(Y)_1, va(Y)_2, ..., va(Y)_s}$, escritos también en forma de vector columna (de nuevo un vector de vectores) como
+dónde $va(xi) in RR^n$ y $m in ZZ$. Recordando la definición de la función característica,
 
 $
-  Y = mat(va(Y)_1, va(Y)_2, ..., va(Y)_s)^TT.
+  phi^"GVM" (va(xi), m) = EE[e^i(va(xi)^TT va(x) + m theta)]
 $
 
-Los puntos intermedios se utilizan para la evaluación de $F$, formando otro vector de vectores
+se hace evidente porqué $m$ queda limitado a $ZZ$, esto se debe a que, para $m$ no entero, $e^(i m theta)$ no sería cíclico en $theta$, y la expresión carecería de sentido @mardiaDirectionalStatistics1999.
 
-
-$
-  F(Y) = mat(F(va(Y)_1), F(va(Y)_2), ..., F(va(T)_s))^TT.
-$
-
-Una vez escritas todas las magnitudes, la relación entre estas es
+La distribución marginal a partir de la función característica se obtiene poniendo el parámetro sobre el que marginalizamos a $0$. Por lo tanto, para $va(xi) = 0$, tenemos
 
 $
-  va(Y)_i = h A_i F(Y) + U_i y^"(n)", \
-  va(y)^"(n+1)"_i = h B_i F(Y) + V_i y^"(n)",
+  phi^"GVM" (0, m) = (I_abs(m) (kappa)) / (I_0 (kappa)) exp[
+    i m alpha - m^2/2 va(beta)^TT va(beta)
+  ].
 $
 
-dónde $A_i$, $U_i$, $B_i$ y $V_i$ son matrices constantes (normalmente escritas como el producto de Kronecker de otra matriz y la matriz unitaria).
-
-En todo caso, la estimación del siguiente estado depende de la suma de:
-
-- Una combinación lineal de vectores estado anteriores.
-- Una combinación lineal de evaluaciones de $F$ en puntos derivados de solucionar una ecuación formada por combinaciones lineales de los vectores estado anteriores y las propias evaluaciones de $F$ (si el método es implícito).
-
-=== Wrap-around en las derivadas
-
-Introducimos ahora el concepto de wrap-around. Consideremos la función $W mat(p, f, g, h, k, L) = mat(p, f, g, h, k, L mod 2 pi)$, afirmamos que
+Podemos entender esta expresión como el producto de una distribución Von Mises (con media nula, y valor $kappa$) y una distribución normal "enrollada" con media $alpha$ y varianza $sigma^2 = va(beta)^TT va(beta)$:
 
 $
-  F (sum_i a_i va(x)_i) = F (W(sum_i a_i va(x)_i)) = F (sum_i W(a_i va(x)_i)).
+  phi^"GVM" (0, m) = underbrace((I_abs(m) (kappa)) / (I_0 (kappa)), "Von Mises") underbrace(exp[i m alpha - m^2 / 2 sigma^2], "Gaussiana en círculo").
 $
 
-Sí $a_i in RR$. Para ello, notamos que
+== Aproximación de la función característica por otra Von Mises
+
+La anteriormente presentada función característica marginal no es una Von Mises. Ya que la función característica se puede convertir en la función distribución de probabilidad mediante la transformada inversa de Fourier, podemos entender, mediante el teorema de la convolución, este marginal como la convolución de una Von Mises y una distribución normal (enrollada en el círculo, debido al argumento $m$ siendo entero en vez de un número real).
+
+Para aproximar esta distribución con una Von Mises, y notando que la distribución Von Mises tiene dos parámetros, parece razonable utilizar la dirección media $alpha$ y la longitud media resultante $rho$, definida para una distribución en el círculo @mardiaDirectionalStatistics1999
 
 $
-  sin(sum_i a_i x_i) = sin((sum_i a_i x_i) mod 2 pi) = sin (sum_i (a_i x_i mod 2 pi)),
+  phi^"GVM" (0, 1) = rho exp[i alpha].
 $
 
-y de igual forma para el coseno. Ya que la dependencia en $L$ de $F$ ocurre exclusivamente a través del seno y coseno, confirmamos la identidad.
-
-Por otra parte, debemos ser cuidadosos, ya que
+Si igualamos este "momento" del marginal con el de una Von Mises (con parámetros $hat(alpha)$ y $hat(kappa)$), obtenemos
 
 $
-  sin(sum_i a_i (x_i mod 2 pi)) != sin(sum_i a_i x_i)
+  (I_1 (kappa)) / (I_0 (kappa)) exp [i alpha - 1 / 2 sigma^2] =
+  (I_1 (hat(kappa))) / (I_0 (hat(kappa))) exp [i hat(alpha)].
 $
 
-excepto sí $a_i in ZZ$. Ya que $a_i$ son reales, esta última expresión es incorrecta en su caso general.
+Ya que la ecuación es una igualdad de numeros complejos, podemos igualar su norma y argumento por separado.
 
-Debido a lo anterior, el cálculo de las derivadas será equivalente siempre que se realicen las operaciones de truncado al círculo:
-- o bien tras combinar linealmente los puntos
-- o bien a cada punto tras ser escalado por su coeficiente
-
-pero nunca realizando el truncado al círculo a los puntos para posteriormente ser escalados.
-
-=== Wrap-around en la integración
-
-Por lo anteriormente descrito, un método numérico GLM convencional no va a causar problemas en la evaluación de $F(Y)$, ya que $Y$ es una combinación lineal, sin truncamiento, de varios puntos.
-
-El método GLM tampoco va a tener problemas a la hora de evaluar $va(y)^"(n+1)"$, ya que de nuevo, este se obtiene por combinación lineal de puntos sin ningún truncamiento.
-
-Por otra parte, *resultaría incorrecto* realizar un truncamiento al círculo de cada vector $va(y)_i^"(n)"$, ya que posteriormente estos valores van a ser utilizados en una combinación lineal, y la suma ponderada de ángulos truncados al círculo no es equivalente al truncamiento al círculo de la suma ponderada de ángulos.
-
-En conclusión, para asegurar que no hay problemas, un integrador convencional deberá operar con ángulos "desenrollados". Si deseamos utilizar ángulos truncados, *no siempre será apto utilizar un integrador convencional*, y sería necesario utilizar un integrador geométrico o alguna otra técnica.
-
-
-#box[
-  == Funciones de varias trayectorias con y sin desenrollamiento
-
-  #abstract[Se introduce el sistema de propagador multi-trayectoria como modelo matemático de los métodos de propagación de incertidumbres no intrusivos. Se concluye que la propagación de la magnitud angular "desenrollada" supone que
-    -
-  ]
-]
-
-Consideraremos un sistema multi-trayectoria como un conjunto de soluciones de las ecuaciones dinámicas ${va(x)_i (t)}$, y asumiremos que estos se utilizan para deducir propiedades mediante ciertas funciones de las variables. Por ejemplo, la media se podría calcular para este tipo de sistemas como
+El argumento es inmediato,
 
 $
-  EE[va(x)(t)] approx 1 / n sum_(i = 1)^n va(x)_i (t),
+  exp[i alpha] = exp[i hat(alpha)] => alpha = hat(alpha),
 $
 
-pero en general se estudiará una propiedad
+pero la norma requiere resolver
 
 $
-  phi(t) = phi(va(x)_1 (t), va(x)_2 (t), ..., va(x)_n (t)),
+  (I_1 (kappa)) / (I_0 (kappa)) exp[-1/2 sigma^2] = (I_1 (hat(kappa))) / (I_0 (hat(kappa))).
 $
 
-y asumiremos que los vectores de estado $va(x)_i (t)$ contienen el ángulo "desenrollado".
-
-En su caso más general, $phi(t)$ puede depender de $L$ directamente, como en el ejemplo de la media anteriormente presentado. Pero, son más interesantes aquellas funciones que dependen de $L$ a través del seno y coseno. Por ejemplo, consideremos la media direccional
+Es posible que esta ecuación tenga una solución analítica, pero consideraremos su solución numérica. Si escribimos $A(kappa) = (I_1 (kappa)) / (I_0 (kappa))$, la ecuación equivale a
 
 $
-  EE_theta [L(t)] approx "Arg"(1 / n sum_(i = 1)^n e^(i L_i(t))) =
-  "atan2"(1/n sum_(i=1)^n sin(L_i (t)), 1/n sum_(i=1)^n cos(L_i (t))),
+  A(hat(kappa)) - A(kappa) exp[-1 / 2 sigma^2] = 0,
 $
 
-o cualquier función que dependa de la posición euclídea del objeto (debido a que la transformación $X$ depende únicamente de seno y coseno de $L$).
+que afortunadamente tiene derivada analítica en cuanto a $hat(kappa)$ (calculada con Wolfram Mathematica)
 
-Esto se generaliza a todos los momentos estadísticos, ya que $sin(n x)$ se puede escribir en función de $sin(x)$ y $cos(x)$ siempre que $n in NN$. Por otra parte, sí $n in RR$, esto no se cumple, y por lo tanto el desenrollamiento deberá ser tratado cuidadosamente.
+$
+  dv(A, kappa) = (I_0 (kappa) + I_2 (kappa)) / (2 I_0 (kappa)) -A(kappa)^2,
+$
 
-= Distribución GVM
+lo que permite escribir una expresión iterativa para Newton-Rhapson.
+
+= Planteamiento de un nuevo método de propagación de incertidumbre GVM
+
+Con lo anteriormente desarollado, se plantea el siguiente esquema de propagación de incertidumbre:
+
+- Propagar
+
+= Efecto de $Gamma != 0$
+
+Tomando de @horwoodGaussMisesDistribution2014 la función característica completa con $Gamma != 0$ es algo más compleja
+
+
+
+
 
 #bibliography("../writeup/refs.bib")
