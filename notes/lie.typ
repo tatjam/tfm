@@ -2,10 +2,12 @@
 #import "@preview/physica:0.9.8": *
 
 #show: note.with(
-  title: [Filtro de Kalman enrollado],
+  title: [Propagación orbital en el espacio $"SO"(2) times RR^5$],
 )
 
-#abstract[Se parte del paper @markovicWrappingKalmanFilter2017 y se particulariza a las necesidades de la propagación orbital.]
+#set math.equation(numbering: "(1)")
+
+#abstract[Se parte del paper @markovicWrappingKalmanFilter2017 y se particulariza a las necesidades de la propagación orbital, considerando un grupo de Lie "cilíndrico" $"SO"(2) times RR^5$ como el espacio en el que realizar la propagación orbital. Posteriormente, se considera el vector de estado como una variable aleatoria sobre este espacio cilíndrico siguiendo el tratamiento estadístico detallado en @bourmaudContinuousDiscreteExtendedKalman2015, y se propone un filtro similar al filtro unscented convencional, junto con la construcción de una distribución Von Mises a-posteriori que permite comparar distribuciones sin problemas de enrollamiento.]
 
 = Notación
 
@@ -221,9 +223,163 @@ Ahora, consideremos que significado tiene la adición de cada término vectorial
 
 Por lo tanto, siempre será posible escribir $Omega$ a partir de $hat(f_k)$. Con esto, garantizamos que el desarrollo que vamos a realizar dentro de la maquinaria del grupo de Lie sea aplicabe en el caso numérico.
 
-= Tratamiento estadístico del grupo de Lie
+== Incertidumbre en el grupo Lie
+
+Consideremos que el estado $X_1 in G$ esté formado por dos componentes
+
+$
+  X_1 = mu_1 exp_G [[epsilon_1]_G^and],
+$<locura1>
+
+dónde $mu_1 in G$ y $epsilon_1 in RR^6$ representa un ruido aproximado por una distribución normal multivariable en $RR^6$ de media nula y matriz de covarianza $P_1$, es decir, $epsilon_1 tilde cal(N)(0, P_1)$. En la literatura, esto se conoce como una Gaussiana concentrada en un grupo de Lie @bourmaudContinuousDiscreteExtendedKalman2015.
+
+Consideremos ahora el efecto en esta incertidumbre de nuestra función desplazamiento $Omega$, para obtener $X_2 in G$. Asumiremos que tras la propagación, el término de incertidumbre $epsilon_2$ sigue siendo normal, de media nula y matriz de covarianza $P_2$.
+
+El procedimiento más convencional considera que la media se propaga ignorando el término $epsilon$ @markovicWrappingKalmanFilter2017
+
+$
+  mu_2 = mu_1 exp_G [[Omega(X_1)]_G^and].
+$
+
+Por otra parte, la propagación de la matriz de covarianca, siguiendo la notación de @markovicWrappingKalmanFilter2017, y particularizando para el caso sin ruido aditivo, se escribe
+
+$
+  P_2 = cal(F)_1 P_1 cal(F)_1^TT
+$
+
+dónde, para un grupo abeliano (la multiplicación de nuestra matrices es commutativa)
+
+$
+  cal(F)_1 = 1 + cal(C),
+$
+
+dónde @markovicWrappingKalmanFilter2017
+
+$
+  cal(C) = I_(n times n) + evaluated(pdv(, epsilon) Omega(mu_1 exp_G [ [epsilon]^and_G ]))_(epsilon = 0)
+$
+
+se trata del Jacobiano respecto a una perturbación en el espacio de $epsilon$.
+
+Notamos que la aparición de la unidad aditiva no es más que un artefacto de cómo hemos relacionado $f(x)$ con $Omega(X)$, recordando la ecuación @locura1 y el párrafo que sigue.
+
+Es apreciable que, con esta construcción, la evolución de la matriz de covarianza es totalmente independiente del grupo de Lie en el que vive la dinámica real #footnote[Realmente, hemos asumido que es un grupo abeliano, para nuestro caso es suficiente. Un contraejemplo sería $"SO"(3)$ que no es abeliano.] y por lo tanto, demostrado que la propagación de incertidumbre sobre un espacio euclídeo no requiere un tratamiento especial, siempre que se cumpla la hipótesis de Gaussiana concentrada.
 
 
+== ¿Que pasa si no se cumple la hipótesis de Gaussiana concentrada?
+
+En la realidad, la hipótesis de Gaussiana concentrada no tiene porque cumplirse para una órbita, ya que la incertidumbre podría crecer tanto que la incertidumbre en el ángulo no sea Gaussiana.
+
+Consideremos un sistema de partículas, cada uno con estado ${X_1, X_2, X_3, ...}$.
+
+La definición de media no es evidente, ya que $(X_i)^j in G$ no presenta una operación de suma para sus elementos.
+
+Una primera idea podría ser realizar la media de los elementos en su expresión matricial (al final, los miembros de $G$ son una matriz). El problema es que el resultado no necesariamente va a pertenecer a $G$. En nuestro caso, la media de las matrices de rotación no tiene porque ser otra matriz de rotación, ni mucho menos tener un sentido estadístico satisfactorio.
+
+=== Media extrínseca en grupo $"SO"(2)$
+
+Afortunadamente, no estamos tratando con cualquier grupo de Lie, si no que $G = "SO"(2) times RR^5$. Para este caso particular, podemos tomar prestado de la estadística direccional el concepto de media circular. En este apartado, demostraremos que la media de las matrices de rotación, bajo una interpretación típica de la acción de estas sobre un vector, es exactamente equivalente a la media circular.
+
+Se define, para un conjunto de $N$ ángulos $theta_n$, su media circular como el número complejo @mardiaDirectionalStatistics1999
+
+$
+  z = 1/N sum_(n = 1)^N exp [i theta_n],
+$
+
+pudiendose obtener la dirección media como el argumento de este número (si existe). De forma similar, podríamos considerar la media "extrínsica" sobre un grupo de Lie a través de una construcción similar
+
+$
+  va(x) = 1 / N sum_(n = 1)^N X_n va(1)
+$
+
+dónde $va(1)$ es un vector unitario apropiado. Por ejemplo, para nuestro caso, podría ser
+
+$
+  va(1) = mat(1, 0, bar, 0, 1, bar, 0, 1, bar ...)^TT.
+$
+
+Definimos que la acción de un miembro de $G$ en este vector sea la multiplicación matricial
+
+$
+  X_k va(1) = mat(
+    R_(theta_k), , , ;
+    , mat(1, a_k; 0, 1), , ;
+    , , mat(1, b_k; 0, 1), ;
+    , , , dots.down
+  ) mat(mat(1; 0); mat(0; 1); mat(0; 1); dots.v) =
+  mat(R_(theta_k) mat(1; 0); mat(a_k; 1); mat(b_k; 1); dots.v).
+$
+
+Entonces, entendemos intuitivamente que el vector resultante tiene
+- Por primera submatriz, el vector $mat(1, 0)^TT$ rotado $theta_k$ (equivalente a la exponenciación de $e^(i theta_k)$ si consideramos $1$ como el vector $mat(1, 0)^TT$ y la magnitud imaginaria como el vector $mat(0, 1)^TT$)
+- Por siguientes submatrices, un vector afín "transladado y escalado", ya que la escala es $1$, simplemente extrae el valor de la matriz.
+
+Por otra parte, por álgebra matricial, podemos escribir equivalentemente
+
+$
+  va(x) = (1 / N sum_(n = 1)^N X_n) va(1),
+$
+
+dónde denominaremos por $mu_E$ a la media de matrices, que de forma general no será miembro de $"SO"(2) times RR^n$. Ahora, podemos definir un operador proyección que convierte esta matriz en un miembro del grupo de Lie, $mu = cal(P)(mu_E)$. En el caso de $"SO"(2)$, la siguiente proyección es apropiada @khanMeansRandomVariables2025:
+
+$
+  cal(P)(A) = A (A^TT A)^(-1/2).
+$
+
+Para entender porqué esta transformación tiene sentido, consideremos una matriz fruto de sumar matrices de rotación escaladas,
+
+$
+  A = mat(x, -y; y, x),
+$
+
+y aplicamos la transformación. Primero de todo,
+
+$
+  A^TT A = mat(x^2 + y^2, 0; 0, x^2 + y^2),
+$
+
+que tiene raiz cuadrada inversa siempre por ser diagonal. Podemos escribir
+
+$
+  (A^TT A)^(-1/2) = I_(2 times 2) / sqrt(x^2 + y^2),
+$
+
+y finalmente
+
+$
+  cal(P)(A) = A / sqrt(x^2 + y^2).
+$
+
+¿Que sentido tiene esta transformación? Consideremos ahora la acción de $cal(P)(A)$ en el vector unitario
+
+$
+  cal(P)(A) mat(1; 0) = 1 / sqrt(x^2 + y^2) mat(x; y),
+$
+
+que es claramente unitario y tiene por argumento $"atan2"(y, x)$. Notamos que, por ser $A$ una media de matrices de rotación
+
+$
+  x = 1 / N sum_k^N cos(theta_k) quad quad y = 1 / N sum_k^N sin(theta_k),
+$
+
+que podemos escribir como un número complejo $z = x + i y$
+
+$
+  z = 1 / N sum_k^N e^(i theta_k),
+$
+
+es decir, la media de matrices de rotación es exactamente equivalente a la media circula definida en @mardiaDirectionalStatistics1999.
+
+$cal(P)$ solo actúa en la parte de rotación, la media de las magnitudes euclídianas es directa (no requiere proyección). Por lo tanto, se podría construir un $cal(P)$ para $"SO"(2) times RR^n$.
+
+=== Concetración extrínseca en grupo $"SO"(2)$
+
+De igual forma que antes,
+
+== Distribución Gauss Von Mises con correlación lineal
+
+
+== Evaluación de probabilidad de impacto
 
 
 
