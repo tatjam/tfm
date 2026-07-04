@@ -513,7 +513,7 @@ Tenemos la expresión para calcular la distancia de Mahalanobis Von Mises, pero 
 La función característica para esta distribución es @horwoodGaussMisesDistribution2014
 
 $
-  phi^"GVM" (va(xi), m) = (I_(abs(m))(kappa)) / (I_0(kappa)) exp[i (va(mu)^TT va(xi) + m alpha) - 1/2 (A^TT va(xi) + m beta)^TT (A^TT va(xi) + m va(beta))],
+  phi^"GVM" (va(xi), m) = (I_(abs(m))(kappa)) / (I_0(kappa)) exp[i (va(mu)^TT va(xi) + m alpha) - 1/2 (A^TT va(xi) + m va(beta))^TT (A^TT va(xi) + m va(beta))],
 $
 
 dónde $va(xi) in RR^n$ y $m in ZZ$. Recordando la definición de la función característica,
@@ -523,6 +523,115 @@ $
 $
 
 se hace evidente porqué $m$ queda limitado a $ZZ$, esto se debe a que, para $m$ no entero, $e^(i m theta)$ no sería cíclico en $theta$, y la expresión carecería de sentido @mardiaDirectionalStatistics1999.
+
+Ahora, consideremos la siguiente descomposición del espacio $RR^n$ característico del álgebra de Lie. Sea nuestra variable aleatoria $X = mu exp_G [ [va(epsilon)]_G^and ]$, con media proyectada $va(mu) = [log_G [mu]]_G^or$ y $va(epsilon) ~ cal(N)(0, P)$. Consideremos además el muestreo $va(x) = va(mu) + va(epsilon)$, que notamos diferente a la proyección de la variable aleatoria al álgebra de Lie, ya que esta $va(x)$ no sufre discontinuidades del logaritmo.
+
+Podemos descomponer en bloques
+
+$
+  va(mu) = mat(hat(alpha); va(mu)_e), \
+  hat(P) = mat(
+    sigma^2, va(gamma)^TT;
+    va(gamma), hat(P_e)
+  ),\
+  va(x) = mat(theta; va(x_e))
+$
+
+tal que podemos escribir la función característica de la distribución normal multivariable (ver anexo `ExpandNormalCharacteristic.nb`)
+
+$
+  phi^N (va(eta))
+  = exp[i va(mu)^TT va(eta) - 1/2 va(eta)^TT P va(eta)] = \ =
+  phi^N (va(eta_e), n) =
+  exp[i (va(mu_e)^TT va(eta_e) + n hat(alpha)) - 1/2 sigma^2 n^2 - n va(gamma)^TT va(eta_e) - 1/2 va(eta_e)^TT hat(P) va(eta_e)]
+$
+
+dónde $va(eta) in RR^n$, $va(eta_e) in RR^(n-1)$ y $n in RR$. Si realizamos la factorización de Cholesky de $hat(P)$, y la denominamos $hat(A)$, asimilar esta expresión a la de Gauss Von Mises.
+
+Podemos para ello realizar la multiplicación
+
+$
+  1/2 (hat(A) va(eta_e)^TT + n va(gamma))^TT (hat(A)^TT va(eta_e) + n va(gamma)) = \
+  =
+  1/2 [va(eta_e)^TT hat(A) hat(A)^TT va(eta_e) + n va(eta_e)^TT hat(A) va(gamma) +
+    n va(gamma)^TT hat(A)^TT va(eta_e) + n^2 va(gamma)^TT va(gamma)].
+$
+
+Notamos que
+
+$
+  (n va(eta_e)^TT hat(A) va(gamma))^TT = n va(gamma)^TT hat(A)^TT va(eta_e),
+$
+
+y esta última magnitud es un escalar (es decir, se cumple $x^TT = x$ trivialmente), por lo que podemos agrupar los términos
+
+$
+  n va(eta_e)^TT hat(A) va(gamma) + n va(eta_e)^TT hat(A) va(gamma) =
+  2 n va(gamma)^TT hat(A)^TT va(eta_e).
+$
+
+Por otra parte, recordamos que $hat(A) hat(A)^TT = hat(P)$ por ser su descomposición de Cholesky. Por lo tanto
+
+$
+  va(eta_e)^TT hat(A) hat(A)^TT va(eta_e) = va(eta_e)^TT hat(P) va(eta_e).
+$
+
+Tenemos entonces
+
+$
+  1/2 (hat(A) va(eta_e)^TT + n va(gamma))^TT (hat(A)^TT va(eta_e) + n va(gamma)) = \
+  n va(gamma)^TT hat(A)^TT va(eta_e) + 1/2 n^2 va(gamma)^TT va(gamma) + 1/2 va(eta_e)^TT hat(P) va(eta_e).
+$
+
+Realizando el mismo desarrollo para la expresión de Gauss Von Mises,
+
+$
+  1/2 (A va(xi)^TT + m va(beta))^TT (A^TT va(xi) + m va(beta)) = \
+  m va(beta)^TT A^TT va(xi) + 1/2 m^2 va(beta)^TT va(beta) + 1/2 va(xi)^TT P va(xi).
+$
+
+==== Ajuste por moment-matching si $kappa -> infinity$
+
+Vamos a comparar ahora las expresiones de $phi^N$ y $phi^"GVM"$, bajo la anterior expansión
+
+$
+  phi^"GVM" & = (I_(abs(m))(kappa)) / (I_0(kappa)) &exp[ & i (va(mu)^TT va(xi) + m alpha) & - m va(beta)^TT A^TT va(xi) &- 1/2 m^2 va(beta)^TT va(beta) &- 1/2 va(xi)^TT P va(xi).
+  ], \
+  phi^N & = &exp[&i (va(mu_e)^TT va(eta_e) + n hat(alpha)) &- n va(gamma)^TT va(mu_e) &- 1/2 sigma^2 n^2 &- 1/2 va(eta_e)^TT hat(P) va(eta_e)].
+$
+
+Observamos una marcada semejanza, lo que justifica una aproximación entre ambas. Comenzemos por el caso $kappa -> infinity$, ya que este es presentado en @horwoodGaussMisesDistribution2014 (si bien mediante un desarrollo alternativo). En este caso, $lim_(kappa -> infinity) (I_(abs(m))(kappa)) / (I_0(kappa)) = 1$.
+
+Dentro del exponencial, asemejamos, para $va(mu) = va(mu_e)$, $va(xi) = va(eta_e)$ y $m = n$,
+
+$
+  hat(alpha) = alpha \
+  hat(P_e) = P, \
+$
+
+dónde $P = A A^TT$ de la Gauss Von Mises. Por otra parte, igualando términos según su orden en $n = m$
+
+$
+  va(beta)^TT A^TT = va(gamma)^TT \
+  va(beta)^TT va(beta) = sigma^2
+$
+
+lo que nos permite obtener
+
+$
+  hat(P) = mat(
+    va(beta)^TT va(beta), va(beta)^TT A^TT;
+    A va(beta), P
+  ),
+$
+
+expresión idéntica hasta el orden de filas con la presentada en @horwoodGaussMisesDistribution2014 cuando $kappa -> infinity$.
+
+==== Ajuste por moment-matching con $kappa$ finito
+
+En el caso de $kappa$ finito, asumamos igual que antes $va(mu) = va(mu_e)$, $va(xi) = va(eta_e)$ y $m = n$ para realizar el moment-matching. Ahora, no es posible igualar término a término debido a la aparición del factor de escala fuera de la exponencial.
+
+==== TODO
 
 La distribución marginal a partir de la función característica se obtiene poniendo el parámetro sobre el que marginalizamos a $0$. Por lo tanto, para $va(xi) = 0$, tenemos
 
@@ -541,4 +650,15 @@ $
 
 Esta función característica marginal no es una Von Mises. Ya que la función característica se puede convertir en la función distribución de probabilidad mediante la transformada inversa de Fourier, podemos entender, mediante el teorema de la convolución, este marginal como la convolución de una Von Mises y una distribución normal (enrollada en el círculo, debido al argumento $m$ siendo entero en vez de un número real).
 
+Por otra parte, podemos escribir la función característica de la Gaussiana en el álgebra de Lie, desplazada por $va(mu) = [log_G [mu]]_G^or$.
+
+$
+  phi^"N" (va(epsilon)) = exp[i va(mu) va(epsilon)^TT - 1/2 va(epsilon)^TT P va(epsilon)],
+$
+
+y tomar la marginal sobre la variable angular (que asumimos es la primera entrada del vector), que resulta en la marginal normal
+
+$
+  phi^"N" (n, 0, 0, ...) = exp [i n mu_theta - n^2/2 n^2 sigma_theta^2 ].
+$
 
