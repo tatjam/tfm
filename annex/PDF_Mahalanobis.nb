@@ -1,0 +1,725 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Naive-Mahalanobis", "Title"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"mu", "=",
+   RowBox[{"{",
+    RowBox[{
+     RowBox[{"-", "1.4"}], ",", "0"}], "}"}]}], ";"}], "\n",
+ RowBox[{
+  RowBox[{"sigma", "=",
+   RowBox[{"{",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"0.17", ",", "0.2"}], "}"}], ",",
+     RowBox[{"{",
+      RowBox[{"0.2", ",", "0.4"}], "}"}]}], "}"}]}], ";"}], "\n",
+ RowBox[{
+  RowBox[{"invSigma", "=",
+   RowBox[{"Inverse", "[", "sigma", "]"}]}], ";"}], "\n",
+ RowBox[{
+  RowBox[{"baseRadius", "=", "2"}], ";",
+  RowBox[{"epsilon", "=", "0.1"}], ";",
+  RowBox[{"distortionScale", "=", "0.5"}], ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"mahalSq", "[",
+    RowBox[{"\[Theta]_", ",", "y_"}], "]"}], ":=",
+   RowBox[{"Module", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"v", "=",
+       RowBox[{"{",
+        RowBox[{"\[Theta]", ",", "y"}], "}"}]}], "}"}], ",",
+     RowBox[{
+      RowBox[{"(",
+       RowBox[{"v", "-", "mu"}], ")"}], ".", "invSigma", ".",
+      RowBox[{"(",
+       RowBox[{"v", "-", "mu"}], ")"}]}]}], "]"}]}], ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"colorScale", "[",
+    RowBox[{"\[Theta]_", ",", "y_"}], "]"}], ":=",
+   RowBox[{
+    RowBox[{"(",
+     RowBox[{"1", "-",
+      RowBox[{"CDF", "[",
+       RowBox[{
+        RowBox[{"ChiSquareDistribution", "[", "2", "]"}], ",",
+        RowBox[{"mahalSq", "[",
+         RowBox[{"\[Theta]", ",", "y"}], "]"}]}], "]"}]}], ")"}], "^",
+    "0.1"}]}], ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"flat", "=",
+   RowBox[{"Plot3D", "[",
+    RowBox[{
+     RowBox[{"PDF", "[",
+      RowBox[{
+       RowBox[{"MultinormalDistribution", "[",
+        RowBox[{"mu", ",", "sigma"}], "]"}], ",",
+       RowBox[{"{",
+        RowBox[{"\[Theta]", ",", "y"}], "}"}]}], "]"}], ",",
+     RowBox[{"{",
+      RowBox[{"\[Theta]", ",",
+       RowBox[{"-", "Pi"}], ",", "Pi"}], "}"}], ",",
+     RowBox[{"{",
+      RowBox[{"y", ",",
+       RowBox[{"-", "2"}], ",", "2"}], "}"}], ",",
+     RowBox[{"PlotPoints", "->", "60"}], ",",
+     RowBox[{"ColorFunction", "->",
+      RowBox[{"Function", "[",
+       RowBox[{
+        RowBox[{"{",
+         RowBox[{"\[Theta]", ",", "y"}], "}"}], ",",
+        RowBox[{
+         RowBox[{"ColorData", "[", "\"\<GrayYellowTones\>\"", "]"}], "[",
+         RowBox[{"colorScale", "[",
+          RowBox[{"\[Theta]", ",", "y"}], "]"}], "]"}]}], "]"}]}], ",",
+     RowBox[{"ColorFunctionScaling", "->", "False"}], ",",
+     RowBox[{"MeshFunctions", "->",
+      RowBox[{"{",
+       RowBox[{"#3", "&"}], "}"}]}], ",", "\[IndentingNewLine]",
+     RowBox[{"MeshStyle", "->", "Gray"}], ",",
+     RowBox[{"Ticks", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"{",
+         RowBox[{
+          RowBox[{"-", "Pi"}], ",", "Pi"}], "}"}], ",",
+        RowBox[{"{",
+         RowBox[{
+          RowBox[{"-", "2"}], ",", "2"}], "}"}], ",", "None"}], "}"}]}], ",",
+
+     RowBox[{"Axes", "->",
+      RowBox[{"{",
+       RowBox[{"Automatic", ",", "Automatic", ",", "False"}], "}"}]}], ",",
+     RowBox[{"Boxed", "->", "False"}], ",",
+     RowBox[{"PlotRange", "->", "All"}]}], "]"}]}], ";"}]], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"p1", "=",
+   RowBox[{"{",
+    RowBox[{
+     RowBox[{"-", "2.8"}], ",",
+     RowBox[{"-", "1"}]}], "}"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"p2", "=",
+   RowBox[{"{",
+    RowBox[{"2.8", ",",
+     RowBox[{"-", "1"}]}], "}"}]}], ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"marker1", "=",
+   RowBox[{"Graphics3D", "[",
+    RowBox[{"{",
+     RowBox[{"Red", ",",
+      RowBox[{"Thickness", "[", "0.005", "]"}], ",",
+      RowBox[{"Line", "[",
+       RowBox[{"{",
+        RowBox[{
+         RowBox[{"Join", "[",
+          RowBox[{"p1", ",",
+           RowBox[{"{", "0", "}"}]}], "]"}], ",",
+         RowBox[{
+          RowBox[{"Join", "[",
+           RowBox[{"p1", ",",
+            RowBox[{"{", "0", "}"}]}], "]"}], "+",
+          RowBox[{"{",
+           RowBox[{"0", ",", "0", ",", "1"}], "}"}]}]}], "}"}], "]"}]}],
+     "}"}], "]"}]}], ";"}]], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"marker2", "=",
+   RowBox[{"Graphics3D", "[",
+    RowBox[{"{",
+     RowBox[{"Orange", ",",
+      RowBox[{"Thickness", "[", "0.005", "]"}], ",",
+      RowBox[{"Line", "[",
+       RowBox[{"{",
+        RowBox[{
+         RowBox[{"Join", "[",
+          RowBox[{"p2", ",",
+           RowBox[{"{", "0", "}"}]}], "]"}], ",",
+         RowBox[{
+          RowBox[{"Join", "[",
+           RowBox[{"p2", ",",
+            RowBox[{"{", "0", "}"}]}], "]"}], "+",
+          RowBox[{"{",
+           RowBox[{"0", ",", "0", ",", "1"}], "}"}]}]}], "}"}], "]"}]}],
+     "}"}], "]"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"markermu", "=",
+   RowBox[{"Graphics3D", "[",
+    RowBox[{"{",
+     RowBox[{"Pink", ",",
+      RowBox[{"Thickness", "[", "0.005", "]"}], ",",
+      RowBox[{"Line", "[",
+       RowBox[{"{",
+        RowBox[{
+         RowBox[{"Join", "[",
+          RowBox[{"mu", ",",
+           RowBox[{"{", "0", "}"}]}], "]"}], ",",
+         RowBox[{
+          RowBox[{"Join", "[",
+           RowBox[{"mu", ",",
+            RowBox[{"{", "0", "}"}]}], "]"}], "+",
+          RowBox[{"{",
+           RowBox[{"0", ",", "0", ",", "1.1"}], "}"}]}]}], "}"}], "]"}]}],
+     "}"}], "]"}]}], ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"fig1", "=",
+   RowBox[{"Show", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"flat", ",", "marker1", ",", "marker2", ",", "markermu"}],
+      "}"}], ",",
+     RowBox[{"ViewPoint", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"-", "10"}], ",",
+        RowBox[{"-", "10"}], ",", "10"}], "}"}]}]}], "]"}]}], ";"}]], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"baseRadius", "=", "3"}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"distortionScale", "=", "1"}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"epsilon", "=", "0.1"}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"totemRadius", "=",
+   RowBox[{"baseRadius", "+", "1.5"}]}], ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"markerbent", "[",
+    RowBox[{"p_", ",", "col_"}], "]"}], ":=",
+   RowBox[{"Graphics3D", "[",
+    RowBox[{"{",
+     RowBox[{"col", ",", " ",
+      RowBox[{"Thickness", "[", "0.005", "]"}], ",", "\[IndentingNewLine]",
+      RowBox[{"Module", "[", "\[IndentingNewLine]",
+       RowBox[{
+        RowBox[{"{", "a", "}"}], ",", "\[IndentingNewLine]",
+        RowBox[{
+         RowBox[{"a", "=",
+          RowBox[{"{",
+           RowBox[{
+            RowBox[{"Cos", "[",
+             RowBox[{"p", "[",
+              RowBox[{"[", "1", "]"}], "]"}], "]"}], ",",
+            RowBox[{"Sin", "[",
+             RowBox[{"p", "[",
+              RowBox[{"[", "1", "]"}], "]"}], "]"}], ",",
+            RowBox[{"p", "[",
+             RowBox[{"[", "2", "]"}], "]"}]}], "}"}]}], ";",
+         "\[IndentingNewLine]", " ",
+         RowBox[{"Line", "[",
+          RowBox[{"{",
+           RowBox[{
+            RowBox[{"a", "*",
+             RowBox[{"{",
+              RowBox[{"baseRadius", ",", "baseRadius", ",", "1"}], "}"}]}], ",",
+            RowBox[{"a", "*",
+             RowBox[{"{",
+              RowBox[{"totemRadius", ",", "totemRadius", ",", "1"}],
+              "}"}]}]}], "}"}], "]"}]}]}], "\[IndentingNewLine]", "]"}]}],
+     "\[IndentingNewLine]", "}"}], "]"}]}], ";"}]], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"marker1bent", "=",
+   RowBox[{"markerbent", "[",
+    RowBox[{"p1", ",", "Red"}], "]"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"marker2bent", "=",
+   RowBox[{"markerbent", "[",
+    RowBox[{"p2", ",", "Orange"}], "]"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"markermubent", "=",
+   RowBox[{"markerbent", "[",
+    RowBox[{"mu", ",", "Pink"}], "]"}]}], ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"bent", "=",
+   RowBox[{"ParametricPlot3D", "[", "\[IndentingNewLine]",
+    RowBox[{
+     RowBox[{"{", "\[IndentingNewLine]",
+      RowBox[{
+       RowBox[{
+        RowBox[{"(",
+         RowBox[{"baseRadius", "+",
+          RowBox[{"distortionScale", "*",
+           RowBox[{"PDF", "[",
+            RowBox[{
+             RowBox[{"MultinormalDistribution", "[",
+              RowBox[{"mu", ",", "sigma"}], "]"}], ",",
+             RowBox[{"{",
+              RowBox[{"\[Theta]", ",", "y"}], "}"}]}], "]"}]}]}], ")"}], "*",
+
+        RowBox[{"Cos", "[", "\[Theta]", "]"}]}], ",", "\[IndentingNewLine]",
+       RowBox[{
+        RowBox[{"(",
+         RowBox[{"baseRadius", "+",
+          RowBox[{"distortionScale", "*",
+           RowBox[{"PDF", "[",
+            RowBox[{
+             RowBox[{"MultinormalDistribution", "[",
+              RowBox[{"mu", ",", "sigma"}], "]"}], ",",
+             RowBox[{"{",
+              RowBox[{"\[Theta]", ",", "y"}], "}"}]}], "]"}]}]}], ")"}], "*",
+
+        RowBox[{"Sin", "[", "\[Theta]", "]"}]}], ",", "\[IndentingNewLine]",
+       "y"}], "}"}], ",", "\[IndentingNewLine]",
+     RowBox[{"{",
+      RowBox[{"\[Theta]", ",",
+       RowBox[{"-", "Pi"}], ",", "Pi"}], "}"}], ",",
+     RowBox[{"{",
+      RowBox[{"y", ",",
+       RowBox[{"-", "5"}], ",", "5"}], "}"}], ",", "\[IndentingNewLine]",
+     RowBox[{"PlotPoints", "->", "60"}], ",", "\[IndentingNewLine]",
+     RowBox[{"Lighting", "->",
+      RowBox[{"AmbientLight", "[", "White", "]"}]}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"ColorFunction", "->",
+      RowBox[{"Function", "[",
+       RowBox[{
+        RowBox[{"{",
+         RowBox[{"x", ",", "y", ",", "z", ",", "\[Theta]", ",", "yv"}], "}"}],
+         ",",
+        RowBox[{
+         RowBox[{"ColorData", "[", "\"\<GrayYellowTones\>\"", "]"}], "[",
+         RowBox[{"colorScale", "[",
+          RowBox[{"\[Theta]", ",", "yv"}], "]"}], "]"}]}], "]"}]}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"ColorFunctionScaling", "->", "False"}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"Boxed", "->", "False"}], ",", "\[IndentingNewLine]",
+     RowBox[{"Axes", "->",
+      RowBox[{"{",
+       RowBox[{"False", ",", "False", ",", "True"}], "}"}]}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"Ticks", "->",
+      RowBox[{"{",
+       RowBox[{"None", ",", "None", ",",
+        RowBox[{"{",
+         RowBox[{
+          RowBox[{"{",
+           RowBox[{
+            RowBox[{"-", "2"}], ",",
+            RowBox[{"-", "2"}]}], "}"}], ",",
+          RowBox[{"{",
+           RowBox[{"2", ",", "2"}], "}"}]}], "}"}]}], "}"}]}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"BoundaryStyle", "->",
+      RowBox[{"Directive", "[",
+       RowBox[{"White", ",",
+        RowBox[{"Thickness", "[", "0.003", "]"}]}], "]"}]}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"MeshFunctions", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"PDF", "[",
+         RowBox[{"dist", ",",
+          RowBox[{"{",
+           RowBox[{"#4", ",", "#5"}], "}"}]}], "]"}], "&"}], "}"}]}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"MeshStyle", "->", "Gray"}], ",", "\[IndentingNewLine]",
+     RowBox[{"ViewPoint", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"-", "100"}], ",",
+        RowBox[{"-", "30.5"}], ",", "40"}], "}"}]}]}], "]"}]}],
+  ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"fig2", "=",
+   RowBox[{"Show", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{
+      "bent", ",", "marker1bent", ",", "marker2bent", ",", "markermubent"}],
+      "}"}], ",",
+     RowBox[{"PlotRange", "->", "All"}]}], "]"}]}], ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"link", "=",
+   RowBox[{"Graphics", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{
+       RowBox[{"Arrowheads", "[", "Medium", "]"}], ",",
+       RowBox[{"Arrow", "[",
+        RowBox[{"{",
+         RowBox[{
+          RowBox[{"{",
+           RowBox[{"0", ",", "0"}], "}"}], ",",
+          RowBox[{"{",
+           RowBox[{".3", ",", "0"}], "}"}]}], "}"}], "]"}], ",",
+       RowBox[{"Text", "[",
+        RowBox[{
+         RowBox[{"Style", "[",
+
+          RowBox[{"\"\<\!\(\*SubscriptBox[\(log\), \(G\)]\)\>\"", ",", "14", ",",
+            "Italic"}], "]"}], ",",
+         RowBox[{"{",
+          RowBox[{".15", ",", ".05"}], "}"}]}], "]"}]}], "}"}], ",",
+     RowBox[{"PlotRangePadding", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"{",
+         RowBox[{".02", ",", ".02"}], "}"}], ",", "Automatic"}], "}"}]}], ",",
+     RowBox[{"ImageSize", "->", " ", "100"}]}], "]"}]}], ";"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"comb", "=",
+  RowBox[{"GraphicsRow", "[",
+   RowBox[{"{",
+    RowBox[{"fig2", ",", "link", ",", "fig1"}], "}"}], "]"}]}]], "Input"]
+}]]
+}]],
+
+Cell[CellGroupData[{
+
+Cell["Wrapped-Mahalanobis", "Title"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"wrap", "[", "p_", "]"}], ":=",
+  RowBox[{"{",
+   RowBox[{
+    RowBox[{
+     RowBox[{"Mod", "[",
+      RowBox[{
+       RowBox[{
+        RowBox[{"p", "[",
+         RowBox[{"[", "1", "]"}], "]"}], "-", "\[Pi]"}], ",",
+       RowBox[{"2", "\[Pi]"}]}], "]"}], "-", "\[Pi]"}], ",",
+    RowBox[{"p", "[",
+     RowBox[{"[", "2", "]"}], "]"}]}], "}"}]}]], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"p1t", "=",
+   RowBox[{"wrap", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{
+       RowBox[{"-", "2.8"}], ",",
+       RowBox[{"-", "1"}]}], "}"}], "-", "mu"}], "]"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"p2t", "=",
+   RowBox[{"wrap", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"2.8", ",",
+       RowBox[{"-", "1"}]}], "}"}], "-", "mu"}], "]"}]}], ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"mahalSqt", "[",
+    RowBox[{"\[Theta]_", ",", "y_"}], "]"}], ":=",
+   RowBox[{"Module", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"v", "=",
+       RowBox[{"{",
+        RowBox[{"\[Theta]", ",", "y"}], "}"}]}], "}"}], ",",
+     RowBox[{"v", ".", "invSigma", ".", "v"}]}], "]"}]}], ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"colorScalet", "[",
+    RowBox[{"\[Theta]_", ",", "y_"}], "]"}], ":=",
+   RowBox[{
+    RowBox[{"(",
+     RowBox[{"1", "-",
+      RowBox[{"CDF", "[",
+       RowBox[{
+        RowBox[{"ChiSquareDistribution", "[", "2", "]"}], ",",
+        RowBox[{"mahalSqt", "[",
+         RowBox[{"\[Theta]", ",", "y"}], "]"}]}], "]"}]}], ")"}], "^",
+    "0.1"}]}], ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"flatt", "=",
+   RowBox[{"Plot3D", "[",
+    RowBox[{
+     RowBox[{"PDF", "[",
+      RowBox[{
+       RowBox[{"MultinormalDistribution", "[",
+        RowBox[{
+         RowBox[{"{",
+          RowBox[{"0", ",", "0"}], "}"}], ",", "sigma"}], "]"}], ",",
+       RowBox[{"{",
+        RowBox[{"\[Theta]", ",", "y"}], "}"}]}], "]"}], ",",
+     RowBox[{"{",
+      RowBox[{"\[Theta]", ",",
+       RowBox[{"-", "Pi"}], ",", "Pi"}], "}"}], ",",
+     RowBox[{"{",
+      RowBox[{"y", ",",
+       RowBox[{"-", "2"}], ",", "2"}], "}"}], ",",
+     RowBox[{"PlotPoints", "->", "60"}], ",",
+     RowBox[{"ColorFunction", "->",
+      RowBox[{"Function", "[",
+       RowBox[{
+        RowBox[{"{",
+         RowBox[{"\[Theta]", ",", "y"}], "}"}], ",",
+        RowBox[{
+         RowBox[{"ColorData", "[", "\"\<GrayYellowTones\>\"", "]"}], "[",
+         RowBox[{"colorScalet", "[",
+          RowBox[{"\[Theta]", ",", "y"}], "]"}], "]"}]}], "]"}]}], ",",
+     RowBox[{"ColorFunctionScaling", "->", "False"}], ",",
+     RowBox[{"MeshFunctions", "->",
+      RowBox[{"{",
+       RowBox[{"#3", "&"}], "}"}]}], ",", "\[IndentingNewLine]",
+     RowBox[{"MeshStyle", "->", "Gray"}], ",",
+     RowBox[{"Ticks", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"{",
+         RowBox[{
+          RowBox[{"-", "Pi"}], ",", "Pi"}], "}"}], ",",
+        RowBox[{"{",
+         RowBox[{
+          RowBox[{"-", "2"}], ",", "2"}], "}"}], ",", "None"}], "}"}]}], ",",
+
+     RowBox[{"Axes", "->",
+      RowBox[{"{",
+       RowBox[{"Automatic", ",", "Automatic", ",", "False"}], "}"}]}], ",",
+     RowBox[{"Boxed", "->", "False"}], ",",
+     RowBox[{"PlotRange", "->", "All"}]}], "]"}]}], ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"marker1t", "=",
+   RowBox[{"Graphics3D", "[",
+    RowBox[{"{",
+     RowBox[{"Red", ",",
+      RowBox[{"Thickness", "[", "0.005", "]"}], ",",
+      RowBox[{"Line", "[",
+       RowBox[{"{",
+        RowBox[{
+         RowBox[{"Join", "[",
+          RowBox[{"p1t", ",",
+           RowBox[{"{", "0", "}"}]}], "]"}], ",",
+         RowBox[{
+          RowBox[{"Join", "[",
+           RowBox[{"p1t", ",",
+            RowBox[{"{", "0", "}"}]}], "]"}], "+",
+          RowBox[{"{",
+           RowBox[{"0", ",", "0", ",", "1"}], "}"}]}]}], "}"}], "]"}]}],
+     "}"}], "]"}]}], ";"}]], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"marker2t", "=",
+   RowBox[{"Graphics3D", "[",
+    RowBox[{"{",
+     RowBox[{"Orange", ",",
+      RowBox[{"Thickness", "[", "0.005", "]"}], ",",
+      RowBox[{"Line", "[",
+       RowBox[{"{",
+        RowBox[{
+         RowBox[{"Join", "[",
+          RowBox[{"p2t", ",",
+           RowBox[{"{", "0", "}"}]}], "]"}], ",",
+         RowBox[{
+          RowBox[{"Join", "[",
+           RowBox[{"p2t", ",",
+            RowBox[{"{", "0", "}"}]}], "]"}], "+",
+          RowBox[{"{",
+           RowBox[{"0", ",", "0", ",", "1"}], "}"}]}]}], "}"}], "]"}]}],
+     "}"}], "]"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"markermut", "=",
+   RowBox[{"Graphics3D", "[",
+    RowBox[{"{",
+     RowBox[{"Pink", ",",
+      RowBox[{"Thickness", "[", "0.005", "]"}], ",",
+      RowBox[{"Line", "[",
+       RowBox[{"{",
+        RowBox[{
+         RowBox[{"{",
+          RowBox[{"0", ",", "0", ",", "0"}], "}"}], ",",
+         RowBox[{"{",
+          RowBox[{"0", ",", "0", ",", "1.1"}], "}"}]}], "}"}], "]"}]}], "}"}],
+     "]"}]}], ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"fig1t", "=",
+   RowBox[{"Show", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"flatt", ",", "marker1t", ",", "marker2t", ",", "markermut"}],
+      "}"}], ",",
+     RowBox[{"ViewPoint", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"-", "10"}], ",",
+        RowBox[{"-", "10"}], ",", "10"}], "}"}]}]}], "]"}]}], ";"}]], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"marker1bentt", "=",
+   RowBox[{"markerbent", "[",
+    RowBox[{"p1t", ",", "Red"}], "]"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"marker2bentt", "=",
+   RowBox[{"markerbent", "[",
+    RowBox[{"p2t", ",", "Orange"}], "]"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"markermubentt", "=",
+   RowBox[{"markerbent", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{"0", ",", "0"}], "}"}], ",", "Pink"}], "]"}]}], ";"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"bentt", "=",
+   RowBox[{"ParametricPlot3D", "[", "\[IndentingNewLine]",
+    RowBox[{
+     RowBox[{"{", "\[IndentingNewLine]",
+      RowBox[{
+       RowBox[{
+        RowBox[{"(",
+         RowBox[{"baseRadius", "+",
+          RowBox[{"distortionScale", "*",
+           RowBox[{"PDF", "[",
+            RowBox[{
+             RowBox[{"MultinormalDistribution", "[",
+              RowBox[{
+               RowBox[{"{",
+                RowBox[{"0", ",", "0"}], "}"}], ",", "sigma"}], "]"}], ",",
+             RowBox[{"{",
+              RowBox[{"\[Theta]", ",", "y"}], "}"}]}], "]"}]}]}], ")"}], "*",
+
+        RowBox[{"Cos", "[", "\[Theta]", "]"}]}], ",", "\[IndentingNewLine]",
+       RowBox[{
+        RowBox[{"(",
+         RowBox[{"baseRadius", "+",
+          RowBox[{"distortionScale", "*",
+           RowBox[{"PDF", "[",
+            RowBox[{
+             RowBox[{"MultinormalDistribution", "[",
+              RowBox[{
+               RowBox[{"{",
+                RowBox[{"0", ",", "0"}], "}"}], ",", "sigma"}], "]"}], ",",
+             RowBox[{"{",
+              RowBox[{"\[Theta]", ",", "y"}], "}"}]}], "]"}]}]}], ")"}], "*",
+
+        RowBox[{"Sin", "[", "\[Theta]", "]"}]}], ",", "\[IndentingNewLine]",
+       "y"}], "}"}], ",", "\[IndentingNewLine]",
+     RowBox[{"{",
+      RowBox[{"\[Theta]", ",",
+       RowBox[{"-", "Pi"}], ",", "Pi"}], "}"}], ",",
+     RowBox[{"{",
+      RowBox[{"y", ",",
+       RowBox[{"-", "5"}], ",", "5"}], "}"}], ",", "\[IndentingNewLine]",
+     RowBox[{"PlotPoints", "->", "60"}], ",", "\[IndentingNewLine]",
+     RowBox[{"Lighting", "->",
+      RowBox[{"AmbientLight", "[", "White", "]"}]}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"ColorFunction", "->",
+      RowBox[{"Function", "[",
+       RowBox[{
+        RowBox[{"{",
+         RowBox[{"x", ",", "y", ",", "z", ",", "\[Theta]", ",", "yv"}], "}"}],
+         ",",
+        RowBox[{
+         RowBox[{"ColorData", "[", "\"\<GrayYellowTones\>\"", "]"}], "[",
+         RowBox[{"colorScalet", "[",
+          RowBox[{"\[Theta]", ",", "yv"}], "]"}], "]"}]}], "]"}]}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"ColorFunctionScaling", "->", "False"}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"Boxed", "->", "False"}], ",", "\[IndentingNewLine]",
+     RowBox[{"Axes", "->",
+      RowBox[{"{",
+       RowBox[{"False", ",", "False", ",", "True"}], "}"}]}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"Ticks", "->",
+      RowBox[{"{",
+       RowBox[{"None", ",", "None", ",",
+        RowBox[{"{",
+         RowBox[{
+          RowBox[{"{",
+           RowBox[{
+            RowBox[{"-", "2"}], ",",
+            RowBox[{"-", "2"}]}], "}"}], ",",
+          RowBox[{"{",
+           RowBox[{"2", ",", "2"}], "}"}]}], "}"}]}], "}"}]}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"BoundaryStyle", "->",
+      RowBox[{"Directive", "[",
+       RowBox[{"White", ",",
+        RowBox[{"Thickness", "[", "0.003", "]"}]}], "]"}]}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"MeshFunctions", "->",
+      RowBox[{"{",
+       RowBox[{
+        RowBox[{"PDF", "[",
+         RowBox[{
+          RowBox[{"MultinormalDistribution", "[",
+           RowBox[{
+            RowBox[{"{",
+             RowBox[{"0", ",", "0"}], "}"}], ",", "sigma"}], "]"}], ",",
+          RowBox[{"{",
+           RowBox[{"#4", ",", "#5"}], "}"}]}], "]"}], "&"}], "}"}]}], ",",
+     "\[IndentingNewLine]",
+     RowBox[{"MeshStyle", "->", "Gray"}], ",", "\[IndentingNewLine]",
+     RowBox[{"ViewPoint", "->",
+      RowBox[{"{",
+       RowBox[{"15", ",",
+        RowBox[{"-", "25"}], ",", "45"}], "}"}]}]}], "]"}]}], ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"fig2t", "=",
+   RowBox[{"Show", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{
+      "bentt", ",", "marker1bentt", ",", "marker2bentt", ",",
+       "markermubentt"}], "}"}], ",",
+     RowBox[{"PlotRange", "->", "All"}]}], "]"}]}], ";"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"comb", "=",
+  RowBox[{"GraphicsRow", "[",
+   RowBox[{"{",
+    RowBox[{"fig2t", ",", "link", ",", "fig1t"}], "}"}], "]"}]}]], "Input"]
+}]]
+}]]
+}]
+(* End of Notebook Content *)

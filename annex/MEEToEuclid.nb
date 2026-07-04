@@ -1,0 +1,158 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{"(*",
+  RowBox[{
+   RowBox[{"https", ":"}], "//",
+   RowBox[{
+    RowBox[{
+     RowBox[{"mathematica", ".", "stackexchange", ".", "com"}], "/", "a"}], "/",
+     "262273"}]}], "*)"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"FactorizeCommonFactor", "[",
+    RowBox[{"tensor_", "?", "TensorQ"}], "]"}], ":=",
+   RowBox[{"Block", "[",
+    RowBox[{
+     RowBox[{"{",
+      RowBox[{
+      "GCDListv", ",", "cfactor", ",", "tenfact", ",", "tenfactmf", ",",
+       "facten"}], "}"}], ",",
+     RowBox[{
+      RowBox[{"cfactor", ":=",
+       RowBox[{"PolynomialGCD", "@@",
+        RowBox[{"Flatten", "@", "tensor"}]}]}], ";", "\[IndentingNewLine]",
+      RowBox[{"tenfact", ":=",
+       RowBox[{
+        RowBox[{"(",
+         RowBox[{"1", "/", "cfactor"}], ")"}], "*", "tensor"}]}], ";",
+      "\[IndentingNewLine]",
+      RowBox[{"tenfactmf", ":=",
+       RowBox[{"MatrixForm", "[", "tenfact", "]"}]}], ";",
+      "\[IndentingNewLine]",
+      RowBox[{"Piecewise", "[",
+       RowBox[{"{",
+        RowBox[{
+         RowBox[{"{",
+          RowBox[{
+           RowBox[{"Return", "[",
+            RowBox[{"{",
+             RowBox[{
+              RowBox[{"\"\<Common Factor\>\"", "->", "cfactor"}], ",",
+              "tenfact", ",",
+              RowBox[{"Inactivate", "[",
+               RowBox[{"cfactor", "*", "tenfactmf"}], "]"}]}], "}"}], "]"}], ",",
+           RowBox[{"cfactor", "=!=", "1"}]}], "}"}], ",",
+         RowBox[{"{",
+          RowBox[{
+           RowBox[{
+           "Print",
+            "[", "\"\<The tensor cannot be expressed as a multiple of another\
+\ntensor\>\"", "]"}], ",",
+           RowBox[{"cfactor", "===", "1"}]}], "}"}]}], "}"}], "]"}], ";"}]}],
+    "]"}]}], ";"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"(*",
+  RowBox[{
+   RowBox[{"https", ":"}], "//",
+   RowBox[{
+    RowBox[{
+     RowBox[{"degenerateconic", ".", "com"}], "/", "modified"}], "-",
+    "equinoctial", "-",
+    RowBox[{"elements", ".", "html"}]}]}], "*)"}]], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"w", "=",
+   RowBox[{"1", "+",
+    RowBox[{"f", "*",
+     RowBox[{"Cos", "[", "l", "]"}]}], "+",
+    RowBox[{"g", "*",
+     RowBox[{"Sin", "[", "l", "]"}]}]}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"r", "=",
+   RowBox[{"p", "/", "w"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"x", "=",
+   RowBox[{"r", "*",
+    RowBox[{"Cos", "[", "l", "]"}]}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"y", "=",
+   RowBox[{"r", "*",
+    RowBox[{"Sin", "[", "l", "]"}]}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"s2", "=",
+   RowBox[{"1", "+",
+    RowBox[{"h", "*", "h"}], "+",
+    RowBox[{"k", "*", "k"}]}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"fhat", "=",
+   RowBox[{
+    RowBox[{"{",
+     RowBox[{
+      RowBox[{"1", "-",
+       RowBox[{"k", "*", "k"}], "+",
+       RowBox[{"h", "*", "h"}]}], ",",
+      RowBox[{"2", "*", "k", "*", "h"}], ",",
+      RowBox[{
+       RowBox[{"-", "2"}], "*", "k"}]}], "}"}], "/", "s2"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"ghat", "=",
+   RowBox[{
+    RowBox[{"{",
+     RowBox[{
+      RowBox[{"2", "*", "k", "*", "h"}], ",",
+      RowBox[{"1", "+",
+       RowBox[{"k", "*", "k"}], "-",
+       RowBox[{"h", "*", "h"}]}], ",",
+      RowBox[{"2", "*", "h"}]}], "}"}], "/", "s2"}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"xdot", "=",
+   RowBox[{
+    RowBox[{"-",
+     RowBox[{"Sqrt", "[",
+      FractionBox["\[Mu]", "p"], "]"}]}], "*",
+    RowBox[{"(",
+     RowBox[{"g", "+",
+      RowBox[{"Sin", "[", "l", "]"}]}], ")"}]}]}], ";"}], "\[IndentingNewLine]",
+ RowBox[{
+  RowBox[{"ydot", "=",
+   RowBox[{
+    RowBox[{"Sqrt", "[",
+     FractionBox["\[Mu]", "p"], "]"}], "*",
+    RowBox[{"(",
+     RowBox[{"f", "+",
+      RowBox[{"Cos", "[", "l", "]"}]}], ")"}]}]}], ";"}]}], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"xv", "=",
+  RowBox[{"FactorizeCommonFactor", "[",
+   RowBox[{
+    RowBox[{
+     RowBox[{"x", "*", "fhat"}], "+",
+     RowBox[{"y", "*", "ghat"}]}], "//", "FullSimplify"}], "]"}]}]], "Input"]
+}]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"vv", "=",
+  RowBox[{
+   RowBox[{"FactorizeCommonFactor", "[",
+    RowBox[{
+     RowBox[{"xdot", "*", "fhat"}], "+",
+     RowBox[{"ydot", "*", "ghat"}]}], "]"}], "//",
+   "FullSimplify"}]}]], "Input"]
+}]],
+
+Cell[BoxData[
+ RowBox[{"1", " "}]], "Input"]
+}]
+(* End of Notebook Content *)

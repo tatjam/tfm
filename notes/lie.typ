@@ -2,7 +2,7 @@
 #import "@preview/physica:0.9.8": *
 
 #show: note.with(
-  title: [Propagación orbital en el espacio $"SO"(2) times RR^5$],
+  title: [Notas sobre propagación orbital en el espacio $"SO"(2) times RR^5$],
 )
 
 #set math.equation(numbering: "(1)")
@@ -27,7 +27,7 @@ $
   [.]_G^and: RR^p -> frak(g).
 $
 
-= Particularización e intuición para $"SO"(2)$
+== Particularización e intuición para $"SO"(2)$
 
 $G = "SO"(2)$ es isomórfico al círculo, es decir, un elemento de $"SO"(2)$ se puede entender como un punto del círculo. Equivalentemente, podemos imaginar los elementos de $"SO"(2)$ como las matrices de rotación que nos llevan de un vector identidad a todos los puntos del círculo. Por lo tanto, podemos expresar los elementos $X_k = R_(theta_k) in "SO"(2)$ como
 
@@ -92,6 +92,7 @@ $
 El logaritmo es más complicado de desarrollar, ya que presenta varias ramas. Para el desarrollo que realizaremos, no es necesaria intuición sobre el logaritmo matricial, así que no entraremos en detalle.
 
 
+#pagebreak()
 = Grupo de Lie cilíndrico $"SO"(2) times RR^n$
 
 En @markovicWrappingKalmanFilter2017 se considera que el grupo cilíndrico incluye tan solo dos coordenadas cartesianas. Estas son la velocidad y aceleración angular, por lo tanto íntimamente relacionadas con la coordenada angular. Para la propagación orbital, esta relación no existe, las coordenadas cartesianas no están tan claramente relacionadas con el parámetro angular.
@@ -174,6 +175,7 @@ $
 
 De nuevo, no demostraremos que la expresión inversa es cierta para el logaritmo matricial por la complicación que esto supone.
 
+#pagebreak()
 = Interpretación de la dinámica orbital en $"SO"(2) times RR^n$
 
 El modelo de un sistema en un filtro de Kalman en un grupo de Lie se escribe @markovicWrappingKalmanFilter2017
@@ -182,7 +184,7 @@ $
   X_(k + 1) = X_k exp_G [[Omega(X_k, u_k) + n_k]_G^and].
 $
 
-Para nuestro caso, no necesitamos toda la mecánica del filtro de Kalman. Consideraremos ruido aditivo nulo, $n_k =$. La función $Omega$ es el desplazamiento del estado, y asumiremos que no existe control, es decir, $u_k = 0$. Esto simplifica la expresión a
+Para nuestro caso, no necesitamos toda la mecánica del filtro de Kalman. Consideraremos ruido aditivo nulo, $n_k = 0$. La función $Omega$ es el desplazamiento del estado, y asumiremos que no existe control, es decir, $u_k = 0$. Esto simplifica la expresión a
 
 $
   X_(k + 1) = X_k exp_G [[Omega(X_k)]_G^and].
@@ -221,62 +223,12 @@ Ahora, consideremos que significado tiene la adición de cada término vectorial
 - La suma de ángulos $theta_k$ se translada a una multiplicación de matrices de rotación en el grupo de Lie
 - La suma de elementos euclídeos $a_k$ se translada al producto de matrices $mat(1, a_1; 0, 1) mat(1, a_2; 0, 1) = mat(1, a_1 + a_2; 0, 1)$
 
-Por lo tanto, siempre será posible escribir $Omega$ a partir de $hat(f_k)$. Con esto, garantizamos que el desarrollo que vamos a realizar dentro de la maquinaria del grupo de Lie sea aplicabe en el caso numérico.
+Por lo tanto, siempre será posible escribir $Omega$ a partir de $hat(f_k)$. Con esto, garantizamos que el desarrollo que vamos a realizar dentro de la maquinaria del grupo de Lie sea aplicable en el caso numérico.
 
-== Incertidumbre en el grupo Lie
+#pagebreak()
+= Estadística en $"SO"(2) times RR^n$
 
-Consideremos que el estado $X_1 in G$ esté formado por dos componentes
-
-$
-  X_1 = mu_1 exp_G [[epsilon_1]_G^and],
-$<locura1>
-
-dónde $mu_1 in G$ y $epsilon_1 in RR^6$ representa un ruido aproximado por una distribución normal multivariable en $RR^6$ de media nula y matriz de covarianza $P_1$, es decir, $epsilon_1 tilde cal(N)(0, P_1)$. En la literatura, esto se conoce como una Gaussiana concentrada en un grupo de Lie @bourmaudContinuousDiscreteExtendedKalman2015.
-
-Consideremos ahora el efecto en esta incertidumbre de nuestra función desplazamiento $Omega$, para obtener $X_2 in G$. Asumiremos que tras la propagación, el término de incertidumbre $epsilon_2$ sigue siendo normal, de media nula y matriz de covarianza $P_2$.
-
-El procedimiento más convencional considera que la media se propaga ignorando el término $epsilon$ @markovicWrappingKalmanFilter2017
-
-$
-  mu_2 = mu_1 exp_G [[Omega(X_1)]_G^and].
-$
-
-Por otra parte, la propagación de la matriz de covarianca, siguiendo la notación de @markovicWrappingKalmanFilter2017, y particularizando para el caso sin ruido aditivo, se escribe
-
-$
-  P_2 = cal(F)_1 P_1 cal(F)_1^TT
-$
-
-dónde, para un grupo abeliano (la multiplicación de nuestra matrices es commutativa)
-
-$
-  cal(F)_1 = 1 + cal(C),
-$
-
-dónde @markovicWrappingKalmanFilter2017
-
-$
-  cal(C) = I_(n times n) + evaluated(pdv(, epsilon) Omega(mu_1 exp_G [ [epsilon]^and_G ]))_(epsilon = 0)
-$
-
-se trata del Jacobiano respecto a una perturbación en el espacio de $epsilon$.
-
-Notamos que la aparición de la unidad aditiva no es más que un artefacto de cómo hemos relacionado $f(x)$ con $Omega(X)$, recordando la ecuación @locura1 y el párrafo que sigue.
-
-Es apreciable que, con esta construcción, la evolución de la matriz de covarianza es totalmente independiente del grupo de Lie en el que vive la dinámica real #footnote[Realmente, hemos asumido que es un grupo abeliano, para nuestro caso es suficiente. Un contraejemplo sería $"SO"(3)$ que no es abeliano.] y por lo tanto, demostrado que la propagación de incertidumbre sobre un espacio euclídeo no requiere un tratamiento especial, siempre que se cumpla la hipótesis de Gaussiana concentrada.
-
-
-== ¿Que pasa si no se cumple la hipótesis de Gaussiana concentrada?
-
-En la realidad, la hipótesis de Gaussiana concentrada no tiene porque cumplirse para una órbita, ya que la incertidumbre podría crecer tanto que la incertidumbre en el ángulo no sea Gaussiana.
-
-Consideremos un sistema de partículas, cada uno con estado ${X_1, X_2, X_3, ...}$.
-
-La definición de media no es evidente, ya que $(X_i)^j in G$ no presenta una operación de suma para sus elementos.
-
-Una primera idea podría ser realizar la media de los elementos en su expresión matricial (al final, los miembros de $G$ son una matriz). El problema es que el resultado no necesariamente va a pertenecer a $G$. En nuestro caso, la media de las matrices de rotación no tiene porque ser otra matriz de rotación, ni mucho menos tener un sentido estadístico satisfactorio.
-
-=== Media extrínseca en grupo $"SO"(2)$
+== Media extrínseca (circular) en grupo $"SO"(2)$
 
 Afortunadamente, no estamos tratando con cualquier grupo de Lie, si no que $G = "SO"(2) times RR^5$. Para este caso particular, podemos tomar prestado de la estadística direccional el concepto de media circular. En este apartado, demostraremos que la media de las matrices de rotación, bajo una interpretación típica de la acción de estas sobre un vector, es exactamente equivalente a la media circular.
 
@@ -356,31 +308,222 @@ $
   cal(P)(A) mat(1; 0) = 1 / sqrt(x^2 + y^2) mat(x; y),
 $
 
-que es claramente unitario y tiene por argumento $"atan2"(y, x)$. Notamos que, por ser $A$ una media de matrices de rotación
+que es unitario y forma un ángulo con el eje $x$ de $"atan2"(y, x)$. Notamos que, por ser $A$ una media de matrices de rotación
 
 $
-  x = 1 / N sum_k^N cos(theta_k) quad quad y = 1 / N sum_k^N sin(theta_k),
+  x = 1 / N sum_(n=1)^N cos(theta_n) quad quad y = 1 / N sum_(n=1)^N sin(theta_n),
 $
 
 que podemos escribir como un número complejo $z = x + i y$
 
 $
-  z = 1 / N sum_k^N e^(i theta_k),
+  z = 1 / N sum_(n=1)^N e^(i theta_n),
 $
 
-es decir, la media de matrices de rotación es exactamente equivalente a la media circula definida en @mardiaDirectionalStatistics1999.
+es decir, la media de matrices de rotación es exactamente equivalente a la media circular definida en @mardiaDirectionalStatistics1999.
 
 $cal(P)$ solo actúa en la parte de rotación, la media de las magnitudes euclídianas es directa (no requiere proyección). Por lo tanto, se podría construir un $cal(P)$ para $"SO"(2) times RR^n$.
 
-=== Concetración extrínseca en grupo $"SO"(2)$
+== Dispersión en $"SO"(2) times RR^n$
 
-De igual forma que antes,
+Del anterior apartado concluimos que existe una definición práctica de la media en $"SO"(2)$, análoga a la media circular de la estadística direccional. Consideremos ahora el caso de las covarianzas y varianzas.
 
-== Distribución Gauss Von Mises con correlación lineal
+En su forma euclídea, las covarianzas se definen, para un conjunto de $N$ muestras en $RR^n$,
+
+$
+  "Cov"(i, j) = 1 / N sum_(n=1)^N ((X_n)_i - mu_i) ((X_n)_j - mu_j),
+$
+
+siendo $mu_i$ y $mu_j$ las medias en cada variable. En un grupo de Lie, esta noción de sustración (o distancia a la media) se representa mediante el producto con la inversa de $mu$,
+$
+  "Cov"_G (i, j) = 1 / N sum_(n = 1)^N ([log_G [mu^(-1) X_n]]_G^or)_i ([log_G [mu^(-1) X_n]]_G^or)_j.
+$
+
+Notamos la aparición del logaritmo para permitirnos extraer coordenadas. Podemos escribir la matriz de covarianza entera a través de
+
+$
+  P = 1 / N sum_(n = 1)^N xi_n xi_n^TT quad quad xi_n = [log_G [mu^(-1) X_n]]_G^or.
+$
+
+La aparición del logaritmo es problemática, sí las muestras se encuentran aproximadamente diametralmente opuestas a $mu$, el operator $[ log_G[.] ]_G^or$ causará problemas por la discontinuidad. Por lo tanto, esta expresión de la covarianza es apropiada solo para distribuciones concentradas.
+
+== Dispersión en el espacio tangente
+
+Como hemos visto, la matriz de covarianza no está claramente definida en el grupo de Lie, debido a la aparición del logaritmo. Por otra parte, supongamos que las muestras obedecen
+
+$
+  X_n = mu exp_G [ [epsilon_n]_G^and ],
+$<map_samples>
+
+es decir, las muestras se construyen mediante la adición a la media de una desviación euclídea. Este cambio de punto de vista permite definir la covarianza como
+
+$
+  P = 1 / N sum_(n = 1) epsilon_n epsilon_n^(TT),
+$
+
+que está definido únicamente al ser $epsilon_n in RR^n$. Este planteamiento es, esencialmente, asumir que la distribución de los puntos no vive en el grupo de Lie, sino en el álgebra de Lie (intuitivamente, el espacio tangente a $mu$).
 
 
-== Evaluación de probabilidad de impacto
+== Propagación orbital bajo normal concentrada
 
+En este caso asumimos que los puntos $X_n$ se distribuyen siguiendo una normal concentrada, es decir, sus valores en el álgebra de Lie están suficientemente concentrados como para que el mapa exponencial resulte en una distribución aproximadamente normal sobre el grupo de Lie.
+
+Este es el caso que se considera típicamente en robótica @markovicWrappingKalmanFilter2017, ya que permite un tratamiento directo de la covarianza en el álgebra de Lie, y por tanto permite aplicar directamente el filtro de Kalman. Presentamos a continuación los resultados de @markovicWrappingKalmanFilter2017 adaptados al caso de la propagación orbital.
+
+Consideremos que el estado $X_1 in G$ esté formado por dos componentes
+
+$
+  X_1 = mu_1 exp_G [[epsilon_1]_G^and],
+$<locura1>
+
+dónde $mu_1 in G$ y $epsilon_1 in RR^6$ representa una incertidumbre aproximada por una distribución normal multivariable en $RR^6$ de media nula y matriz de covarianza $P_1$, es decir, $epsilon_1 tilde cal(N)(0, P_1)$. Notamos que estamos asumiendo que la distribución estadística vive en el álgebra de Lie, no en el grupo.
+
+Consideremos ahora el efecto en esta incertidumbre de nuestra función desplazamiento $Omega$, para obtener $X_2 in G$. Asumiremos que tras la propagación, el término de incertidumbre $epsilon_2$ sigue siendo normal, de media nula y matriz de covarianza $P_2$.
+
+El procedimiento más convencional considera que la media se propaga ignorando el término $epsilon$ @markovicWrappingKalmanFilter2017
+
+$
+  mu_2 = mu_1 exp_G [[Omega(X_1)]_G^and].
+$
+
+Por otra parte, la propagación de la matriz de covarianza, siguiendo la notación de @markovicWrappingKalmanFilter2017, y particularizando para el caso sin ruido aditivo, se escribe
+
+$
+  P_2 = cal(F)_1 P_1 cal(F)_1^TT
+$
+
+dónde, para un grupo abeliano (la multiplicación de nuestras matrices es commutativa)
+
+$
+  cal(F)_1 = 1 + cal(C),
+$
+
+dónde @markovicWrappingKalmanFilter2017
+
+$
+  cal(C) = I_(n times n) + evaluated(pdv(, epsilon) Omega(mu_1 exp_G [ [epsilon]^and_G ]))_(epsilon = 0)
+$
+
+se trata del Jacobiano respecto a una perturbación en el espacio de $epsilon$.
+
+Notamos que la aparición de la unidad aditiva no es más que un artefacto de cómo hemos relacionado $f(x)$ con $Omega(X)$, recordando la ecuación @locura1 y el párrafo que sigue.
+
+Ahora, ¿que sucede si los puntos dan una vuelta completa al círculo? La respuesta es, absolutamente nada. La distribución estadística vive en el espacio tangente, plano, construido alrededor de la media. Con esta construcción, la evolución de la matriz de covarianza es totalmente independiente del grupo de Lie en el que vive la dinámica real #footnote[Nuestro caso de estudio es commutativo. Un contraejemplo sería $"SO"(3)$ que no es abeliano, y dónde todo es mucho más complicado.] y por lo tanto, la propagación de incertidumbre sobre un espacio euclídeo no requiere un tratamiento especial, siempre que se cumpla la hipótesis de Gaussiana concentrada.
+
+
+== Distancia de puntos a distribuciones en grupos de Lie
+
+La idea de propagar la incertidumbre en el espacio tangente es muy práctica, ya que permite utilizar un propagador convencional y permite la utilización del filtro de Kalman (extendido, unscented, etc...).
+
+Consideremos ahora la computación de una distancia entre una distribución, $X_1 ~ (mu, P)$, con #box[$mu in G$] y #box[$P in RR^n$], y un punto #box[$X_2 in G$].
+
+=== Distancia de Mahalanobis "naive"
+
+Una primera idea podría ser construir la distribución en $RR^n$ a través de una normalización de la media, y comparar esta con la proyección del punto. Podemos escribir
+
+$
+  va(mu) = [log_G [mu]]_G^or, quad "tal que" quad va(x_1) ~ cal(N)(va(mu), P) \
+  va(x_2) = [log_G [X]]_G^or.
+$
+
+Entonces, se define la distancia de Mahalanobis entre el punto y la distribución como
+
+$
+  d = sqrt((va(x_2) - va(mu))^TT P^(-1) (va(x_2) - va(mu))).
+$
+
+El problema de esta definición es que es sensible a los errores de enrollamiento, como se aprecia en @fig:discontinuity.
+
+#figure(
+  image("../writeup/img/statistics/naive_mahalanobis.svg", width: 90%),
+  caption: [Distancia de Mahalanobis, se aprecia que, al no tener en cuenta la geometría real del espacio, surge una discontinuidad que afecta gravemente a la evaluación de la distancia al punto naranja.],
+) <fig:discontinuity>
+
+=== Distancia de Mahalanobis enrollada
+
+Como alternativa, consideremos una operación muy similar, pero esta vez proyectando el punto al espacio tangente a $mu$,
+
+$
+  va(x_1) ~ cal(N)(0, P) \
+  va(x_2) = [log_G [mu^(-1) X]]_G^or,
+$
+
+y se define distancia de Mahalanobis al origen
+
+$
+  d = sqrt(va(x_2)^TT P^(-1) va(x_2)).
+$
+
+Notamos que la acción del logaritmo es, esencialmente, tomar la distancia a la media enrollada al intervalo $[-pi, pi)$, y por lo tanto este método es equivalente a la distancia de Mahalanobis enrollada utilizada en robótica.
+
+El comportamiento de esta transformación es mejor, ya que se aleja la discontinuidad del logaritmo de la zona de interés de la distribución (asumiendo una normal concentrada), como se aprecia en la @fig:discontinuity2.
+
+#figure(
+  image("../writeup/img/statistics/wrapped_mahalanobis.svg", width: 90%),
+  caption: [Distancia de Mahalanobis alrededor de la media. Se reduce el efecto de la discontinuidad, siempre que la distribución esté suficientemente concentrada.],
+) <fig:discontinuity2>
+
+
+Por supuesto, si la distribución normal no es concentrada, surge el mismo problema que antes.
+
+=== Distancia de Mahalanobis Von Mises
+
+La distribución Gauss Von Mises, introducida en @horwoodGaussMisesDistribution2014, consiste en una distribución conjunta Gaussiana y Von Mises, dónde la media angular de la distribución Von Mises depende lineal y cuadráticamente en las variables Gaussianas. En nuestro caso de estudio, asumiremos una dependencia únicamente lineal. La distribución es entonces
+
+$
+  cal("GVM")(theta, va(x)) = cal(N)(va(mu), A A^TT) cal("VM")(Theta(va(x)), kappa),
+$
+
+dónde
+
+$
+  Theta(va(x)) = alpha + va(beta)^TT A^(-1) (va(x) - va(mu))
+$
+
+y $va(mu) in RR^n$ es la media de las variables "euclídeas", $A in RR^(n times n)$ es la descomposición inferior de Cholesky de la matriz de covarianza $P in RR^(n times n)$, $alpha in RR$ es la "media angular", $va(beta) in RR^n$ representa el acomplamiento lineal entre las distribuciones, y $kappa in RR$ es la dispersión de Von Mises.
+
+==== Cálculo de la distancia
+
+En @horwoodGaussMisesDistribution2014 se define la distancia Mahalanobis Von Mises de un punto como la suma de la distancia de Mahalanobis en el espacio euclídeo, más una distancia angular. Para un punto $(theta, va(x))$, escribimos
+
+$
+  d^2 = (va(x) - va(mu))^TT (A A^(-1))^(-1) (va(x) - va(mu)) + 4 kappa sin^2 (1/2 (theta - alpha - beta^TT A^(-1) (va(x) - va(mu)))).
+$
+
+==== Obtención de la distribución Gauss Von Mises a partir de una Gaussiana
+
+Tenemos la expresión para calcular la distancia de Mahalanobis Von Mises, pero carecemos de un método para convertir nuestra Gaussiana en el álgebra de Lie en una distribución Gauss Von Mises.
+
+La función característica para esta distribución es @horwoodGaussMisesDistribution2014
+
+$
+  phi^"GVM" (va(xi), m) = (I_(abs(m))(kappa)) / (I_0(kappa)) exp[i (va(mu)^TT va(xi) + m alpha) - 1/2 (A^TT va(xi) + m beta)^TT (A^TT va(xi) + m va(beta))],
+$
+
+dónde $va(xi) in RR^n$ y $m in ZZ$. Recordando la definición de la función característica,
+
+$
+  phi^"GVM" (va(xi), m) = EE[e^i(va(xi)^TT va(x) + m theta)]
+$
+
+se hace evidente porqué $m$ queda limitado a $ZZ$, esto se debe a que, para $m$ no entero, $e^(i m theta)$ no sería cíclico en $theta$, y la expresión carecería de sentido @mardiaDirectionalStatistics1999.
+
+La distribución marginal a partir de la función característica se obtiene poniendo el parámetro sobre el que marginalizamos a $0$. Por lo tanto, para $va(xi) = 0$, tenemos
+
+$
+  phi^"GVM" (0, m) = (I_abs(m) (kappa)) / (I_0 (kappa)) exp[
+    i m alpha - m^2/2 va(beta)^TT va(beta)
+  ].
+$
+
+Podemos entender esta expresión como el producto de una distribución Von Mises (con media nula, y valor $kappa$) y una distribución normal "enrollada" con media $alpha$ y varianza $sigma^2 = va(beta)^TT va(beta)$:
+
+$
+  phi^"GVM" (0, m) = underbrace((I_abs(m) (kappa)) / (I_0 (kappa)), "Von Mises") underbrace(exp[i m alpha - m^2 / 2 sigma^2], "Gaussiana en círculo").
+$
+
+
+Esta función característica marginal no es una Von Mises. Ya que la función característica se puede convertir en la función distribución de probabilidad mediante la transformada inversa de Fourier, podemos entender, mediante el teorema de la convolución, este marginal como la convolución de una Von Mises y una distribución normal (enrollada en el círculo, debido al argumento $m$ siendo entero en vez de un número real).
 
 
 #bibliography("../writeup/refs.bib")
