@@ -1,14 +1,30 @@
-#import "@preview/bananote:0.1.2": *
 #import "@preview/physica:0.9.8": *
 
-#show: note.with(
-  title: [Notas sobre propagación orbital en el espacio $"SO"(2) times RR^5$],
+#import "@preview/ilm:1.4.2": *
+
+#set text(lang: "es")
+// #set text(font: "Noto Sans")
+// #show math.equation: set text(font: "Fira Math", fallback: true)
+#set quote(block: true)
+
+#show: ilm.with(
+  title: [Notas sobre propagación de incertidumbre],
+  author: "José Antonio Mayo García",
+  bibliography: bibliography("../writeup/refs.bib"),
+  figure-index: (enabled: true),
+  table-index: (enabled: false),
+  listing-index: (enabled: false),
+  abstract: [
+    Se parte del paper @markovicWrappingKalmanFilter2017 y se particulariza a las necesidades de la propagación orbital, considerando un grupo de Lie "cilíndrico" $"SO"(2) times RR^5$ como el espacio en el que realizar la propagación orbital. Posteriormente, se considera el vector de estado como una variable aleatoria con media sobre este espacio cilíndrico, y incertidumbre sobre el álgebra de Lie siguiendo el tratamiento estadístico detallado en @bourmaudContinuousDiscreteExtendedKalman2015. Se deducen las características de la propagación bajo la hipótesis de normal concentrada, y se introducen varias distancias de Mahalanobis apropiadas para el problema.],
+  paper-size: "a4",
 )
 
 #set math.equation(numbering: "(1)")
 
-#abstract[Se parte del paper @markovicWrappingKalmanFilter2017 y se particulariza a las necesidades de la propagación orbital, considerando un grupo de Lie "cilíndrico" $"SO"(2) times RR^5$ como el espacio en el que realizar la propagación orbital. Posteriormente, se considera el vector de estado como una variable aleatoria sobre este espacio cilíndrico siguiendo el tratamiento estadístico detallado en @bourmaudContinuousDiscreteExtendedKalman2015, y se propone un filtro similar al filtro unscented convencional, junto con la construcción de una distribución Von Mises a-posteriori que permite comparar distribuciones sin problemas de enrollamiento.]
 
+#outline()
+
+#pagebreak()
 = Notación
 
 Se utilizará la misma notación que en @markovicWrappingKalmanFilter2017.
@@ -74,7 +90,7 @@ $
 El mapa exponencial es, literalmente, el exponencial matricial
 
 $
-  exp_G[[theta_k]_G^and] = exp[mat(0, -theta_k; theta_k, 0)] =
+  exp_G [[theta_k]_G^and] = exp[mat(0, -theta_k; theta_k, 0)] =
   sum_(n = 0)^infinity mat(0, -theta_k; theta_k, 0)^n / (n!) = \
   mat(1, 0; 0, 1)
   + mat(0, -theta_k; theta_k, 0)
@@ -86,7 +102,7 @@ $
 que identificamos con el desarrollo en serie del seno y coseno en cada posición de la matriz, para obtener
 
 $
-  exp_G[[theta_k]_G^and] = mat(cos(theta_k), -sin(theta_k); sin(theta_k), cos(theta_k)) = R_(theta_k)
+  exp_G [[theta_k]_G^and] = mat(cos(theta_k), -sin(theta_k); sin(theta_k), cos(theta_k)) = R_(theta_k)
 $
 
 El logaritmo es más complicado de desarrollar, ya que presenta varias ramas. Para el desarrollo que realizaremos, no es necesaria intuición sobre el logaritmo matricial, así que no entraremos en detalle.
@@ -144,10 +160,10 @@ $
   ),
 $
 
-evaluando en el origen, obtenemos un elemento del álgebra de Lie, asociado a su vector de $RR^(n+1)$ $x_k = mat(theta_k, a_k, b_k, ...)^TT$
+evaluando en el origen, obtenemos un elemento del álgebra de Lie, asociado a su vector de $RR^(n+1)$, $va(x_k) = mat(theta_k, a_k, b_k, ...)^TT$
 
 $
-  [x_k]_G^and = mat(
+  [va(x_k)]_G^and = mat(
     mat(0, -theta_k; theta_k, 0), , , ;
     , mat(0, a_k; 0, 0), , ;
     , , mat(0, b_k; 0, 0), ;
@@ -158,7 +174,7 @@ $
 Podemos verificar que el mapa exponencial sigue siendo el exponencial matricial, notando que el exponencial de una matriz de bloques con los elementos fuera de la diagonal vacíos no es más que la matriz de los bloques exponenciados:
 
 $
-  exp[[x_k]_G^and] =
+  exp[[va(x_k)]_G^and] =
   mat(
     exp[mat(0, -theta_k; theta_k, 0)], , , ;
     , exp[mat(0, a_k; 0, 0)], , ;
@@ -208,15 +224,15 @@ Intuitivamente:
 
 == Tratamiento de la transición de estado como un elemento del grupo de Lie
 
-No es immediatamente obvio que relación tiene $Omega$ con nuestro propagador orbital. Denominemos #box[$x_k = (theta_k, a_k, b_k, c_k, d_k, e_k) in RR^6$] a nuestro vector de estado orbital (ignorando la realidad angular de $theta_k$, $[x_k]_G^and in frak(g)$ es el verdadero elemento del álgebra de Lie que trata el ángulo correctamente).
+No es immediatamente obvio que relación tiene $Omega$ con nuestro propagador orbital. Denominemos #box[$va(x_k) = (theta_k, a_k, b_k, c_k, d_k, e_k) in RR^6$] a nuestro vector de estado orbital (ignorando la realidad angular de $theta_k$, $[va(x_k)]_G^and in frak(g)$ es el verdadero elemento del álgebra de Lie que trata el ángulo correctamente).
 
 Consideremos, heredando de la notación del filtro de Kalman utilizada en @markovicWrappingKalmanFilter2017, que el propagador orbital se puede escribir como una actualización de estado
 
 $
-  x_(k + 1) = f(x_k) = x_k + hat(f_k)(x_k),
+  va(x_(k + 1)) = f(va(x_k)) = va(x_k) + hat(f_k)(va(x_k)),
 $
 
-notando que no se pierde generalidad por poder tener el término $-x_k$ dentro de $hat(f_k)(x_k)$ @markovicWrappingKalmanFilter2017.
+notando que no se pierde generalidad por poder tener el término $-va(x_k)$ dentro de $hat(f_k)(x_k)$ @markovicWrappingKalmanFilter2017.
 
 Ahora, consideremos que significado tiene la adición de cada término vectorial:
 
@@ -525,6 +541,4 @@ $
 
 Esta función característica marginal no es una Von Mises. Ya que la función característica se puede convertir en la función distribución de probabilidad mediante la transformada inversa de Fourier, podemos entender, mediante el teorema de la convolución, este marginal como la convolución de una Von Mises y una distribución normal (enrollada en el círculo, debido al argumento $m$ siendo entero en vez de un número real).
 
-
-#bibliography("../writeup/refs.bib")
 
