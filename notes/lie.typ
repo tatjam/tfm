@@ -427,7 +427,7 @@ Notamos que la aparición de la unidad aditiva no es más que un artefacto de c�
 Ahora, ¿que sucede si los puntos dan una vuelta completa al círculo? La respuesta es, absolutamente nada. La distribución estadística vive en el espacio tangente, plano, construido alrededor de la media. Con esta construcción, la evolución de la matriz de covarianza es totalmente independiente del grupo de Lie en el que vive la dinámica real #footnote[Nuestro caso de estudio es commutativo. Un contraejemplo sería $"SO"(3)$ que no es abeliano, y dónde todo es mucho más complicado.] y por lo tanto, la propagación de incertidumbre sobre un espacio euclídeo no requiere un tratamiento especial, siempre que se cumpla la hipótesis de Gaussiana concentrada.
 
 
-== Distancia de puntos a distribuciones en grupos de Lie
+== Distancias de Mahalanobis en grupos de Lie
 
 La idea de propagar la incertidumbre en el espacio tangente es muy práctica, ya que permite utilizar un propagador convencional y permite la utilización del filtro de Kalman (extendido, unscented, etc...).
 
@@ -482,7 +482,7 @@ El comportamiento de esta transformación es mejor, ya que se aleja la discontin
 
 Por supuesto, si la distribución normal no es concentrada, surge el mismo problema que antes.
 
-=== Distancia de Mahalanobis Von Mises
+== Distancia de Mahalanobis Von Mises
 
 La distribución Gauss Von Mises, introducida en @horwoodGaussMisesDistribution2014, consiste en una distribución conjunta Gaussiana y Von Mises, dónde la media angular de la distribución Von Mises depende lineal y cuadráticamente en las variables Gaussianas. En nuestro caso de estudio, asumiremos una dependencia únicamente lineal. La distribución es entonces
 
@@ -498,15 +498,13 @@ $
 
 y $va(mu) in RR^n$ es la media de las variables "euclídeas", $A in RR^(n times n)$ es la descomposición inferior de Cholesky de la matriz de covarianza $P in RR^(n times n)$, $alpha in RR$ es la "media angular", $va(beta) in RR^n$ representa el acomplamiento lineal entre las distribuciones, y $kappa in RR$ es la dispersión de Von Mises.
 
-==== Cálculo de la distancia
-
 En @horwoodGaussMisesDistribution2014 se define la distancia Mahalanobis Von Mises de un punto como la suma de la distancia de Mahalanobis en el espacio euclídeo, más una distancia angular. Para un punto $(theta, va(x))$, escribimos
 
 $
   d^2 = (va(x) - va(mu))^TT (A A^(-1))^(-1) (va(x) - va(mu)) + 4 kappa sin^2 (1/2 (theta - alpha - beta^TT A^(-1) (va(x) - va(mu)))).
 $
 
-==== Obtención de la distribución Gauss Von Mises a partir de una Gaussiana
+== Obtención de la distribución Gauss Von Mises a partir de una Gaussiana
 
 Tenemos la expresión para calcular la distancia de Mahalanobis Von Mises, pero carecemos de un método para convertir nuestra Gaussiana en el álgebra de Lie en una distribución Gauss Von Mises.
 
@@ -578,7 +576,7 @@ $
   m va(xi)^TT A va(beta) + 1/2 m^2 va(beta)^TT va(beta) + 1/2 va(xi)^TT P va(xi).
 $
 
-==== Ajuste por moment-matching si $kappa -> infinity$
+=== Ajuste por moment-matching si $kappa -> infinity$
 
 Vamos a comparar ahora las expresiones de $phi^N$ y $phi^"GVM"$, bajo la anterior expansión
 
@@ -595,10 +593,10 @@ Dentro del exponencial, asemejamos, para $va(mu) = va(mu_e)$, $va(xi) = va(eta_e
 $
   hat(alpha) = alpha \
   hat(P_e) = P, \
-  hat(A)_e = A,
+  hat(P_e) = hat(A)_e hat(A)_e^TT,
 $
 
-dónde $P = A A^TT$ de la Gauss Von Mises. Por otra parte, igualando términos según su orden en $n = m$
+dónde $P = A A^TT$ de la Gauss Von Mises. Es importante notar que es necesario realizar de nuevo la descomposición de Cholesky para la submatriz "euclídea". Por otra parte, igualando términos según su orden en $n = m$
 
 $
   va(beta)^TT va(beta) = sigma^2,
@@ -626,7 +624,7 @@ $
 
 expresión idéntica hasta el orden de filas con la presentada en @horwoodGaussMisesDistribution2014 cuando $kappa -> infinity$.
 
-==== Ajuste por moment-matching con $kappa$ finito
+=== Ajuste por moment-matching con $kappa$ finito
 
 En el caso de $kappa$ finito, asumamos igual que antes $va(mu) = va(mu_e)$, $va(xi) = va(eta_e)$ y $m = n$ para realizar el moment-matching. Ahora, no es posible igualar término a término debido a la aparición del factor de escala fuera de la exponencial, por lo tanto la distribución normal obtenida no será exacta (no podría serlo de ninguna forma). En particular, plantearemos que la distribución normal tenga idénticos momentos de primer orden angulares (es decir, media angular y dispersión) que la Gauss Von Mises.
 
@@ -663,10 +661,10 @@ y igualando las magnitudes, relacionamos las matrices de covarianza y obtenemos
 
 $
   P = hat(P_e) \
-  A = hat(A)_e
+  P = A A^TT,
 $
 
-Por último, para obtener $va(beta)$, estudiaremos el caso en el que $va(xi) -> 0$ a través del gradiente de la función característica en el origen. Para ello, sustituimos las igualdades anteriores,
+notando que es necesario realizar la descomposición de Cholesky a la submatriz. Por último, para obtener $va(beta)$, estudiaremos el caso en el que $va(xi) -> 0$ a través del gradiente de la función característica en el origen. Para ello, sustituimos las igualdades anteriores,
 
 $
   phi^"GVM" & = (I_(abs(m))(kappa)) / (I_0(kappa)) &exp[ & i (va(mu)^TT va(xi) + m alpha) & - m va(xi)^TT A va(beta) &- 1/2 m^2 va(beta)^TT va(beta) &- 1/2 va(xi)^TT P va(xi).
@@ -687,4 +685,14 @@ Igualando ambas expresiones, y sustituyendo la @numericaBessel, tenemos
 $
   A va(beta) = va(gamma) => va(beta) = A^(-1) va(gamma).
 $
+
+=== Evaluación del moment-matching
+
+Para evaluar las anteriores experiones, planteamos un método Monte Carlo en el que se muestreará una normal multivariable, su Gauss Von Mises correspondiente obtenida por el método previamente introducido, y se evaluará la similitud de las nubes de puntos.
+
+Para ello se ha planteado un método "Classifier two-sample test (C2ST)", basado en entrenar un clasificador con muestras de ambas distribuciones @lopez-pazRevisitingClassifierTwoSample2018.
+
+Para ello, se parte de los conjunto de puntos $S_cal(N) ~ cal(N)(va(mu), P)$ y $S_cal("GVM") ~ cal("GVM")(va(mu), P, va(beta), kappa)$, y se marcan las muestras de cada uno con un indicator positivo o negativo, respectivamente. Posteriormente, se entrena un clasificador que, dado un conjunto de muestras, prediga si el indicador es positivo o negativo. Si el clasificador es exitoso (clasifica mejor que al azar), consideraremos ambas muestras tomadas de distribuciones similares. Si por el contrario, el clasificador no logra superar el azar, se considerarán que las muestras son de distribuciones diferentes. Para el entrenamiento simplemente se muestrean subconjuntos de ambos conjuntos de puntos, junto con sus indicadores.
+
+La ventaja de estos métodos es que escalan linealmente con el número de puntos (al contrario de pruebas estadísticas más rigurosas, que escalan con el cuadrado) y son muy fáciles de implementar partiendo de las librerías de aprendizaje por máquina disponibles en Python. Todo el código se encuentra en el anexo `moment_matching_evaluation.py`.
 
