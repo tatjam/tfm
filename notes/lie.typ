@@ -543,7 +543,7 @@ $
   phi^N (va(eta))
   = exp[i va(mu)^TT va(eta) - 1/2 va(eta)^TT P va(eta)] = \ =
   phi^N (va(eta_e), n) =
-  exp[i (va(mu_e)^TT va(eta_e) + n hat(alpha)) - 1/2 sigma^2 n^2 - n va(gamma)va(eta_e)^TT - 1/2 va(eta_e)^TT hat(P_e) va(eta_e)]
+  exp[i (va(mu_e)^TT va(eta_e) + n hat(alpha)) - 1/2 sigma^2 n^2 - n va(eta_e)^TT va(gamma)- 1/2 va(eta_e)^TT hat(P_e) va(eta_e)]
 $
 
 dónde $va(eta) in RR^n$, $va(eta_e) in RR^(n-1)$ y $n in RR$. Si realizamos la factorización de Cholesky de $hat(P_e)$, y la denominamos $hat(A)_e$, podemos asimilar esta expresión a la de Gauss Von Mises.
@@ -585,7 +585,7 @@ Vamos a comparar ahora las expresiones de $phi^N$ y $phi^"GVM"$, bajo la anterio
 $
   phi^"GVM" & = (I_(abs(m))(kappa)) / (I_0(kappa)) &exp[ & i (va(mu)^TT va(xi) + m alpha) & - m va(xi)^TT A va(beta) &- 1/2 m^2 va(beta)^TT va(beta) &- 1/2 va(xi)^TT P va(xi).
   ], \
-  phi^N & = &exp[&i (va(mu_e)^TT va(eta_e) + n hat(alpha)) &- n va(gamma) va(eta_e)^TT &- 1/2 sigma^2 n^2 &- 1/2 va(eta_e)^TT hat(P_e) va(eta_e)].
+  phi^N & = &exp[&i (va(mu_e)^TT va(eta_e) + n hat(alpha)) &- n va(eta_e)^TT va(gamma) &- 1/2 sigma^2 n^2 &- 1/2 va(eta_e)^TT hat(P_e) va(eta_e)].
 $
 
 Observamos una marcada semejanza, lo que justifica una aproximación entre ambas. Comenzemos por el caso $kappa -> infinity$, ya que este es presentado en @horwoodGaussMisesDistribution2014 (si bien mediante un desarrollo alternativo). En este caso, $lim_(kappa -> infinity) (I_(abs(m))(kappa)) / (I_0(kappa)) = 1$.
@@ -607,11 +607,10 @@ $
 y la ecuación (sustituyendo $va(xi) = va(eta_e)$)
 
 $
-  va(xi)^TT A va(beta) = va(gamma) va(xi)^TT \
+  va(xi)^TT A va(beta) = va(xi^TT) va(gamma) \
 $
 
-de donde concluimos por independencia de la igualdad en $va(xi)$ y el hecho de que la expresión es un escalar
-
+de donde concluimos por independencia de la igualdad en $va(xi)$
 $
   va(gamma) = A va(beta)
 $
@@ -672,7 +671,7 @@ Por último, para obtener $va(beta)$, estudiaremos el caso en el que $va(xi) -> 
 $
   phi^"GVM" & = (I_(abs(m))(kappa)) / (I_0(kappa)) &exp[ & i (va(mu)^TT va(xi) + m alpha) & - m va(xi)^TT A va(beta) &- 1/2 m^2 va(beta)^TT va(beta) &- 1/2 va(xi)^TT P va(xi).
   ], \
-  phi^N & = &exp[&i (va(mu)^TT va(xi) + m alpha) &- m va(gamma) va(xi)^TT &- 1/2 sigma^2 m^2 &- 1/2 va(xi)^TT P va(xi)]. \
+  phi^N & = &exp[&i (va(mu)^TT va(xi) + m alpha) &- m va(xi)^TT va(gamma) &- 1/2 sigma^2 m^2 &- 1/2 va(xi)^TT P va(xi)]. \
 $
 
 y totamos el gradiente respecto a $xi$, evaluado en $xi = 0$,
