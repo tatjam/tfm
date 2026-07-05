@@ -1,5 +1,7 @@
 sympy
 numpy
 matplotlib
+seaborn
 scipy
 scikit-learn
+pqdm
