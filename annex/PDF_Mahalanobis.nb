@@ -166,7 +166,7 @@ Cell[BoxData[{
   RowBox[{"markermu", "=",
    RowBox[{"Graphics3D", "[",
     RowBox[{"{",
-     RowBox[{"Pink", ",",
+     RowBox[{"Magenta", ",",
       RowBox[{"Thickness", "[", "0.005", "]"}], ",",
       RowBox[{"Line", "[",
        RowBox[{"{",
@@ -256,7 +256,7 @@ Cell[BoxData[{
  RowBox[{
   RowBox[{"markermubent", "=",
    RowBox[{"markerbent", "[",
-    RowBox[{"mu", ",", "Pink"}], "]"}]}], ";"}]}], "Input"],
+    RowBox[{"mu", ",", "Magenta"}], "]"}]}], ";"}]}], "Input"],
 
 Cell[BoxData[
  RowBox[{
@@ -561,7 +561,7 @@ Cell[BoxData[{
   RowBox[{"markermut", "=",
    RowBox[{"Graphics3D", "[",
     RowBox[{"{",
-     RowBox[{"Pink", ",",
+     RowBox[{"Magenta", ",",
       RowBox[{"Thickness", "[", "0.005", "]"}], ",",
       RowBox[{"Line", "[",
        RowBox[{"{",
@@ -600,7 +600,8 @@ Cell[BoxData[{
    RowBox[{"markerbent", "[",
     RowBox[{
      RowBox[{"{",
-      RowBox[{"0", ",", "0"}], "}"}], ",", "Pink"}], "]"}]}], ";"}]}], "Input"],
+      RowBox[{"0", ",", "0"}], "}"}], ",", "Magenta"}], "]"}]}],
+  ";"}]}], "Input"],
 
 Cell[BoxData[
  RowBox[{

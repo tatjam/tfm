@@ -537,57 +537,45 @@ $
   va(x) = mat(theta; va(x_e))
 $
 
-tal que podemos escribir la función característica de la distribución normal multivariable (ver anexo `ExpandNormalCharacteristic.nb`)
+tal que podemos escribir la función característica de la distribución normal multivariable (ver anexo `expand_normal_characteristic.py`)
 
 $
   phi^N (va(eta))
   = exp[i va(mu)^TT va(eta) - 1/2 va(eta)^TT P va(eta)] = \ =
   phi^N (va(eta_e), n) =
-  exp[i (va(mu_e)^TT va(eta_e) + n hat(alpha)) - 1/2 sigma^2 n^2 - n va(gamma)^TT va(eta_e) - 1/2 va(eta_e)^TT hat(P) va(eta_e)]
+  exp[i (va(mu_e)^TT va(eta_e) + n hat(alpha)) - 1/2 sigma^2 n^2 - n va(gamma)^TT va(eta_e) - 1/2 va(eta_e)^TT hat(P_e) va(eta_e)]
 $
 
-dónde $va(eta) in RR^n$, $va(eta_e) in RR^(n-1)$ y $n in RR$. Si realizamos la factorización de Cholesky de $hat(P)$, y la denominamos $hat(A)$, asimilar esta expresión a la de Gauss Von Mises.
+dónde $va(eta) in RR^n$, $va(eta_e) in RR^(n-1)$ y $n in RR$. Si realizamos la factorización de Cholesky de $hat(P_e)$, y la denominamos $hat(A)_e$, podemos asimilar esta expresión a la de Gauss Von Mises.
 
-Podemos para ello realizar la multiplicación
+Podemos para ello realizar la multiplicación (ver anexo `expand_normal_characteristic.py`)
 
 $
-  1/2 (hat(A) va(eta_e)^TT + n va(gamma))^TT (hat(A)^TT va(eta_e) + n va(gamma)) = \
+  1/2 (A^TT va(xi) + m va(beta))^TT (A^TT va(xi) + m va(beta)) = \
   =
-  1/2 [va(eta_e)^TT hat(A) hat(A)^TT va(eta_e) + n va(eta_e)^TT hat(A) va(gamma) +
-    n va(gamma)^TT hat(A)^TT va(eta_e) + n^2 va(gamma)^TT va(gamma)].
+  1/2 [va(xi)^TT A A^TT va(xi) + va(xi)^TT A m va(beta) +
+    va(beta)^TT m A^TT va(xi) + m^2 va(beta)^TT va(beta)].
 $
 
 Notamos que
 
 $
-  (n va(eta_e)^TT hat(A) va(gamma))^TT = n va(gamma)^TT hat(A)^TT va(eta_e),
+  (va(beta)^TT m A^TT va(eta)_e)^TT = va(eta)_e^TT A m va(beta),
 $
 
-y esta última magnitud es un escalar (es decir, se cumple $x^TT = x$ trivialmente), por lo que podemos agrupar los términos
+y esta última magnitud es un escalar (es decir, se cumple $x^TT = x$ trivialmente), por lo que podemos agrupar los dos términos.
+
+Por otra parte, recordamos que $A A^TT = hat(P_e)$ por ser su descomposición de Cholesky. Por lo tanto
 
 $
-  n va(eta_e)^TT hat(A) va(gamma) + n va(eta_e)^TT hat(A) va(gamma) =
-  2 n va(gamma)^TT hat(A)^TT va(eta_e).
-$
-
-Por otra parte, recordamos que $hat(A) hat(A)^TT = hat(P)$ por ser su descomposición de Cholesky. Por lo tanto
-
-$
-  va(eta_e)^TT hat(A) hat(A)^TT va(eta_e) = va(eta_e)^TT hat(P) va(eta_e).
+  va(xi)^TT A A^TT va(xi) = va(xi)^TT hat(P)_e va(xi)
 $
 
 Tenemos entonces
 
 $
-  1/2 (hat(A) va(eta_e)^TT + n va(gamma))^TT (hat(A)^TT va(eta_e) + n va(gamma)) = \
-  n va(gamma)^TT hat(A)^TT va(eta_e) + 1/2 n^2 va(gamma)^TT va(gamma) + 1/2 va(eta_e)^TT hat(P) va(eta_e).
-$
-
-Realizando el mismo desarrollo para la expresión de Gauss Von Mises,
-
-$
-  1/2 (A va(xi)^TT + m va(beta))^TT (A^TT va(xi) + m va(beta)) = \
-  m va(beta)^TT A^TT va(xi) + 1/2 m^2 va(beta)^TT va(beta) + 1/2 va(xi)^TT P va(xi).
+  1/2 (A^TT va(xi) + m va(beta))^TT (A^TT va(xi) + m va(beta)) = \
+  m va(xi)^TT A va(beta) + 1/2 m^2 va(beta)^TT va(beta) + 1/2 va(xi)^TT P va(xi).
 $
 
 ==== Ajuste por moment-matching si $kappa -> infinity$
@@ -595,9 +583,9 @@ $
 Vamos a comparar ahora las expresiones de $phi^N$ y $phi^"GVM"$, bajo la anterior expansión
 
 $
-  phi^"GVM" & = (I_(abs(m))(kappa)) / (I_0(kappa)) &exp[ & i (va(mu)^TT va(xi) + m alpha) & - m va(beta)^TT A^TT va(xi) &- 1/2 m^2 va(beta)^TT va(beta) &- 1/2 va(xi)^TT P va(xi).
+  phi^"GVM" & = (I_(abs(m))(kappa)) / (I_0(kappa)) &exp[ & i (va(mu)^TT va(xi) + m alpha) & - m va(xi)^TT A va(beta) &- 1/2 m^2 va(beta)^TT va(beta) &- 1/2 va(xi)^TT P va(xi).
   ], \
-  phi^N & = &exp[&i (va(mu_e)^TT va(eta_e) + n hat(alpha)) &- n va(gamma)^TT va(mu_e) &- 1/2 sigma^2 n^2 &- 1/2 va(eta_e)^TT hat(P) va(eta_e)].
+  phi^N & = &exp[&i (va(mu_e)^TT va(eta_e) + n hat(alpha)) &- n va(gamma)^TT va(eta_e) &- 1/2 sigma^2 n^2 &- 1/2 va(eta_e)^TT hat(P_e) va(eta_e)].
 $
 
 Observamos una marcada semejanza, lo que justifica una aproximación entre ambas. Comenzemos por el caso $kappa -> infinity$, ya que este es presentado en @horwoodGaussMisesDistribution2014 (si bien mediante un desarrollo alternativo). En este caso, $lim_(kappa -> infinity) (I_(abs(m))(kappa)) / (I_0(kappa)) = 1$.
@@ -607,13 +595,25 @@ Dentro del exponencial, asemejamos, para $va(mu) = va(mu_e)$, $va(xi) = va(eta_e
 $
   hat(alpha) = alpha \
   hat(P_e) = P, \
+  hat(A)_e = A,
 $
 
 dónde $P = A A^TT$ de la Gauss Von Mises. Por otra parte, igualando términos según su orden en $n = m$
 
 $
-  va(beta)^TT A^TT = va(gamma)^TT \
-  va(beta)^TT va(beta) = sigma^2
+  va(beta)^TT va(beta) = sigma^2,
+$
+
+y la ecuación (sustituyendo $va(xi) = va(eta_e)$)
+
+$
+  va(xi)^TT A va(beta) = va(gamma)^TT va(xi) = \
+$
+
+de donde concluimos por independencia de la igualdad en $va(xi)$ y el hecho de que la expresión es un escalar
+
+$
+  va(gamma) = A va(beta)
 $
 
 lo que nos permite obtener
@@ -629,7 +629,58 @@ expresión idéntica hasta el orden de filas con la presentada en @horwoodGaussM
 
 ==== Ajuste por moment-matching con $kappa$ finito
 
-En el caso de $kappa$ finito, asumamos igual que antes $va(mu) = va(mu_e)$, $va(xi) = va(eta_e)$ y $m = n$ para realizar el moment-matching. Ahora, no es posible igualar término a término debido a la aparición del factor de escala fuera de la exponencial.
+En el caso de $kappa$ finito, asumamos igual que antes $va(mu) = va(mu_e)$, $va(xi) = va(eta_e)$ y $m = n$ para realizar el moment-matching. Ahora, no es posible igualar término a término debido a la aparición del factor de escala fuera de la exponencial, por lo tanto la distribución normal obtenida no será exacta (no podría serlo de ninguna forma). En particular, plantearemos que la distribución normal tenga idénticos momentos de primer orden angulares (es decir, media angular y dispersión) que la Gauss Von Mises.
+
+Consideremos el caso $va(xi) = 0$ y $m = 1$, tenemos entonces
+
+$
+  phi^"GVM" & = (I_1(kappa)) / (I_0(kappa)) &exp[ & i alpha & - 1/2 va(beta)^TT va(beta) ], \
+  phi^N & = &exp[ & i hat(alpha) & - 1/2 sigma^2 ]. \
+$
+
+Igualando las fases, garantizamos que ambas distribuciones tengan la misma media angular @mardiaDirectionalStatistics1999, lo que permite obtener $alpha = hat(alpha)$. Igualando las normas, garantizamos que ambas tengan la misma dispersión, y obtenemos la siguiente ecuación para $kappa$ y $beta$,
+
+$
+  (I_1(kappa)) / (I_0(kappa)) = (va(beta)^TT va(beta) - sigma^2) / 2,
+$
+
+que no tiene solución analítica, pero se comporta bien numéricamente (más adelante lo demostramos).
+
+Ahora, consideremos el caso con $va(xi) != va(0)$ y $m = 0$, tenemos entonces
+
+$
+  phi^"GVM" & = & exp[ & i va(mu)^TT va(xi)   &         - 1/2 va(xi)^TT P va(xi).
+                                                        ], \
+      phi^N & = & exp[ & i va(mu_e)^TT va(xi) & - 1/2 va(xi)^TT hat(P_e) va(xi)]. \
+$
+
+De nuevo, igualando fases podemos relacionar las medias y obtener
+
+$
+  va(mu_e) = va(mu),
+$
+
+y igualando las magnitudes, relacionamos las matrices de covarianza y obtenemos
+
+$
+  P = hat(P_e) \
+  A = hat(A)_e
+$
+
+Por último, para obtener $va(beta)$, notamos que, sustituyendo las anteriores igualdades en la expresión general de las funciones características
+
+$
+  phi^"GVM" & = (I_(abs(m))(kappa)) / (I_0(kappa)) &exp[ & i (va(mu)^TT va(xi) + m alpha) & - m va(xi)^TT A va(beta) &- 1/2 m^2 va(beta)^TT va(beta) &- 1/2 va(xi)^TT P va(xi).
+  ], \
+  phi^N & = &exp[&i (va(mu)^TT va(xi) + m alpha) &- m va(gamma)^TT va(xi) &- 1/2 sigma^2 m^2 &- 1/2 va(xi)^TT P va(xi)]. \
+$
+
+debemos igualar, para los diferentes órdenes de $m$
+
+$
+  va(xi)^TT A va(beta) = va(gamma)^TT va(xi) \
+$
+
 
 ==== TODO
 
