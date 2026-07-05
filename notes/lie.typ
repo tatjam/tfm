@@ -543,7 +543,7 @@ $
   phi^N (va(eta))
   = exp[i va(mu)^TT va(eta) - 1/2 va(eta)^TT P va(eta)] = \ =
   phi^N (va(eta_e), n) =
-  exp[i (va(mu_e)^TT va(eta_e) + n hat(alpha)) - 1/2 sigma^2 n^2 - n va(gamma)^TT va(eta_e) - 1/2 va(eta_e)^TT hat(P_e) va(eta_e)]
+  exp[i (va(mu_e)^TT va(eta_e) + n hat(alpha)) - 1/2 sigma^2 n^2 - n va(gamma)va(eta_e)^TT - 1/2 va(eta_e)^TT hat(P_e) va(eta_e)]
 $
 
 dónde $va(eta) in RR^n$, $va(eta_e) in RR^(n-1)$ y $n in RR$. Si realizamos la factorización de Cholesky de $hat(P_e)$, y la denominamos $hat(A)_e$, podemos asimilar esta expresión a la de Gauss Von Mises.
@@ -585,7 +585,7 @@ Vamos a comparar ahora las expresiones de $phi^N$ y $phi^"GVM"$, bajo la anterio
 $
   phi^"GVM" & = (I_(abs(m))(kappa)) / (I_0(kappa)) &exp[ & i (va(mu)^TT va(xi) + m alpha) & - m va(xi)^TT A va(beta) &- 1/2 m^2 va(beta)^TT va(beta) &- 1/2 va(xi)^TT P va(xi).
   ], \
-  phi^N & = &exp[&i (va(mu_e)^TT va(eta_e) + n hat(alpha)) &- n va(gamma)^TT va(eta_e) &- 1/2 sigma^2 n^2 &- 1/2 va(eta_e)^TT hat(P_e) va(eta_e)].
+  phi^N & = &exp[&i (va(mu_e)^TT va(eta_e) + n hat(alpha)) &- n va(gamma) va(eta_e)^TT &- 1/2 sigma^2 n^2 &- 1/2 va(eta_e)^TT hat(P_e) va(eta_e)].
 $
 
 Observamos una marcada semejanza, lo que justifica una aproximación entre ambas. Comenzemos por el caso $kappa -> infinity$, ya que este es presentado en @horwoodGaussMisesDistribution2014 (si bien mediante un desarrollo alternativo). En este caso, $lim_(kappa -> infinity) (I_(abs(m))(kappa)) / (I_0(kappa)) = 1$.
@@ -607,7 +607,7 @@ $
 y la ecuación (sustituyendo $va(xi) = va(eta_e)$)
 
 $
-  va(xi)^TT A va(beta) = va(gamma)^TT va(xi) = \
+  va(xi)^TT A va(beta) = va(gamma) va(xi)^TT \
 $
 
 de donde concluimos por independencia de la igualdad en $va(xi)$ y el hecho de que la expresión es un escalar
@@ -641,8 +641,8 @@ $
 Igualando las fases, garantizamos que ambas distribuciones tengan la misma media angular @mardiaDirectionalStatistics1999, lo que permite obtener $alpha = hat(alpha)$. Igualando las normas, garantizamos que ambas tengan la misma dispersión, y obtenemos la siguiente ecuación para $kappa$ y $beta$,
 
 $
-  (I_1(kappa)) / (I_0(kappa)) = (va(beta)^TT va(beta) - sigma^2) / 2,
-$
+  (I_1(kappa)) / (I_0(kappa)) = exp[(va(beta)^TT va(beta) - sigma^2) / 2],
+$<numericaBessel>
 
 que no tiene solución analítica, pero se comporta bien numéricamente (más adelante lo demostramos).
 
@@ -667,49 +667,25 @@ $
   A = hat(A)_e
 $
 
-Por último, para obtener $va(beta)$, notamos que, sustituyendo las anteriores igualdades en la expresión general de las funciones características
+Por último, para obtener $va(beta)$, estudiaremos el caso en el que $va(xi) -> 0$ a través del gradiente de la función característica en el origen. Para ello, sustituimos las igualdades anteriores,
 
 $
   phi^"GVM" & = (I_(abs(m))(kappa)) / (I_0(kappa)) &exp[ & i (va(mu)^TT va(xi) + m alpha) & - m va(xi)^TT A va(beta) &- 1/2 m^2 va(beta)^TT va(beta) &- 1/2 va(xi)^TT P va(xi).
   ], \
-  phi^N & = &exp[&i (va(mu)^TT va(xi) + m alpha) &- m va(gamma)^TT va(xi) &- 1/2 sigma^2 m^2 &- 1/2 va(xi)^TT P va(xi)]. \
+  phi^N & = &exp[&i (va(mu)^TT va(xi) + m alpha) &- m va(gamma) va(xi)^TT &- 1/2 sigma^2 m^2 &- 1/2 va(xi)^TT P va(xi)]. \
 $
 
-debemos igualar, para los diferentes órdenes de $m$
+y totamos el gradiente respecto a $xi$, evaluado en $xi = 0$,
+
 
 $
-  va(xi)^TT A va(beta) = va(gamma)^TT va(xi) \
+  nabla_xi phi^"GVM" & = (I_(abs(m))(kappa)) / (I_0(kappa)) &[&i va(mu)^TT &- m A va(beta) &- P va(xi)] &exp[ & i m alpha & - 1/2 m^2 va(beta)^TT va(beta)], \
+  nabla_xi phi^N & = &[&i va(mu)^TT &- m va(gamma) &- P va(xi)]&exp[ & i m alpha & - 1/2 sigma^2 m^2 ]. \
 $
 
-
-==== TODO
-
-La distribución marginal a partir de la función característica se obtiene poniendo el parámetro sobre el que marginalizamos a $0$. Por lo tanto, para $va(xi) = 0$, tenemos
+Igualando ambas expresiones, y sustituyendo la @numericaBessel, tenemos
 
 $
-  phi^"GVM" (0, m) = (I_abs(m) (kappa)) / (I_0 (kappa)) exp[
-    i m alpha - m^2/2 va(beta)^TT va(beta)
-  ].
-$
-
-Podemos entender esta expresión como el producto de una distribución Von Mises (con media nula, y valor $kappa$) y una distribución normal "enrollada" con media $alpha$ y varianza $sigma^2 = va(beta)^TT va(beta)$:
-
-$
-  phi^"GVM" (0, m) = underbrace((I_abs(m) (kappa)) / (I_0 (kappa)), "Von Mises") underbrace(exp[i m alpha - m^2 / 2 sigma^2], "Gaussiana en círculo").
-$
-
-
-Esta función característica marginal no es una Von Mises. Ya que la función característica se puede convertir en la función distribución de probabilidad mediante la transformada inversa de Fourier, podemos entender, mediante el teorema de la convolución, este marginal como la convolución de una Von Mises y una distribución normal (enrollada en el círculo, debido al argumento $m$ siendo entero en vez de un número real).
-
-Por otra parte, podemos escribir la función característica de la Gaussiana en el álgebra de Lie, desplazada por $va(mu) = [log_G [mu]]_G^or$.
-
-$
-  phi^"N" (va(epsilon)) = exp[i va(mu) va(epsilon)^TT - 1/2 va(epsilon)^TT P va(epsilon)],
-$
-
-y tomar la marginal sobre la variable angular (que asumimos es la primera entrada del vector), que resulta en la marginal normal
-
-$
-  phi^"N" (n, 0, 0, ...) = exp [i n mu_theta - n^2/2 n^2 sigma_theta^2 ].
+  A va(beta) = va(gamma) => va(beta) = A^(-1) va(gamma).
 $
 
