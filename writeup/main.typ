@@ -34,6 +34,9 @@
 
 #include "mechanics.typ"
 
+= Estadística
+
+#include "statistics.typ"
 
 = Propagación de incertidumbres
 

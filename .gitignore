@@ -1,3 +1,5 @@
 biblio/
 .venv/
 archive/
+__pycache__
+*.pkl

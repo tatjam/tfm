@@ -34,6 +34,8 @@ export SigmaVectors, ut_propagate, run_ut, nearest_pd_matrix
 include("propagators/STM.jl")
 export run_stm
 
+include("propagators/PolyChaos.jl")
+
 include("statistics/GVM.jl")
 export GaussVonMises, decanonicalize, mahalanobis, canon_mahalanobis
 include("propagators/GVM.jl")

@@ -721,6 +721,8 @@ Cell[BoxData[
    RowBox[{"{",
     RowBox[{"fig2t", ",", "link", ",", "fig1t"}], "}"}], "]"}]}]], "Input"]
 }]]
-}]]
+}]],
+
+Cell["Mahalanobis Von Mises", "Title"]
 }]
 (* End of Notebook Content *)

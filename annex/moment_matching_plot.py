@@ -90,7 +90,7 @@ def plot_samples_at_coordinate(data, a00_target, ai0_target, attempt_idx=0):
             x=combined_data[:, 0], 
             y=combined_data[:, 1], 
             hue=labels, 
-            alpha=0.5, 
+            alpha=0.1, 
             palette="Set1",
             edgecolor=None
         )
@@ -145,8 +145,8 @@ if __name__ == "__main__":
     
     plot_grid_scores(sweep_data)
     
-    target_a00 = 0.8
-    target_ai0 = 4.4
+    target_a00 = 1.1
+    target_ai0 = 1.5
     plot_samples_at_coordinate(sweep_data, a00_target=target_a00, ai0_target=target_ai0, attempt_idx=0)
     
     plt.show()

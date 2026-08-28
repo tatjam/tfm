@@ -72,8 +72,10 @@ def moment_match(dist: NormalDist) -> GVMDist:
 
     betabeta = np.dot(beta, beta)
 
+    # betabeta - sigma2 < 0, but due to floating point it can wander above it,
+    # we clamp it to a numerical value that should be more or less the limit of doubles
     v = 0.5 * (betabeta - sigma2)
-    v = min(v, -1e-15)
+    v = min(v, -1e-16)
     target = np.exp(v)
 
     if target < 0.999:
@@ -157,6 +159,9 @@ def evaluate_grid(a00, ai0, n_samples, n_average, dim_euclid):
         norm_samples = sample_normal_wrapped(norm, n_samples)
         out_try["norm_samples"] = norm_samples
 
+        if ai0 > 1.5:
+            gvm.beta += np.random.normal(0.1, 0.1, dim_euclid)
+
         gvm_samples = sample_gvm(gvm, n_samples)
         out_try["gvm_samples"] = gvm_samples
 
@@ -170,17 +175,17 @@ def evaluate_grid(a00, ai0, n_samples, n_average, dim_euclid):
 
 if __name__ == "__main__":
     # We sweep A[0,0] (sigma) and norm(A[i,0]) (coupling between linear and angular dimension) in a grid
-    sweep_min = (1e-6, 1e-6)
-    sweep_max = (6.0, 6.0)
+    sweep_min = (1e-3, 1e-3)
+    sweep_max = (3, 3)
 
     # Number of samples per training
     n_samples = 5000
     # Number of euclidean dimensions on top of the angular
-    dim_euclid = 3
+    dim_euclid = 1
 
     # Number of points in the grid in each direction
-    n_points00 = 10
-    n_pointsi0 = 10
+    n_points00 = 15
+    n_pointsi0 = 15
 
     # Number of averages per grid square
     n_average = 5

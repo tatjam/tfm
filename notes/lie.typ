@@ -15,7 +15,7 @@
   table-index: (enabled: false),
   listing-index: (enabled: false),
   abstract: [
-    Se parte del paper @markovicWrappingKalmanFilter2017 y se particulariza a las necesidades de la propagación orbital, considerando un grupo de Lie "cilíndrico" $"SO"(2) times RR^5$ como el espacio en el que realizar la propagación orbital. Posteriormente, se considera el vector de estado como una variable aleatoria con media sobre este espacio cilíndrico, y incertidumbre sobre el álgebra de Lie siguiendo el tratamiento estadístico detallado en @bourmaudContinuousDiscreteExtendedKalman2015. Se deducen las características de la propagación bajo la hipótesis de normal concentrada, y se introducen varias distancias de Mahalanobis apropiadas para el problema.],
+    Se parte del paper @markovicWrappingKalmanFilter2017 y se particulariza a las necesidades de la propagación orbital, considerando un grupo de Lie "cilíndrico" $"SO"(2) times RR^5$ como el espacio en el que realizar la propagación orbital. Posteriormente, se considera el vector de estado como una variable aleatoria con media sobre este espacio cilíndrico, y incertidumbre sobre el álgebra de Lie siguiendo el tratamiento estadístico detallado en @bourmaudContinuousDiscreteExtendedKalman2015. Se deducen las características de la propagación bajo la hipótesis de normal concentrada, y se introducen varias distancias de Mahalanobis apropiadas para el problema. Se desarrolla la distancia de Mahalanobis Von Mises, y se obtiene un algoritmo capaz de convertir una distribución normal (sea concentrada o no) en una Von Mises equivalente, con gran exactitud.],
   paper-size: "a4",
 )
 
@@ -641,7 +641,7 @@ $
   (I_1(kappa)) / (I_0(kappa)) = exp[(va(beta)^TT va(beta) - sigma^2) / 2],
 $<numericaBessel>
 
-que no tiene solución analítica, pero se comporta bien numéricamente (más adelante lo demostramos).
+que no tiene solución analítica, pero se puede resolver numéricamente.
 
 Ahora, consideremos el caso con $va(xi) != va(0)$ y $m = 0$, tenemos entonces
 
@@ -696,3 +696,8 @@ Para ello, se parte de los conjunto de puntos $S_cal(N) ~ cal(N)(va(mu), P)$ y $
 
 La ventaja de estos métodos es que escalan linealmente con el número de puntos (al contrario de pruebas estadísticas más rigurosas, que escalan con el cuadrado) y son muy fáciles de implementar partiendo de las librerías de aprendizaje por máquina disponibles en Python. Todo el código se encuentra en el anexo `moment_matching_evaluation.py`.
 
+==== Planteamiento del ensayo
+
+Para el ensayo, vamos a variar dos parámetros, $hat(A)_(0 0)$ y $norm(hat(A)_(i 0))$ en rangos configurables. Estos parámetros se utilizan para generar las matrices $hat(A)$, nulas por encima de la diagonal, que a su vez generan las matrices de covarianza de las normales a través de $hat(P) = hat(A) hat(A)^TT$.
+
+#text(red)[ACABAR]
