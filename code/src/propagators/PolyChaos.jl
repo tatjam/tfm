@@ -143,30 +143,48 @@ We store N terms, but the 0th term is implicit, and of value 1.0,
 thus the basis represents polynomials of order [0, N] with both endpoints
 included.
 """
-struct OprlBasis{T<:AbstractFloat, N::Int} <: Basis
-    # Favard indices cₙ and dₙ, favard[1] gives c₀, d₀ and so on
-    favard::SVector{N, Tuple{T,T}}
+struct OprlBasis{T<:AbstractFloat, N} <: Basis
+    # This is the Jacobi matrix of the recurrence relation compactly stored,
+    # jacobi[i] yields the Favard terms c_{i-1} and sqrt(d_{i}) in that order. Remember that arrays
+    # in Julia are 1-indexed! The square root is for normalization.
+    jacobi::SVector{N, Tuple{T,T}}
 end
 
 nvars(b::OprlBasis) = 1
-multi_index(b::OprlBasis{T, N}) where T, N = 0:N
+multi_index(b::OprlBasis{T, N}) where {T, N} = 0:N
 
-function eval_basis!(out::AbstractVector{T}, b::OprlBasis{T, N}, ξ) where T, N
-    # y₀ = 1, n = 0
+function eval_basis!(out::AbstractVector{T}, b::OprlBasis{T, N}, ξ) where {T, N}
+    # The Favard form is just
+    #   y_{n+1} = (x - cₙ) yₙ - dₙ y_{n-1}
+    # Let hₙ = <yₙ, yₙ>, we wish to construct instead the sequence
+    #   pₙ = yₙ / sqrt(hₙ)
+    # which is orthonormal. Now, note that Favard sequences satisfy
+    #   <yₙ, yₙ> = dₙ <y_{n-1}, y_{n-1}>
+    # thus hₙ = dₙ h_{n-1}
+    # Now consider p_{n+1},
+    #  p_{n+1} = y_{n+1} / (sqrt(d_{n+1} h_n)
+    #          = [(x - cₙ) yₙ / sqrt(hₙ) - dₙ y_{n-1} / sqrt(hₙ)] / sqrt(d_{n+1})
+    #          = [(x - cₙ) pₙ            - dₙ y_{n-1} / sqrt(dₙ h_{n-1})] / sqrt(d_{n+1})
+    #          = [(x - cₙ) pₙ - sqrt(dₙ) p_{n-1}] / sqrt(d_{n+1})
+
+    # y₀ = p₀ = 1
     out[1] = one(T)
-
-    # y₁ = (x - c₀) y₀
+    
+    # y₁ = (x - c₀) y₀, thus
+    # sqrt(d₁) p₁ = (x - c₀) p₀
     if N >= 1
-        c0, _ = b.favard[1]
-        out[2] = (ξ - c0) * out[1]
+        c0, sqd1 = b.jacobi[1]
+        out[2] = ((ξ - c0) * out[1]) / sqd1
     end
 
-    # y_{n+1} = (x - cₙ) yₙ - dₙ y_{n-1}
+    # y_{n+1} = (x - cₙ) yₙ - dₙ y_{n-1}, thus
+    # sqrt(d_{n+1}) p_{n+1} = (x - cₙ) pₙ - sqrt(dₙ) p_{n-1}
     for n in 1:(N-1)
-        # Those are cₙ and dₙ respectively, the +1 due to 1 based indexing
-        c, d = b.favard[n+1]
+        cn, sqdnp1 = b.jacobi[n+1]
+        _, sqdn = b.jacobi[n]
+
         # the +1 due to 1 based indexing
-        out[(n+1) + 1] = (ξ - c) * out[n + 1] - d * out[(n-1) + 1]
+        out[(n+1) + 1] = ((ξ - cn) * out[n + 1] - sqdn * out[(n-1) + 1]) / sqdnp1
     end
 
     return out
