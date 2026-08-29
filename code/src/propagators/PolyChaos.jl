@@ -3,16 +3,13 @@
 # ---------------------------------------------
 # Polynomial chaos expansion based propagator, using the non-intrusive approach.
 # Coordinates may either be euclidean or angular. The main idea is our
-using Distributions: degrees
 # chaos inputs are independent, thus the polynomial chaos expansion
 # is just the product of the polynomials of both (truncated to maximum
 # order). 
 
 
 """
-A polynomial basis orthogonal to some distribution, if ξ is our vector
-of random variables, this represents a sum of a number of polynomial functions
-of ξ, each indexed by a index αᵢ
+A polynomial basis orthogonal to some distribution
 """
 abstract type AbstractPCEBasis end
 
@@ -26,21 +23,110 @@ function nvars end
 """
     multi_index(b::AbstractPCEBasis)
 
-Return a multi_index object, each of its entries is one of the terms in the basis,
-so iterating over this yields every possible α.
-
-Note that the returned object could be an "opaque" pointer if the basis
-is not a tensor product, this is not neccesarily a conventional multi index.
+Returns a vector of tuples, one per basis function, in the same order as used by
+eval_basis. Each tuple contains as many entries as variables in the basis, each entry
+thus indicating the polynomial degree used for said variable in said basis function.
 
 """
 function multi_index end
 
 """
-    eval_basis(b::Basis, ξ, α)
-
-Evaluates one of the basis functions at a given point.
+Number of basis functions in the basis. 
 """
-function eval_basis end
+Base.length(b::AbstractPCEBasis) = length(multi_index(b))
+
+"""
+Resulting type of evaluating the basis functions. 
+"""
+Base.eltype(b::AbstractPCEBasis) = error("Not implemented for type $(typeof(b))")
+
+"""
+    eval_basis!(out::AbstractVector, b::AbstractPCEBasis, ξ)
+
+Evaluates all of the basis functions at a given point, setting
+    out[i] = Ψ_{α_i}(ξ)
+for each α in the multi index, and returning a reference to out.
+"""
+function eval_basis! end
+
+eval_basis(b::AbstractPCEBasis, ξ) = eval_basis!(Vector{eltype(b)}(undef, length(b)), b, ξ)
+
+abstract type AbstractPCEQuadrature end
+
+"""
+    nodes(q::AbstractPCEQuadrature)
+
+Returns a vector of quadrature nodes (values of ξ) 
+"""
+function nodes end
+
+"""
+    weights(q::AbstractPCEQuadrature)
+
+Returns a weight for each of the quadrature nodes
+"""
+function weights end
+
+"""
+   quadrature(b::AbstractPCEBasis) 
+
+Returns a quadrature consistent with the orthogonality measure of the basis.
+"""
+function quadrature end
+
+"""
+   galerkin(f, b::AbstractPCEBasis, q::AbstractPCEQuadrature = quadrature(b))
+
+Obtains the coefficients for the basis b by Galerkin projection of f onto it. The Galerkin
+projection means that we choose as a representation of f, such that the difference of the
+representation of f to f itself is orthogonal to our basis. We say
+projection because geometrically we are finding the projection of f into the subspace defined
+by our basis. Refer to fᵣ as
+
+    fᵣ(ξ) = ∑ᵦ cᵦ Ψᵦ(ξ)
+
+then, Galerkin imposes that f - fᵣ is orthogonal to our basis, which means it's orthogonal to every
+individual basis function γ,
+
+    <f - ∑ᵦ cᵦ Ψᵦ, Ψᵧ> = 0
+
+by linearity of the expected value, we get
+
+    ∑ᵦ cᵦ <Ψᵦ, Ψᵧ> = <f, Ψᵧ>
+
+This can be made efficient via using a orthonormal base, as then <Ψᵦ, Ψᵧ> = 1 iff β = γ, 0 otherwise,
+and thus we get a series of equations for each β
+
+    cᵦ = <f, Ψᵦ>
+
+Finally, we evaluate the expected value via the quadrature rule, which is chosen so it's highly accurate for
+our distribution (in fact, ideally should be exact if f is a linear combination of the basis functions).
+
+NOTE: Assumes f has as many outputs as stochastic inputs, could be easily adapted to be more general
+"""
+function galerkin(f, b::AbstractPCEBasis, q::AbstractPCEQuadrature = quadrature(b))
+    ns, ws = nodes(q), weights(q)
+    T = eltype(b)
+    n = length(b)
+    m = nvars(b)
+
+    partials = [zeros(T, n, m) for _ in 1:nthreads()]
+    bufs = [Vector{T}(undef, n) for _ in 1:nthreads()]
+
+
+    # Quadrature rule just means we replace integration by a sum over
+    # nodes with weights, so loop over each node. The :static prevents
+    # threadid from changing unexpectedly!
+    @Threads.threads :static for k in eachindex(ns)
+        tid = Threads.threadid()
+        buf = bufs[tid]
+        eval_basis!(buf, b, ns[k])
+
+        partials[tid] .+= ws[k] .* (conj.(buf) * transpose(f(ns[k])))
+    end
+
+    return sum(partials)
+end
 
 """
 A polynomial basis orthogonal to some distribution on the reals,
@@ -56,8 +142,7 @@ end
 
 nvars(b::OprlBasis) = 1
 multi_index(b::OprlBasis) = 0:b.degree
-
-function eval_basis(b::OprlBasis{T}, ξ::T, α::Integer) where T 
+function eval_basis(b::OprlBasis{T}, ξ::T) where T 
     
 end
 
