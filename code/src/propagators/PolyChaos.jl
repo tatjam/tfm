@@ -46,6 +46,9 @@ Base.eltype(b::AbstractPCEBasis) = error("Not implemented for type $(typeof(b))"
 Evaluates all of the basis functions at a given point, setting
     out[i] = Ψ_{α_i}(ξ)
 for each α in the multi index, and returning a reference to out.
+
+Note the indices represent order + 1, i.e. out[1] is the order 0, and is
+always equal to 1.0 as we use normalized basis.
 """
 function eval_basis! end
 
@@ -101,28 +104,29 @@ and thus we get a series of equations for each β
 
 Finally, we evaluate the expected value via the quadrature rule, which is chosen so it's highly accurate for
 our distribution (in fact, ideally should be exact if f is a linear combination of the basis functions).
-
-NOTE: Assumes f has as many outputs as stochastic inputs, could be easily adapted to be more general
 """
-function galerkin(f, b::AbstractPCEBasis, q::AbstractPCEQuadrature = quadrature(b))
+function galerkin(f, b::AbstractPCEBasis, q::AbstractPCEQuadrature=quadrature(b))
     ns, ws = nodes(q), weights(q)
     T = eltype(b)
     n = length(b)
-    m = nvars(b)
 
-    partials = [zeros(T, n, m) for _ in 1:nthreads()]
-    bufs = [Vector{T}(undef, n) for _ in 1:nthreads()]
+    probe_idx = 1
+    probe = f(ns[probe_idx])
+    m = length(probe)
 
+    partials = [zeros(T, n, m) for _ in 1:Threads.nthreads()]
+    bufs = [Vector{T}(undef, n) for _ in 1:Threads.nthreads()]
 
-    # Quadrature rule just means we replace integration by a sum over
-    # nodes with weights, so loop over each node. The :static prevents
-    # threadid from changing unexpectedly!
-    @Threads.threads :static for k in eachindex(ns)
+    Threads.@threads :static for k in eachindex(ns)
         tid = Threads.threadid()
         buf = bufs[tid]
         eval_basis!(buf, b, ns[k])
-
-        partials[tid] .+= ws[k] .* (conj.(buf) * transpose(f(ns[k])))
+        if k == probe_idx
+            fk = probe
+        else
+            fk = f(ns[k])
+        end
+        partials[tid] .+= ws[k] .* (conj.(buf) * transpose(fk isa Number ? [fk] : fk))
     end
 
     return sum(partials)
@@ -134,18 +138,39 @@ OPRL meaning Orthogonal Polynomial on the Real Line.
 
 We store the Favard's recurrence terms, as those represent enough
 polynomials basis for our purposes.
+
+We store N terms, but the 0th term is implicit, and of value 1.0,
+thus the basis represents polynomials of order [0, N] with both endpoints
+included.
 """
-struct OprlBasis{T<:AbstractFloat} <: Basis
-    degree::Int
-    favard::{Tuple{T, T}}
+struct OprlBasis{T<:AbstractFloat, N::Int} <: Basis
+    # Favard indices cₙ and dₙ, favard[1] gives c₀, d₀ and so on
+    favard::SVector{N, Tuple{T,T}}
 end
 
 nvars(b::OprlBasis) = 1
-multi_index(b::OprlBasis) = 0:b.degree
-function eval_basis(b::OprlBasis{T}, ξ::T) where T 
-    
-end
+multi_index(b::OprlBasis{T, N}) where T, N = 0:N
 
+function eval_basis!(out::AbstractVector{T}, b::OprlBasis{T, N}, ξ) where T, N
+    # y₀ = 1, n = 0
+    out[1] = one(T)
+
+    # y₁ = (x - c₀) y₀
+    if N >= 1
+        c0, _ = b.favard[1]
+        out[2] = (ξ - c0) * out[1]
+    end
+
+    # y_{n+1} = (x - cₙ) yₙ - dₙ y_{n-1}
+    for n in 1:(N-1)
+        # Those are cₙ and dₙ respectively, the +1 due to 1 based indexing
+        c, d = b.favard[n+1]
+        # the +1 due to 1 based indexing
+        out[(n+1) + 1] = (ξ - c) * out[n + 1] - d * out[(n-1) + 1]
+    end
+
+    return out
+end
 
 """
 A polynomial basis orthogonal to some distribution on the unit circle,
@@ -155,7 +180,7 @@ struct OpucBasis <: Basis
 
 end
 
-function run_poly_chaos(p::ForceModel, )
+function run_poly_chaos(p::ForceModel,)
 
 
 end
