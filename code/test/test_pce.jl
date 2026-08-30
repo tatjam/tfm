@@ -29,7 +29,7 @@ end
 end
 
 @testset "Basis self-projection" begin
-    N = 4
+    N = 20
     basis = hermite_basis(Float64, N)
     
     # Note that the quadrature is 
@@ -45,4 +45,36 @@ end
 
         @test proj ≈ expected atol = 1e-9
     end
+end
+
+@testset "Cubic polynomial expansion" begin
+    basis = hermite_basis(Float64, 4)
+    proj = galerkin(x -> x^3, basis)
+
+    @test proj[1] ≈ 0.0 atol = 1e-9 
+    @test proj[2] ≈ 3.0 atol = 1e-9 
+    @test proj[3] ≈ 0.0 atol = 1e-9 
+    @test proj[4] ≈ sqrt(6) atol = 1e-9
+    @test proj[5] ≈ 0.0 atol = 1e-9
+end
+
+
+@testset "Multi-dimensional output projection" begin
+    basis = hermite_basis(Float64, 3)
+    f(x) = [2.5*x - 1.0, x^2]
+    
+    proj = galerkin(f, basis)
+    
+    @test size(proj) == (4, 2)
+    @test proj[:, 1] ≈ [-1.0, 2.5, 0.0, 0.0] atol = 1e-9
+    @test proj[:, 2] ≈ [1.0, 0.0, sqrt(2), 0.0] atol = 1e-9
+end
+
+@testset "Float32 Type Preservation" begin
+    basis32 = hermite_basis(Float32, 3)
+    proj32 = galerkin(x -> x^2, basis32)
+
+    @test eltype(proj32) === Float32
+    @test proj32[1] ≈ 1.0f0 atol = 1e-5
+    @test proj32[3] ≈ sqrt(2.0f0) atol = 1e-5
 end
