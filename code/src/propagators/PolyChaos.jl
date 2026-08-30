@@ -115,8 +115,9 @@ function galerkin(f, b::AbstractPCEBasis, q::AbstractPCEQuadrature=quadrature(b)
     probe = f(ns[probe_idx])
     m = length(probe)
 
-    partials = [zeros(T, n, m) for _ in 1:Threads.nthreads()]
-    bufs = [Vector{T}(undef, n) for _ in 1:Threads.nthreads()]
+    # TODO: This could waste a whole lot of memory if maxthreadis is very big!
+    partials = [zeros(T, n, m) for _ in 1:Threads.maxthreadid()]
+    bufs = [Vector{T}(undef, n) for _ in 1:Threads.maxthreadid()]
 
     Threads.@threads :static for k in eachindex(ns)
         tid = Threads.threadid()
@@ -134,13 +135,14 @@ function galerkin(f, b::AbstractPCEBasis, q::AbstractPCEQuadrature=quadrature(b)
 end
 
 """
-A polynomial basis orthogonal to some distribution on the reals,
+A **normalized** polynomial basis orthogonal to some distribution on the reals,
 OPRL meaning Orthogonal Polynomial on the Real Line. 
 
 The recurrence relation is compactly stored,
 jacobi[i] yields the Favard terms cᵢ₋₁ and √dᵢ in that order, for the relation
   yₙ₊₁= (x - cₙ) yₙ - dₙ yₙ₋₁
-which is normalized to 
+
+which we normalize to 
   pₙ₊₁ = yₙ / sqrt(hₙ) = ((x - cₙ) pₙ - sqrt(dₙ) pₙ₋₁) / sqrt(dₙ₊₁)
 
 Note that, to compute pₙ, {cₙ₋₁, dₙ₋₁ and dₙ} are needed. This justifies storing
@@ -157,9 +159,12 @@ struct OprlBasis{T<:AbstractFloat,N} <: AbstractPCEBasis
     jacobi::SVector{N,Tuple{T,T}}
 end
 
-function OprlBasis(terms::AbstractVector{Tuple{T, T}}) where {T<:AbstractFloat}
+Base.length(b::OprlBasis{T, N}) where {T, N} = N + 1 
+Base.eltype(b::OprlBasis{T, N}) where {T, N} = T
+
+function OprlBasis(terms::AbstractVector{Tuple{T,T}}) where {T<:AbstractFloat}
     N = length(terms)
-    return OprlBasis{T, N}(SVector{N, Tuple{T, T}}(terms))
+    return OprlBasis{T,N}(SVector{N,Tuple{T,T}}(terms))
 end
 
 nvars(b::OprlBasis) = 1
@@ -211,13 +216,13 @@ function hermite_basis(::Type{T}, N::Int) where {T<:AbstractFloat}
     #   yₙ₊₁ = x yₙ - n yₙ₋₁
     # thus cₙ = 0, dₙ = n
     jacobi = [(zero(T), sqrt(T(n))) for n in 1:N]
-    @Main.infiltrate
+    # @Main.infiltrate
 
     return OprlBasis(jacobi)
 end
 
 
-struct OprlQuadrature{T<:AbstractFloat,N}
+struct OprlQuadrature{T<:AbstractFloat,N} <: AbstractPCEQuadrature 
     nodes::SVector{N,T}
     weights::SVector{N,T}
 end
@@ -239,7 +244,7 @@ function quadrature(b::OprlBasis{T,N}) where {T,N}
 
     # The diagonal is all the first terms of jacobi, the off-diagonal the second ones,
     # note that as expected there's one "unused" element in the jacobi array
-    jacobimat = SymTridiagonal(first.(b.jacobi), second.(b.jacobi)[1:end-1])
+    jacobimat = SymTridiagonal(Vector(first.(b.jacobi)), Vector(last.(b.jacobi[SOneTo(N - 1)])))
 
     eigdecomp = eigen(jacobimat)
     eigval = eigdecomp.values
@@ -252,12 +257,12 @@ function quadrature(b::OprlBasis{T,N}) where {T,N}
     # (multiplied by the total mass of the distribution, but by definition that's 1)
     weights = eigvec[1, :] .^ 2
 
-    return OprlQuadrature(nodes, weights)
+    return OprlQuadrature(SVector{N}(nodes), SVector{N}(weights))
 end
 
 
-nodes(q::OprlQuadrature) = q.nodes
-weights(q::OprlQuadrature) = q.weights
+nodes(q::OprlQuadrature{T, N}) where {T, N} = q.nodes
+weights(q::OprlQuadrature{T, N}) where {T, N} = q.weights
 
 
 """

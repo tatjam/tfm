@@ -1,0 +1,30 @@
+
+@testset "Normal squared is ChiSquared" begin
+    # Under the Hermite polynomials, the normal is expressed
+    # as just (0, 1, 0) and chi squared is (1,0,√2), noting that
+    # the basis is (1, x, 1/√2 (x²-1)), for a normal input ξ
+    # Galerkin projection should handle this exactly up to float precision!
+    f(x) = x^2
+
+    basis = hermite_basis(Float64, 3)
+    proj = galerkin(f, basis)
+
+    @test proj[1] ≈ 1 atol = 1e-9
+    @test proj[2] ≈ 0 atol = 1e-9
+    @test proj[3] ≈ sqrt(2) atol = 1e-9
+    @test proj[4] ≈ 0 atol = 1e-9
+end
+
+@testset "Normal squared is ChiSquared (useless coefficients)" begin
+    # Same as before but with a lot of expected 0 coefficients
+    f(x) = x^2
+
+    basis = hermite_basis(Float64, 20)
+    proj = galerkin(f, basis)
+
+    @test proj[1] ≈ 1 atol = 1e-9
+    @test proj[2] ≈ 0 atol = 1e-9
+    @test proj[3] ≈ sqrt(2) atol = 1e-9
+    @test proj[4] ≈ 0 atol = 1e-9
+
+end
