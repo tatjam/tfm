@@ -153,13 +153,15 @@ the coefficients as follows:
   ...
   jacobi[n=end] = (cₙ₋₁, √dₙ)
 
-So that N represents the maximum order represented by the basis!
+Finally, note that the order N polynomial is NOT usable for PCE, so evaluating the basis
+and similar gives results only up to order N-1. This node is instead used only for the quadrature.
 """
 struct OprlBasis{T<:AbstractFloat,N} <: AbstractPCEBasis
     jacobi::SVector{N,Tuple{T,T}}
 end
 
-Base.length(b::OprlBasis{T, N}) where {T, N} = N + 1 
+# N-1 is the maximum order usable in the basis, plus the 0 order, gives N
+Base.length(b::OprlBasis{T, N}) where {T, N} = N 
 Base.eltype(b::OprlBasis{T, N}) where {T, N} = T
 
 function OprlBasis(terms::AbstractVector{Tuple{T,T}}) where {T<:AbstractFloat}
@@ -196,7 +198,8 @@ function eval_basis!(out::AbstractVector{T}, b::OprlBasis{T,N}, ξ) where {T,N}
 
     # yₙ₊₁= (x - cₙ) yₙ - dₙ yₙ₋₁, thus
     # sqrt(dₙ₊₁ pₙ₊₁= (x - cₙ) pₙ - sqrt(dₙ) pₙ₋₁
-    for n in 1:(N-1)
+    # Note the last element is ignored, that's only for quadrature!
+    for n in 1:(N-2)
         cn, sqdnp1 = b.jacobi[n+1]
         _, sqdn = b.jacobi[n]
 
@@ -209,13 +212,13 @@ end
 
 """
 Basis orthogonal to exp(-0.5x²) in the real line (Probabilist's Hermite polynomials) for
-orders up to N (included)
+orders up to N (included) usable for PCE (thus the basis stores one more)
 """
 function hermite_basis(::Type{T}, N::Int) where {T<:AbstractFloat}
     # The Hermite generator is
     #   yₙ₊₁ = x yₙ - n yₙ₋₁
     # thus cₙ = 0, dₙ = n
-    jacobi = [(zero(T), sqrt(T(n))) for n in 1:N]
+    jacobi = [(zero(T), sqrt(T(n))) for n in 1:N+1]
     # @Main.infiltrate
 
     return OprlBasis(jacobi)

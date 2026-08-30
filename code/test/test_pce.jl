@@ -12,7 +12,6 @@
     @test proj[1] ≈ 1 atol = 1e-9
     @test proj[2] ≈ 0 atol = 1e-9
     @test proj[3] ≈ sqrt(2) atol = 1e-9
-    @test proj[4] ≈ 0 atol = 1e-9
 end
 
 @testset "Normal squared is ChiSquared (useless coefficients)" begin
@@ -25,6 +24,25 @@ end
     @test proj[1] ≈ 1 atol = 1e-9
     @test proj[2] ≈ 0 atol = 1e-9
     @test proj[3] ≈ sqrt(2) atol = 1e-9
-    @test proj[4] ≈ 0 atol = 1e-9
+    @test all(isapprox.(proj[4:end], 0, atol = 1e-9))
 
+end
+
+@testset "Basis self-projection" begin
+    N = 4
+    basis = hermite_basis(Float64, N)
+    
+    # Note that the quadrature is 
+    @testset "Basis index $k" for k in 1:length(basis)
+        p_k(x) = eval_basis(basis, x)[k]
+        
+        proj = galerkin(p_k, basis)
+        
+        # The projection of a unit vector of the basis on itself is 1 only
+        # at its index, 0 otherwise
+        expected = zeros(Float64, length(basis), 1)
+        expected[k, 1] = 1.0
+
+        @test proj ≈ expected atol = 1e-9
+    end
 end
