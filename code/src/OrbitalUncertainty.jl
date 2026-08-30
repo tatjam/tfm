@@ -35,6 +35,10 @@ include("propagators/STM.jl")
 export run_stm
 
 include("propagators/PolyChaos.jl")
+export AbstractPCEBasis, AbstractPCEQuadrature
+export nvars, multi_index, eval_basis, eval_basis!, nodes, weights, galerkin
+export OprlBasis, OprlQuadrature
+export hermite_basis 
 
 include("statistics/GVM.jl")
 export GaussVonMises, decanonicalize, mahalanobis, canon_mahalanobis

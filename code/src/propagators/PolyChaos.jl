@@ -137,22 +137,33 @@ end
 A polynomial basis orthogonal to some distribution on the reals,
 OPRL meaning Orthogonal Polynomial on the Real Line. 
 
-We store the Favard's recurrence terms, as those represent enough
-polynomials basis for our purposes.
+The recurrence relation is compactly stored,
+jacobi[i] yields the Favard terms cᵢ₋₁ and √dᵢ in that order, for the relation
+  yₙ₊₁= (x - cₙ) yₙ - dₙ yₙ₋₁
+which is normalized to 
+  pₙ₊₁ = yₙ / sqrt(hₙ) = ((x - cₙ) pₙ - sqrt(dₙ) pₙ₋₁) / sqrt(dₙ₊₁)
 
-We store N terms, but the 0th term is implicit, and of value 1.0,
-thus the basis represents polynomials of order [0, N] with both endpoints
-included.
+Note that, to compute pₙ, {cₙ₋₁, dₙ₋₁ and dₙ} are needed. This justifies storing
+the coefficients as follows:
+
+  jacobi[1] = (c₀, √d₁)
+  jacobi[2] = (c₁, √d₂)
+  ...
+  jacobi[n=end] = (cₙ₋₁, √dₙ)
+
+So that N represents the maximum order represented by the basis!
 """
-struct OprlBasis{T<:AbstractFloat,N} <: Basis
-    # This is the Jacobi matrix of the recurrence relation compactly stored,
-    # jacobi[i] yields the Favard terms c_{i-1} and sqrt(d_{i}) in that order. Remember that arrays
-    # in Julia are 1-indexed! The square root is for normalization.
+struct OprlBasis{T<:AbstractFloat,N} <: AbstractPCEBasis
     jacobi::SVector{N,Tuple{T,T}}
 end
 
+function OprlBasis(terms::AbstractVector{Tuple{T, T}}) where {T<:AbstractFloat}
+    N = length(terms)
+    return OprlBasis{T, N}(SVector{N, Tuple{T, T}}(terms))
+end
+
 nvars(b::OprlBasis) = 1
-multi_index(b::OprlBasis{T,N}) where {T,N} = 0:N
+multi_index(_b::OprlBasis{T,N}) where {T,N} = 0:N
 
 function eval_basis!(out::AbstractVector{T}, b::OprlBasis{T,N}, ξ) where {T,N}
     # The Favard form is just
@@ -190,6 +201,21 @@ function eval_basis!(out::AbstractVector{T}, b::OprlBasis{T,N}, ξ) where {T,N}
 
     return out
 end
+
+"""
+Basis orthogonal to exp(-0.5x²) in the real line (Probabilist's Hermite polynomials) for
+orders up to N (included)
+"""
+function hermite_basis(::Type{T}, N::Int) where {T<:AbstractFloat}
+    # The Hermite generator is
+    #   yₙ₊₁ = x yₙ - n yₙ₋₁
+    # thus cₙ = 0, dₙ = n
+    jacobi = [(zero(T), sqrt(T(n))) for n in 1:N]
+    @Main.infiltrate
+
+    return OprlBasis(jacobi)
+end
+
 
 struct OprlQuadrature{T<:AbstractFloat,N}
     nodes::SVector{N,T}
@@ -238,11 +264,7 @@ weights(q::OprlQuadrature) = q.weights
 A polynomial basis orthogonal to some distribution on the unit circle,
 OPUC meaning Orthogonal Polynomial on the Unit Circle
 """
-struct OpucBasis <: Basis
+struct OpucBasis <: AbstractPCEBasis
 
 end
 
-function run_poly_chaos(p::ForceModel,)
-
-
-end
