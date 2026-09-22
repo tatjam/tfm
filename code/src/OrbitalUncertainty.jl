@@ -55,4 +55,11 @@ EARTH_FM_WITH_J2_NEWTON = ForceModel(GM_EARTH, EARTH_FM_WITH_J2_TUPLE, Val(true)
 EARTH_FM_WITH_J2_KEPLER = ForceModel(GM_EARTH, EARTH_FM_WITH_J2_TUPLE, Val(false))
 export EARTH_FM_WITH_J2_NEWTON, EARTH_FM_WITH_J2_KEPLER
 
+# To fix LSP on tests
+@static if false
+    module TestScope
+        include("../test/runtests.jl")
+    end
+end
+
 end # module OrbitalUncertainty
