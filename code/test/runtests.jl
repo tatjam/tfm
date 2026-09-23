@@ -30,3 +30,7 @@ end
 @testset "PCE" begin
     include("test_pce.jl")
 end
+
+@testset "Energy Test" begin
+    include("test_energy_test.jl")
+end

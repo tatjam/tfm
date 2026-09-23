@@ -1,4 +1,4 @@
-# GVM.jl (c) tatjam 2026
+# EnergyTest.jl (c) tatjam 2026
 # SPDX-License-Identifier: GPL-3.0-or-later
 # ---------------------------------------------
 # The energy test is useful to compare the samples of a distribution against a
@@ -22,6 +22,83 @@
 # We also implement the distance computation function stand-alone as it's useful
 # to see how the methods become incorrect wrt. Monte Carlo as we propagate.
 
+using Statistics: mean, cov
+using LinearAlgebra: norm, ldiv!
+using Random: shuffle!
+using Distances: pairwise, Euclidean
+
+"""
+    sum_pairwise_submatrix(D, idx)
+
+Obtains ∑ D(i, j) where i, j ∈ I, which must be sorted, exploiting the fact that D is
+Symmetric, and its diagonal is zero, we can compute
+
+∑ D(i, j) = 2∑ D(i, k) for i ∈ I, k ∈ {k ∈ I | k < i}:
+
+  [xxxxx]       [     ]
+  [xxxxx]       [x    ]
+∑ [xxxxx] = 2 ∑ [xx   ]
+  [xxxxx]       [xxx  ]
+  [xxxxx]       [xxxx ]
+    
+"""
+function sum_pairwise_submatrix(D, idx)
+    len = length(idx)
+    s = 0.0
+
+    # By default matrices are column-major, so the innermost loop must iterate
+    # along the columns to reduce cache swaps
+    @inbounds for b = 2:len
+        ib = idx[b]
+        @inbounds for a = 1:(b-1)
+            ia = idx[a]
+            s += D[ia, ib]
+        end
+    end
+
+    return 2 * s
+end
+
+"""
+    energy_metric_on_distance_matrix(D, I, J, D_total)
+    
+Given the distance matrix, where D(i, j) gives distance between points i, j, computes
+the energy metric knowing that I is the set of indices which belong to one set and J is
+the set of indices which belongs to the other. D_total is the sum of all entries in D.
+
+NOTE: I and J must be sorted before calling this function!
+"""
+
+function energy_metric_on_distance_matrix(
+    D::AbstractMatrix,
+    I::AbstractVector{Int},
+    J::AbstractVector{Int},
+    D_total,
+)
+    n, m = length(I), length(J)
+
+    inx = sum_pairwise_submatrix(D, I)
+    iny = sum_pairwise_submatrix(D, J)
+
+    cross = 0.5 * (D_total - inx - iny)
+
+    cross /= n * m
+    inx /= n * n
+    iny /= m * m
+
+    return 2 * cross - inx - iny
+end
+
+"""
+    distance_matrix(Z)
+
+Computes D(i, j) = ‖Zᵢ - Zⱼ‖ and returns it
+    
+"""
+function distance_matrix(Z::AbstractMatrix)
+    return Symmetric(pairwise(Euclidean(), Z, dims = 2))
+end
+
 """
    energy_metric(X, Y) 
 
@@ -30,10 +107,13 @@ which are given as d×n and d×m matrices (i.e. number of points is the number o
 """
 function energy_metric(X::AbstractMatrix, Y::AbstractMatrix)
     n, m = size(X, 2), size(Y, 2)
-    cross = mean(norm(X[:, i] - Y[:, j]) for i = 1:n, j = 1:m)
-    inx = mean(norm(X[:, i] - Y[:, j]) for i = 1:n, j = 1:n)
-    iny = mean(norm(X[:, i] - Y[:, j]) for i = 1:n, j = 1:n)
-    return 2 * cross - inx - iny
+    Z = hcat(X, Y)
+    I = collect(1:n)
+    J = collect((n+1):(n+m))
+    D = distance_matrix(Z)
+
+    # I and J are sorted by construction
+    return energy_metric_on_distance_matrix(D, I, J, sum(D))
 end
 
 """
@@ -47,8 +127,8 @@ function withen_union!(X::AbstractMatrix, Y::AbstractMatrix)
     n, m = size(X, 2), size(Y, 2)
     c = n + m
 
-    # For covariances we use the Bessel correction
-    cc = c - 2
+    # Bessel correction
+    cc = c - 1
 
     meanX = mean(X, dims = 2)
     meanY = mean(Y, dims = 2)
@@ -64,8 +144,8 @@ function withen_union!(X::AbstractMatrix, Y::AbstractMatrix)
         (n * m) / (c * cc) * meandiff * meandiff'
 
     k = cholesky(Symmetric(cov)).L
-    X .= k \ (X .- mean)
-    Y .= k \ (Y .- mean)
+    ldiv!(X, k, (X .- mean))
+    ldiv!(Y, k, (Y .- mean))
 
     return X, Y
 end
@@ -114,27 +194,29 @@ function energy_test_null_distribution!(
 )
     n, m = size(X, 2), size(Y, 2)
     Z = hcat(X, Y)
+    D = distance_matrix(Z)
+    D_total = sum(D)
 
     # {1, 2, ..., n, n+1, n+2, ..., n+m}
     # {X, X, ..., X,   Y,   Y, ...,   Y}
     index_map = collect(1:(n+m))
     for k in eachindex(samples)
         shuffle!(index_map)
-        # First n samples to first partition, by reference to not copy
-        # TODO: Copying may be faster at the end due to cache locality! Benchmark
-        xp = @view Z[:, index_map[0:n]]
-        # Remainder (m) samples to second partition
-        yp = @view Z[:, index_map[(n+1):end]]
-        samples[k] = energy_test_statistic(xp, yp)
+        @views I = index_map[1:n]
+        @views J = index_map[(n+1):end]
+        samples[k] = energy_metric_on_distance_matrix(D, sort(I), sort(J), D_total)
+        # @info k
     end
 end
 
 """
-    energy_test(X, Y)
+    energy_test(X, Y, num_samples)
 
 Performs the energy test to X and Y, using the given number of samples to estimate the
 null-distribution, and returning the p-value. The X and Y matrices are NOT whitened, you
 must use whiten_union! first if you want to do the whitened energy test.
+
+Each sample is understood to be a column of X or Y.
 """
 function energy_test(X::AbstractMatrix, Y::AbstractMatrix, num_samples::Int)
     t = energy_test_statistic(X, Y)
