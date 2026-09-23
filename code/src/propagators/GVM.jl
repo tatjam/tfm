@@ -16,9 +16,9 @@ Indices are:
     1:2    -> Angular offset
     3:2L+1 -> Euclidean offsets
 """
-struct GVMSigmaVectors{L, N, T <: Real}
-    χ::SMatrix{L, N, T}  # Sigma points matrix
-    W::SVector{N, T}     # Weights for each sigma point
+struct GVMSigmaVectors{L,N,T<:Real}
+    χ::SMatrix{L,N,T}  # Sigma points matrix
+    W::SVector{N,T}     # Weights for each sigma point
 end
 
 """
@@ -49,13 +49,13 @@ function GVMSigmaVectors(dist::GaussVonMises{T}) where {T}
 
     # Generate canonical sigma vectors
     χ = begin
-        χbuf = MMatrix{L, N, T}(undef)
+        χbuf = MMatrix{L,N,T}(undef)
         χbuf[:, 1] = SA[zero(dist.μ)..., T(0)]   # χ00
-        χbuf[:, 2] = SA[zero(dist.μ)...,  T(ηc)] # χη0
+        χbuf[:, 2] = SA[zero(dist.μ)..., T(ηc)] # χη0
         χbuf[:, 3] = SA[zero(dist.μ)..., -T(ηc)] # χη1
 
         # Symmetric vectors around the origin for the Euclidean part
-        for i in 1:n
+        for i = 1:n
             idx = 3 + i
             χbuf[:, idx] = SA[zero(dist.μ)..., T(0)]
             χbuf[i, idx] = ξc
@@ -82,34 +82,39 @@ Type parameters:
     - N: Number of sigma points, N = 2L + 1
     - M: Number of euclidean dimensions (n)
 """
-struct GVMLeastSquares{S, L, N, M, T} <: NLLSsolver.AbstractResidual
+struct GVMLeastSquares{S,L,N,M,T} <: NLLSsolver.AbstractResidual
     # Initial mahalanobis distance of each sigma-point
-    lₑ::SVector{N, T}
-    end_σ::SMatrix{L, N, T}
+    lₑ::SVector{N,T}
+    end_σ::SMatrix{L,N,T}
     κ::T
-    end_μ::SVector{M, T}
-    end_A::LowerTriangular{T, SMatrix{M, M, T}}
+    end_μ::SVector{M,T}
+    end_A::LowerTriangular{T,SMatrix{M,M,T}}
 end
 
 # NLLSsolver Boilerplate
-Base.eltype(::GVMLeastSquares{S, L, N, M, T}) where {S, L, N, M, T} = T
+Base.eltype(::GVMLeastSquares{S,L,N,M,T}) where {S,L,N,M,T} = T
 NLLSsolver.ndeps(::GVMLeastSquares) = static(3)
 NLLSsolver.nres(::GVMLeastSquares) = static(1)
 NLLSsolver.varindices(::GVMLeastSquares) = SVector(1, 2, 3)
 
-function NLLSsolver.getvars(::GVMLeastSquares{S, L, N, M, T}, vars::Vector) where {S, L, N, M, T}
+function NLLSsolver.getvars(::GVMLeastSquares{S,L,N,M,T}, vars::Vector) where {S,L,N,M,T}
     return (
-        vars[1]::NLLSsolver.EuclideanVector{1, T},  # end_α
-        vars[2]::NLLSsolver.EuclideanVector{M, T},  # end_β
-        vars[3]::NLLSsolver.EuclideanVector{S, T},  # end_Γ (flattened)
+        vars[1]::NLLSsolver.EuclideanVector{1,T},  # end_α
+        vars[2]::NLLSsolver.EuclideanVector{M,T},  # end_β
+        vars[3]::NLLSsolver.EuclideanVector{S,T},  # end_Γ (flattened)
     )
 end
 
-function NLLSsolver.computeresidual(res::GVMLeastSquares{S, L, N, M, T}, end_α, end_β, end_Γ_vec) where {S, L, N, M, T}
+function NLLSsolver.computeresidual(
+    res::GVMLeastSquares{S,L,N,M,T},
+    end_α,
+    end_β,
+    end_Γ_vec,
+) where {S,L,N,M,T}
     # 1. Dynamically find the incoming type (Float64 during evaluation, Dual during AD)
     T_AD = promote_type(eltype(end_α), eltype(end_β), eltype(end_Γ_vec))
     n_Γ = L - 1
-    
+
     end_Γ = begin
         tmp = zeros(T_AD, n_Γ, n_Γ)
         tmp[triu(ones(Bool, n_Γ, n_Γ))] = end_Γ_vec
@@ -124,8 +129,8 @@ function NLLSsolver.computeresidual(res::GVMLeastSquares{S, L, N, M, T}, end_α,
     # 3. Ensure end_α is treated as a scalar regardless of how NLLSsolver packs it
     α_scalar = end_α isa AbstractArray ? end_α[1] : end_α
 
-    end_dist = GaussVonMises(μ_ad, α_scalar, end_β, end_Γ, κ_ad, A=A_ad)
-    
+    end_dist = GaussVonMises(μ_ad, α_scalar, end_β, end_Γ, κ_ad, A = A_ad)
+
     return sum(zip(res.lₑ, eachcol(res.end_σ))) do (lₑᵢ, end_σᵢ)
         lₐᵢ = mahalanobis(end_σᵢ, end_dist)
         r = T_AD(lₑᵢ) - lₐᵢ
@@ -141,9 +146,9 @@ function gvm_propagate(f, dist::GaussVonMises{T}) where {T}
 
     # Step 1: Generate and propagate sigma vectors
     sigma = GVMSigmaVectors(dist)
-    endpoints = Vector{SVector{L, T}}(undef, N)
-    
-    Threads.@threads for i in 1:N
+    endpoints = Vector{SVector{L,T}}(undef, N)
+
+    Threads.@threads for i = 1:N
         endpoints[i] = f(sigma.χ[:, i])
     end
 
@@ -151,10 +156,10 @@ function gvm_propagate(f, dist::GaussVonMises{T}) where {T}
     end_μ, end_P, end_A = let
         euclid_index = [1; 4:N]
         out_μ = sum(endpoints .* sigma.W)[1:n]
-        
+
         dx = reduce(hcat, endpoints)[1:n, euclid_index] .- out_μ
         euclid_W = sigma.W[euclid_index]
-        
+
         out_P = nearest_pd_matrix(dx * Diagonal(euclid_W) * dx')
         out_A = cholesky(Symmetric(out_P)).L
         out_μ, out_P, out_A
@@ -163,7 +168,7 @@ function gvm_propagate(f, dist::GaussVonMises{T}) where {T}
     # Step 3: Initial estimate of α, β, and Γ using ForwardDiff
     end_α, end_β, end_Γ = let
         central_point = sigma.χ[:, 1]
-        
+
         δf = ForwardDiff.jacobian(f, central_point)
         δₓfx = δf[1:n, 1:n]
         δₓfα = δf[L, 1:n]
@@ -172,7 +177,7 @@ function gvm_propagate(f, dist::GaussVonMises{T}) where {T}
         δ²ₓfα = δ²fα[1:n, 1:n]
 
         canon_δₓfx = inv(end_A) * δₓfx * dist.A
-        canon_δ²ₓfα = dist.A' * δ²ₓfα * dist.A 
+        canon_δ²ₓfα = dist.A' * δ²ₓfα * dist.A
 
         Δβ = dist.A' * δₓfα
         β_orig = dist.β + Δβ
@@ -192,19 +197,19 @@ function gvm_propagate(f, dist::GaussVonMises{T}) where {T}
     end_α, end_β, end_Γ = let
         lₑ = [mahalanobis(s, dist) for s in eachcol(sigma.χ)]
 
-        problem = NLLSsolver.NLLSProblem(Any, GVMLeastSquares{S, L, N, n, T})
-        
+        problem = NLLSsolver.NLLSProblem(Any, GVMLeastSquares{S,L,N,n,T})
+
         Γ_vec = end_Γ[triu(ones(Bool, n, n))]
         NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(end_α))
         NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(end_β...))
         NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(Γ_vec...))
-        
-        cost_function = GVMLeastSquares{S, L, N, n, T}(
-            SVector(lₑ), 
-            SMatrix{L, N, T}(reduce(hcat, endpoints)), 
-            dist.κ, 
-            SVector{n}(end_μ), 
-            LowerTriangular(SMatrix{n, n}(end_A))
+
+        cost_function = GVMLeastSquares{S,L,N,n,T}(
+            SVector(lₑ),
+            SMatrix{L,N,T}(reduce(hcat, endpoints)),
+            dist.κ,
+            SVector{n}(end_μ),
+            LowerTriangular(SMatrix{n,n}(end_A)),
         )
         NLLSsolver.addcost!(problem, cost_function)
 
@@ -212,7 +217,7 @@ function gvm_propagate(f, dist::GaussVonMises{T}) where {T}
 
         α_final = problem.variables[1][1]
         β_final = problem.variables[2]
-        Γ_vec   = problem.variables[3]
+        Γ_vec = problem.variables[3]
 
         Γ_final = begin
             tmp = zeros(T, n, n)
@@ -223,7 +228,7 @@ function gvm_propagate(f, dist::GaussVonMises{T}) where {T}
         α_final, β_final, Γ_final
     end
 
-    return GaussVonMises(end_μ, end_α, end_β, end_Γ, dist.κ, A=end_A)
+    return GaussVonMises(end_μ, end_α, end_β, end_Γ, dist.κ, A = end_A)
 end
 
 """
@@ -231,8 +236,14 @@ end
 
 Runs the GVM propagation for a given orbital distribution over time-interval Δt.
 """
-function run_gvm(p::ForceModel, dist::GaussVonMises{T, V}, Δt, reltol=1e-10, abstol=1e-10) where {T, V}
+function run_gvm(
+    p::ForceModel,
+    dist::GaussVonMises{T,V},
+    Δt,
+    reltol = 1e-10,
+    abstol = 1e-10,
+) where {T,V}
     return gvm_propagate(dist) do v
-        propagate_orbit(p, v, Δt, reltol=reltol, abstol=abstol)
+        propagate_orbit(p, v, Δt, reltol = reltol, abstol = abstol)
     end
 end

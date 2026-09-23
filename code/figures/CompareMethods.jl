@@ -18,17 +18,17 @@ fm = EARTH_FM_WITH_J2_NEWTON
 
 starting_dist = MvNormal(μ, σ^2)
 
-function run_animation(fm, starting_dist, t1, Δt, filename="animation.mp4")
+function run_animation(fm, starting_dist, t1, Δt, filename = "animation.mp4")
     starting_samples = [SVector{6}(col) for col in eachcol(rand(starting_dist, 1000))]
-    
+
     current_samples = copy(starting_samples)
     μ₀ = mean(starting_dist)
     P₀ = cov(starting_dist)
 
-    fig = Figure(size=(1920, 1080))
-    ax = Axis(fig[1,1])
+    fig = Figure(size = (1920, 1080))
+    ax = Axis(fig[1, 1])
 
-    record(fig, filename, 0:Δt:t1, framerate=15, px_per_unit=2) do t
+    record(fig, filename, 0:Δt:t1, framerate = 15, px_per_unit = 2) do t
         t == 0 && return
         empty!(ax)
 
@@ -37,9 +37,15 @@ function run_animation(fm, starting_dist, t1, Δt, filename="animation.mp4")
         stm_dist = run_stm(fm, μ₀, P₀, t)
 
         mc = stack(current_samples)
-        scatter!(ax, mc[1,:], mc[2,:], color=(:orange, 0.1), label="MC (Euclidean) 1000 samples")
-        plot_ellipse(ut_dist, 1, 2, color=(:blue, 0.5), label="UT")
-        plot_ellipse(stm_dist, 1, 2, color=(:red, 0.5), label="STM")
+        scatter!(
+            ax,
+            mc[1, :],
+            mc[2, :],
+            color = (:orange, 0.1),
+            label = "MC (Euclidean) 1000 samples",
+        )
+        plot_ellipse(ut_dist, 1, 2, color = (:blue, 0.5), label = "UT")
+        plot_ellipse(stm_dist, 1, 2, color = (:red, 0.5), label = "STM")
 
         # ut_samples = stack(rand(ut_dist, 10000))
         # stm_samples = stack(rand(stm_dist, 10000))

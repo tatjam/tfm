@@ -18,21 +18,16 @@ starting_dist = MvNormal(μ, σ^2)
 
 function mee_and_back(dist)
 
-    starting_dist_mee = ut_propagate(
-        v -> euclid_to_mee(v..., GM_EARTH),
-        μ,
-        σ^2,
-        α=1e-1
-    )
+    starting_dist_mee = ut_propagate(v -> euclid_to_mee(v..., GM_EARTH), μ, σ^2, α = 1e-1)
 
     starting_dist_back = ut_propagate(
-        v -> mee_to_euclid(v...,GM_EARTH),
+        v -> mee_to_euclid(v..., GM_EARTH),
         mean(starting_dist_mee),
-        cov(starting_dist_mee)
+        cov(starting_dist_mee),
     )
 
-    fig = Figure(size=(1920, 1080))
-    ax = Axis(fig[1,1])
+    fig = Figure(size = (1920, 1080))
+    ax = Axis(fig[1, 1])
 
 
     i = 1
@@ -50,12 +45,11 @@ function mee_and_back(dist)
     end
     samples_mee_back = reduce(hcat, results)
 
-    scatter!(ax, samples_mee_back[i,:], samples_mee_back[j,:], color=(:orange, 0.05))
+    scatter!(ax, samples_mee_back[i, :], samples_mee_back[j, :], color = (:orange, 0.05))
 
-    plot_ellipse(starting_dist_back, i, j, color=(:blue, 1))
+    plot_ellipse(starting_dist_back, i, j, color = (:blue, 1))
 
     fig
 end
 
 mee_and_back(starting_dist)
-

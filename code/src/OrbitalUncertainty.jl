@@ -38,7 +38,7 @@ include("propagators/PolyChaos.jl")
 export AbstractPCEBasis, AbstractPCEQuadrature
 export nvars, multi_index, eval_basis, eval_basis!, nodes, weights, galerkin
 export OprlBasis, OprlQuadrature
-export hermite_basis 
+export hermite_basis
 
 include("statistics/GVM.jl")
 export GaussVonMises, decanonicalize, mahalanobis, canon_mahalanobis
@@ -61,7 +61,7 @@ export EARTH_FM_WITH_J2_NEWTON, EARTH_FM_WITH_J2_KEPLER
 # To fix LSP on tests
 @static if false
     module TestScope
-        include("../test/runtests.jl")
+    include("../test/runtests.jl")
     end
 end
 

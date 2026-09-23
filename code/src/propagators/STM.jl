@@ -20,12 +20,16 @@ function run_stm(
     μ::AbstractVector{T},
     P::AbstractMatrix{T},
     Δt;
-    reltol=1e-10,
-    abstol=1e-10,
+    reltol = 1e-10,
+    abstol = 1e-10,
 ) where {T}
 
     dr = DiffResults.JacobianResult(μ)
-    dr = ForwardDiff.jacobian!(dr, x -> propagate_orbit(p, x, Δt, reltol=reltol, abstol=abstol), μ)
+    dr = ForwardDiff.jacobian!(
+        dr,
+        x -> propagate_orbit(p, x, Δt, reltol = reltol, abstol = abstol),
+        μ,
+    )
 
     μ_prop = DiffResults.value(dr)
     # Note, this is not really the jacobian as the entire integration is performed, this

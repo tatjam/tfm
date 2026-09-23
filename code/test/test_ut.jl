@@ -71,8 +71,8 @@ end
         # Flatten to a conventional matrix 
         samples_mc_mat = reduce(hcat, samples_mc)
 
-        μ_mc = vec(mean(samples_mc_mat, dims=2))
-        P_mc = cov(samples_mc_mat, dims=2)
+        μ_mc = vec(mean(samples_mc_mat, dims = 2))
+        P_mc = cov(samples_mc_mat, dims = 2)
 
         @test μ_mc ≈ mean(dist) rtol = 1e-6
 

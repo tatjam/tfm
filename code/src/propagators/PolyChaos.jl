@@ -106,7 +106,7 @@ Finally, we evaluate the expected value via the quadrature rule, which is chosen
 our distribution (in fact, ideally should be exact if f is a linear combination of the basis functions). Note that
 if high performance is desired, precomputation of the quadrature will save some effort.
 """
-function galerkin(f, b::AbstractPCEBasis, q::AbstractPCEQuadrature=quadrature(b))
+function galerkin(f, b::AbstractPCEBasis, q::AbstractPCEQuadrature = quadrature(b))
     ns, ws = nodes(q), weights(q)
     T = eltype(b)
     n = length(b)
@@ -116,8 +116,8 @@ function galerkin(f, b::AbstractPCEBasis, q::AbstractPCEQuadrature=quadrature(b)
     m = length(probe)
 
     # TODO: This could waste a whole lot of memory if maxthreadis is very big!
-    partials = [zeros(T, n, m) for _ in 1:Threads.maxthreadid()]
-    bufs = [Vector{T}(undef, n) for _ in 1:Threads.maxthreadid()]
+    partials = [zeros(T, n, m) for _ = 1:Threads.maxthreadid()]
+    bufs = [Vector{T}(undef, n) for _ = 1:Threads.maxthreadid()]
 
     Threads.@threads :static for k in eachindex(ns)
         tid = Threads.threadid()
@@ -161,8 +161,8 @@ struct OprlBasis{T<:AbstractFloat,N} <: AbstractPCEBasis
 end
 
 # N-1 is the maximum order usable in the basis, plus the 0 order, gives N
-Base.length(b::OprlBasis{T, N}) where {T, N} = N 
-Base.eltype(b::OprlBasis{T, N}) where {T, N} = T
+Base.length(b::OprlBasis{T,N}) where {T,N} = N
+Base.eltype(b::OprlBasis{T,N}) where {T,N} = T
 
 function OprlBasis(terms::AbstractVector{Tuple{T,T}}) where {T<:AbstractFloat}
     N = length(terms)
@@ -199,7 +199,7 @@ function eval_basis!(out::AbstractVector{T}, b::OprlBasis{T,N}, ξ) where {T,N}
     # yₙ₊₁= (x - cₙ) yₙ - dₙ yₙ₋₁, thus
     # sqrt(dₙ₊₁ pₙ₊₁= (x - cₙ) pₙ - sqrt(dₙ) pₙ₋₁
     # Note the last element is ignored, that's only for quadrature!
-    for n in 1:(N-2)
+    for n = 1:(N-2)
         cn, sqdnp1 = b.jacobi[n+1]
         _, sqdn = b.jacobi[n]
 
@@ -218,14 +218,14 @@ function hermite_basis(::Type{T}, N::Int) where {T<:AbstractFloat}
     # The Hermite generator is
     #   yₙ₊₁ = x yₙ - n yₙ₋₁
     # thus cₙ = 0, dₙ = n
-    jacobi = [(zero(T), sqrt(T(n))) for n in 1:N+1]
+    jacobi = [(zero(T), sqrt(T(n))) for n = 1:(N+1)]
     # @Main.infiltrate
 
     return OprlBasis(jacobi)
 end
 
 
-struct OprlQuadrature{T<:AbstractFloat,N} <: AbstractPCEQuadrature 
+struct OprlQuadrature{T<:AbstractFloat,N} <: AbstractPCEQuadrature
     nodes::SVector{N,T}
     weights::SVector{N,T}
 end
@@ -247,7 +247,8 @@ function quadrature(b::OprlBasis{T,N}) where {T,N}
 
     # The diagonal is all the first terms of jacobi, the off-diagonal the second ones,
     # note that as expected there's one "unused" element in the jacobi array
-    jacobimat = SymTridiagonal(Vector(first.(b.jacobi)), Vector(last.(b.jacobi[SOneTo(N - 1)])))
+    jacobimat =
+        SymTridiagonal(Vector(first.(b.jacobi)), Vector(last.(b.jacobi[SOneTo(N - 1)])))
 
     eigdecomp = eigen(jacobimat)
     eigval = eigdecomp.values
@@ -264,15 +265,12 @@ function quadrature(b::OprlBasis{T,N}) where {T,N}
 end
 
 
-nodes(q::OprlQuadrature{T, N}) where {T, N} = q.nodes
-weights(q::OprlQuadrature{T, N}) where {T, N} = q.weights
+nodes(q::OprlQuadrature{T,N}) where {T,N} = q.nodes
+weights(q::OprlQuadrature{T,N}) where {T,N} = q.weights
 
 
 """
 A **normalized** polynomial basis orthonormal to some distribution on
 the unit circle, OPUC meaning Orthogonal Polynomial on the Unit Circle
 """
-struct OpucBasis <: AbstractPCEBasis
-    verblunsky::
-end
-
+struct OpucBasis <: AbstractPCEBasis end

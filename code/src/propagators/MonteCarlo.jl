@@ -15,14 +15,16 @@ function run_monte_carlo(
     p::ForceModel,
     samples::AbstractVector{<:SVector{6,T}},
     delta_t;
-    reltol=1e-10,
-    abstol=1e-10) where {T<:Real}
+    reltol = 1e-10,
+    abstol = 1e-10,
+) where {T<:Real}
 
     n = length(samples)
     results = Vector{SVector{6,T}}(undef, n)
 
     Threads.@threads for i in eachindex(samples)
-        results[i] = propagate_orbit(p, samples[i], delta_t, reltol=reltol, abstol=abstol)
+        results[i] =
+            propagate_orbit(p, samples[i], delta_t, reltol = reltol, abstol = abstol)
     end
 
     return results

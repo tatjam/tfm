@@ -130,8 +130,8 @@ struct EGM96Force
             order = degree
         end
 
-        buffer_P = LowerTriangularStorage((degree + 1) * (order +1))
-        buffer_dP = LowerTriangularStorage((degree + 1) * (order +1))
+        buffer_P = LowerTriangularStorage((degree + 1) * (order + 1))
+        buffer_dP = LowerTriangularStorage((degree + 1) * (order + 1))
         new(model, degree, order, jd0, buffer_P, buffer_dP)
     end
 end
@@ -143,7 +143,8 @@ function egm96_acceleration_eci(f::EGM96Force, r_eci, t)
     eci2ecef = r_eci_to_ecef(J2000(), PEF(), jd)
 
     # Note, acc doesn't include rotational terms, and time is expected as seconds, not julian date, since J2000
-    acc_ecef = GravityModels.gravitational_acceleration(f.model, eci2ecef * r_eci, jd * 86400.0)
+    acc_ecef =
+        GravityModels.gravitational_acceleration(f.model, eci2ecef * r_eci, jd * 86400.0)
     acc_eci = eci2ecef' * acc_ecef
 
     # We need to exclude the 2-body term, as it's included by EGM96
@@ -168,7 +169,7 @@ IGRF acceleration, computed in euclidean coordinates and then transformed.
 """
 function param_variation(fm::EGM96Force, p, f, g, h, k, L, t, μ)
     euclid_state = mee_to_euclid(p, f, g, h, k, L, μ)
-    a_eci = egm96_acceleration_eci(fm, euclid_state[SA[1,2,3]], t)
+    a_eci = egm96_acceleration_eci(fm, euclid_state[SA[1, 2, 3]], t)
 
     csn2eci = get_csn_basis(euclid_state...)
     a_csn = csn2eci' * a_eci
@@ -240,7 +241,7 @@ function param_variation(fm::ForceModel{F,false}, u, t) where {F}
 
     # 2-body term
     w = 1 + u[2] * cos(u[6]) + u[3] * sin(u[6])
-    du += SA[0.0, 0.0, 0.0, 0.0, 0.0, sqrt(fm.μ * u[1]) * (w / u[1])^2] 
+    du += SA[0.0, 0.0, 0.0, 0.0, 0.0, sqrt(fm.μ*u[1])*(w/u[1])^2]
 
     return du
 end
@@ -283,8 +284,8 @@ function propagate_orbit(
     fm::ForceModel,
     u0::AbstractVector{<:Real},
     t::Real;
-    reltol=1e-10,
-    abstol=1e-10
+    reltol = 1e-10,
+    abstol = 1e-10,
 )
     u0_static = SVector{6}(u0)
 

@@ -18,28 +18,33 @@ fm_kepl = EARTH_FM_WITH_J2_KEPLER
 σ = Diagonal([100e3, 10e3, 10e3, 1.0, 100.0, 1.0])
 
 starting_dist = MvNormal(μ, σ^2)
-starting_dist_mee = ut_propagate(
-    v -> euclid_to_mee(v..., GM_EARTH),
-    μ,
-    σ^2,
-)
+starting_dist_mee = ut_propagate(v -> euclid_to_mee(v..., GM_EARTH), μ, σ^2)
 
-function run_animation(fm_eucl, fm_kepl, starting_dist, starting_dist_mee, t1, Δt, filename="animation.mp4")
+function run_animation(
+    fm_eucl,
+    fm_kepl,
+    starting_dist,
+    starting_dist_mee,
+    t1,
+    Δt,
+    filename = "animation.mp4",
+)
     starting_samples = [SVector{6}(col) for col in eachcol(rand(starting_dist, 1000))]
-    starting_samples_mee = [SVector{6}(col) for col in eachcol(rand(starting_dist_mee, 1000))]
-    
+    starting_samples_mee =
+        [SVector{6}(col) for col in eachcol(rand(starting_dist_mee, 1000))]
+
     current_samples = copy(starting_samples)
     current_samples_mee = copy(starting_samples_mee)
     μ₀ = mean(starting_dist_mee)
     P₀ = cov(starting_dist_mee)
 
-    fig = Figure(size=(1366, 768))
-    ax = Axis(fig[1,1])
-    ax_state = Axis(fig[1,2])
+    fig = Figure(size = (1366, 768))
+    ax = Axis(fig[1, 1])
+    ax_state = Axis(fig[1, 2])
     state_x = 1
     state_y = 6
 
-    record(fig, filename, 0:Δt:t1, framerate=15, px_per_unit=2) do t
+    record(fig, filename, 0:Δt:t1, framerate = 15, px_per_unit = 2) do t
         t == 0 && return
         empty!(ax)
         empty!(ax_state)
@@ -54,7 +59,12 @@ function run_animation(fm_eucl, fm_kepl, starting_dist, starting_dist_mee, t1, �
         # scatter!(ax, mc_euclidean[1,:], mc_euclidean[2,:], color=(:red, 0.1), label="MC (MEE) 1000 samples")
 
         mee_mc = stack(current_samples_mee)
-        scatter!(ax_state, mee_mc[state_x,:],rem2pi.(mee_mc[state_y,:], RoundNearest), color=(:orange, 0.1))
+        scatter!(
+            ax_state,
+            mee_mc[state_x, :],
+            rem2pi.(mee_mc[state_y, :], RoundNearest),
+            color = (:orange, 0.1),
+        )
         # mee_mc_euclidean = mapslices(v -> mee_to_euclid.(v..., GM_EARTH), mee_mc, dims=1)
         # scatter!(ax, mee_mc_euclidean[1,:], mee_mc_euclidean[2,:], color=(:orange, 0.1), label="MC (Euclidean) 1000 samples")
 
@@ -62,7 +72,7 @@ function run_animation(fm_eucl, fm_kepl, starting_dist, starting_dist_mee, t1, �
         # scatter!(ax_state, ut[state_x,:], rem2pi.(ut[state_y,:], RoundNearest), color=(:blue, 0.1))
         # ut_euclidean = mapslices(v -> mee_to_euclid.(v..., GM_EARTH), ut, dims=1)
         # scatter!(ax, ut_euclidean[1,:], ut_euclidean[2,:], color=(:blue, 0.1), label = "UT 1000 samples")
-        
+
 
         # r = 6000e3
         # center = mean(mc_euclidean, dims=2)

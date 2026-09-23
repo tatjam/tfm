@@ -30,11 +30,11 @@ end
 """
     SigmaVectors(χ, W, W0c)
 """
-struct SigmaVectors{L, N, T<:Real}
+struct SigmaVectors{L,N,T<:Real}
     # L-dimensional, 2L+1 sigma points
-    χ::SMatrix{L, N, T}
+    χ::SMatrix{L,N,T}
     # One weight for each sigma point
-    W::SVector{N, T}
+    W::SVector{N,T}
     # Additional weight for average sigma point
     W0c::T
 end
@@ -61,13 +61,13 @@ function SigmaVectors(μ::AbstractVector{T}, P::AbstractMatrix{T}, α, κ, β) w
     S = sqrt((L + λ) * P)
 
     # Symmetric L sigma-vectors
-    for i in 2:(L+1)
-        χ[:, i]   = μ + S[:, i-1]
+    for i = 2:(L+1)
+        χ[:, i] = μ + S[:, i-1]
         χ[:, i+L] = μ - S[:, i-1]
-        W[i]   = 1 / (2 * (L + λ))
+        W[i] = 1 / (2 * (L + λ))
         W[i+L] = W[i]
     end
-    return SigmaVectors{L, N, T}(SMatrix(χ), SVector(W), W0c)
+    return SigmaVectors{L,N,T}(SMatrix(χ), SVector(W), W0c)
 end
 
 """
@@ -80,21 +80,21 @@ function ut_propagate(
     f,
     μ::AbstractVector{T},
     P::AbstractMatrix{T};
-    α=1e-3,
-    κ=0,
-    β=2
+    α = 1e-3,
+    κ = 0,
+    β = 2,
 ) where {T}
     L = length(μ)
     N = 2 * L + 1
     sigma = SigmaVectors(μ, P, α, κ, β)
-    endpoints = Vector{SVector{L, T}}(undef, N)
+    endpoints = Vector{SVector{L,T}}(undef, N)
     # The sigma-vectors are propagated through the non-linear function 
-    Threads.@threads for i in 1:N
+    Threads.@threads for i = 1:N
         endpoints[i] = f(sigma.χ[:, i])
     end
 
     # Mean is computed as simply the mean of all points
-    μend = sum(endpoints[i] * sigma.W[i] for i in 1:N)
+    μend = sum(endpoints[i] * sigma.W[i] for i = 1:N)
     # Covariance matrix can be computed from the deviation matrix, but we have to use 
     # the special weight for the mean point
     dx = reduce(hcat, endpoints) .- μend
@@ -119,18 +119,18 @@ function run_ut(
     μ::AbstractVector{T},
     P::AbstractMatrix{T},
     Δt,
-    reltol=1e-10,
-    abstol=1e-10,
-    α=1e-3,
-    κ=0,
-    β=2
+    reltol = 1e-10,
+    abstol = 1e-10,
+    α = 1e-3,
+    κ = 0,
+    β = 2,
 ) where {T}
     return ut_propagate(
-        v -> propagate_orbit(p, v, Δt, reltol=reltol, abstol=abstol),
+        v -> propagate_orbit(p, v, Δt, reltol = reltol, abstol = abstol),
         μ,
         P,
-        α=α,
-        κ=κ,
-        β=β
+        α = α,
+        κ = κ,
+        β = β,
     )
 end

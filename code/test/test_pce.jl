@@ -31,13 +31,13 @@ end
 @testset "Basis self-projection" begin
     N = 20
     basis = hermite_basis(Float64, N)
-    
+
     # Note that the quadrature is 
-    @testset "Basis index $k" for k in 1:length(basis)
+    @testset "Basis index $k" for k = 1:length(basis)
         p_k(x) = eval_basis(basis, x)[k]
-        
+
         proj = galerkin(p_k, basis)
-        
+
         # The projection of a unit vector of the basis on itself is 1 only
         # at its index, 0 otherwise
         expected = zeros(Float64, length(basis), 1)
@@ -51,9 +51,9 @@ end
     basis = hermite_basis(Float64, 4)
     proj = galerkin(x -> x^3, basis)
 
-    @test proj[1] ≈ 0.0 atol = 1e-9 
-    @test proj[2] ≈ 3.0 atol = 1e-9 
-    @test proj[3] ≈ 0.0 atol = 1e-9 
+    @test proj[1] ≈ 0.0 atol = 1e-9
+    @test proj[2] ≈ 3.0 atol = 1e-9
+    @test proj[3] ≈ 0.0 atol = 1e-9
     @test proj[4] ≈ sqrt(6) atol = 1e-9
     @test proj[5] ≈ 0.0 atol = 1e-9
 end
@@ -62,9 +62,9 @@ end
 @testset "Multi-dimensional output projection" begin
     basis = hermite_basis(Float64, 3)
     f(x) = [2.5*x - 1.0, x^2]
-    
+
     proj = galerkin(f, basis)
-    
+
     @test size(proj) == (4, 2)
     @test proj[:, 1] ≈ [-1.0, 2.5, 0.0, 0.0] atol = 1e-9
     @test proj[:, 2] ≈ [1.0, 0.0, sqrt(2), 0.0] atol = 1e-9

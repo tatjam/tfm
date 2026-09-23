@@ -14,14 +14,7 @@
     Returns an array [p, f, g, h, k, L].
 """
 function kepler_to_mee(a, e, i, ω, Ω, ν)
-    return SA[
-        a*(1-e^2),
-        e*cos(ω + Ω),
-        e*sin(ω + Ω),
-        tan(i / 2)*cos(Ω),
-        tan(i / 2)*sin(Ω),
-        Ω+ω+ν
-    ]
+    return SA[a*(1-e^2), e*cos(ω+Ω), e*sin(ω+Ω), tan(i/2)*cos(Ω), tan(i/2)*sin(Ω), Ω+ω+ν]
 end
 
 """
@@ -49,14 +42,7 @@ function mee_to_kepler(p, f, g, h, k, L)
     e = sqrt(f^2 + g^2)
     Ω = atan(k, h)
     ω = atan(g, f) - Ω
-    return SA[
-        p/(1-e^2),
-        e,
-        2*atan(sqrt(h^2 + k^2)),
-        ω,
-        Ω,
-        L-ω-Ω
-    ]
+    return SA[p/(1-e^2), e, 2*atan(sqrt(h^2+k^2)), ω, Ω, L-ω-Ω]
 end
 
 """
@@ -85,10 +71,10 @@ function kepler_to_euclid(a, e, i, ω, Ω, ν, μ)
 
     r = a * (1 - e2) / (1 + e * cos_ν)
 
-    r_o = SA[r * cos_ν, r * sin_ν, 0]
+    r_o = SA[r*cos_ν, r*sin_ν, 0]
 
-    n₀  = √(μ / a^3)
-    v_o = n₀ * a / sqrt(1 - e2) * SA[-sin_ν, e + cos_ν, 0]
+    n₀ = √(μ / a^3)
+    v_o = n₀ * a / sqrt(1 - e2) * SA[-sin_ν, e+cos_ν, 0]
 
     D_i_o = angle_to_dcm(-ω, -i, -Ω, :ZXZ)
 
@@ -107,23 +93,23 @@ Implementation is copied from SatelliteToolbox, with the fixed GM_EARTH removed
 """
 function euclid_to_kepler(x1::T, x2::T, x3::T, v1::T, v2::T, v3::T, μ::T) where {T}
     @inbounds begin
-        sr_i = SVector{3, T}(x1, x2, x3)
-        sv_i = SVector{3, T}(v1, v2, v3)
+        sr_i = SVector{3,T}(x1, x2, x3)
+        sv_i = SVector{3,T}(v1, v2, v3)
 
         r² = dot(sr_i, sr_i)
         v² = dot(sv_i, sv_i)
-        r  = sqrt(r²)
-        v  = sqrt(v²)
+        r = sqrt(r²)
+        v = sqrt(v²)
         rv = dot(sr_i, sv_i)
 
         h_i = sr_i × sv_i
-        h   = norm(h_i)
+        h = norm(h_i)
 
         # Vector that points to the right ascension of the ascending node (RAAN).
         n_i = SVector{3}(0, 0, 1) × h_i
-        n   = norm(n_i)
+        n = norm(n_i)
 
-        e_i = ((v² - μ / r) * sr_i - rv * sv_i ) / μ
+        e_i = ((v² - μ / r) * sr_i - rv * sv_i) / μ
 
         # Orbit energy.
         ξ = v² / 2 - μ / r
@@ -135,13 +121,12 @@ function euclid_to_kepler(x1::T, x2::T, x3::T, v1::T, v2::T, v3::T, μ::T) where
         else
             throw(ArgumentError("""
                 Could not convert the provided Cartesian values to Kepler elements.
-                The computed eccentricity was not between 0 and 1."""
-            ))
+                The computed eccentricity was not between 0 and 1."""))
         end
 
         cos_i = h_i[3] / h
         cos_i = abs(cos_i) > 1 ? sign(cos_i) : cos_i
-        i     = acos(cos_i)
+        i = acos(cos_i)
 
         if abs(n) <= 1e-6
             # Equatorial orbit
@@ -151,7 +136,7 @@ function euclid_to_kepler(x1::T, x2::T, x3::T, v1::T, v2::T, v3::T, μ::T) where
             if abs(ecc) > 1e-6
                 cos_ω = e_i[1] / ecc
                 cos_ω = abs(cos_ω) > 1 ? sign(cos_ω) : cos_ω
-                ω     = acos(cos_ω)
+                ω = acos(cos_ω)
 
                 if e_i[2] < 0
                     ω = T(2π) - ω
@@ -159,7 +144,7 @@ function euclid_to_kepler(x1::T, x2::T, x3::T, v1::T, v2::T, v3::T, μ::T) where
 
                 cos_f = dot(e_i, sr_i) / (ecc * r)
                 cos_f = abs(cos_f) > 1 ? sign(cos_f) : cos_f
-                f     = acos(cos_f)
+                f = acos(cos_f)
 
                 if rv < 0
                     f = T(2π) - f
@@ -171,7 +156,7 @@ function euclid_to_kepler(x1::T, x2::T, x3::T, v1::T, v2::T, v3::T, μ::T) where
 
                 cos_f = sr_i[1] / r
                 cos_f = abs(cos_f) > 1 ? sign(cos_f) : cos_f
-                f     = acos(cos_f)
+                f = acos(cos_f)
 
                 if sr_i[2] < 0
                     f = T(2π) - f
@@ -182,7 +167,7 @@ function euclid_to_kepler(x1::T, x2::T, x3::T, v1::T, v2::T, v3::T, μ::T) where
             # Inclined orbit
             cos_Ω = n_i[1] / n
             cos_Ω = abs(cos_Ω) > 1 ? sign(cos_Ω) : cos_Ω
-            Ω     = acos(cos_Ω)
+            Ω = acos(cos_Ω)
 
             if n_i[2] < 0
                 Ω = T(2π) - Ω
@@ -195,7 +180,7 @@ function euclid_to_kepler(x1::T, x2::T, x3::T, v1::T, v2::T, v3::T, μ::T) where
 
                 cos_f = dot(n_i, sr_i) / (n * r)
                 cos_f = abs(cos_f) > 1 ? sign(cos_f) : cos_f
-                f     = acos(cos_f)
+                f = acos(cos_f)
 
                 if sr_i[3] < 0
                     f = T(2π) - f
@@ -204,7 +189,7 @@ function euclid_to_kepler(x1::T, x2::T, x3::T, v1::T, v2::T, v3::T, μ::T) where
 
                 cos_ω = dot(n_i, e_i) / (n * ecc)
                 cos_ω = abs(cos_ω) > 1 ? sign(cos_ω) : cos_ω
-                ω     = acos(cos_ω)
+                ω = acos(cos_ω)
 
                 if e_i[3] < 0
                     ω = T(2π) - ω
@@ -212,7 +197,7 @@ function euclid_to_kepler(x1::T, x2::T, x3::T, v1::T, v2::T, v3::T, μ::T) where
 
                 cos_f = dot(e_i, sr_i) / (ecc * r)
                 cos_f = abs(cos_f) > 1 ? sign(cos_f) : cos_f
-                f     = acos(cos_f)
+                f = acos(cos_f)
 
                 if rv < 0
                     f = T(2π) - f
@@ -261,24 +246,16 @@ function euclid_to_mee(x1, x2, x3, v1, v2, v3, μ)
     tkh = 2.0 * k * h
     ecc = cross(v, hvec) / μ - rhat
 
-    fhat = SA[
-        1.0 - kk + hh,
-        tkh,
-        -2.0 * k
-    ]
+    fhat = SA[1.0-kk+hh, tkh, -2.0*k]
 
-    ghat = SA[
-        tkh,
-        1.0 + kk - hh,
-        2.0 * h
-    ]
+    ghat = SA[tkh, 1.0+kk-hh, 2.0*h]
 
     fhat = fhat/s2
     ghat = ghat/s2
 
     f = dot(ecc, fhat)
     g = dot(ecc, ghat)
-    L = atan(rhat[2]-vhat[1],rhat[1]+vhat[2])
+    L = atan(rhat[2]-vhat[1], rhat[1]+vhat[2])
 
     return SA[p, f, g, h, k, L]
 end
@@ -303,17 +280,9 @@ function mee_to_euclid(p, f, g, h, k, L, μ)
     r = p / w
 
     smp = sqrt(μ/p)
-    fhat = SA[
-        1.0 - kk + hh,
-        tkh,
-        -2.0 * k
-    ]
+    fhat = SA[1.0-kk+hh, tkh, -2.0*k]
 
-    ghat = SA[
-        tkh,
-        1.0 + kk - hh,
-        2.0 * h
-    ]
+    ghat = SA[tkh, 1.0+kk-hh, 2.0*h]
 
     fhat = fhat/s2
     ghat = ghat/s2
@@ -325,7 +294,7 @@ function mee_to_euclid(p, f, g, h, k, L, μ)
 
     r = x * fhat + y * ghat
     v = xdot * fhat + ydot*ghat
-    
+
     return SA[r[1], r[2], r[3], v[1], v[2], v[3]]
 end
 
@@ -347,11 +316,18 @@ function csn_acceleration_to_mee(p, f, g, h, k, L, C, S, N, μ)
 
     return [
         2p * C / w * sqrt(p / μ),
-        sqrt(p / μ) * ( S * sin(L) + ((w + 1) * cos(L) + f) * C / w - g * (h * sin(L) - k * cos(L)) * N / w),
-        sqrt(p / μ) * (-S * cos(L) + ((w + 1) * sin(L) + g) * C / w + f * (h * sin(L) - k * cos(L)) * N / w),
+        sqrt(p / μ) * (
+            S * sin(L) + ((w + 1) * cos(L) + f) * C / w -
+            g * (h * sin(L) - k * cos(L)) * N / w
+        ),
+        sqrt(p / μ) * (
+            -S * cos(L) +
+            ((w + 1) * sin(L) + g) * C / w +
+            f * (h * sin(L) - k * cos(L)) * N / w
+        ),
         sqrt(p / μ) * s2 * N / (2w) * cos(L),
         sqrt(p / μ) * s2 * N / (2w) * sin(L),
-        sqrt(p / μ) * (h * sin(L) - k * cos(L)) * N / w
+        sqrt(p / μ) * (h * sin(L) - k * cos(L)) * N / w,
     ]
 end
 
@@ -381,7 +357,7 @@ function get_csn_basis(x1, x2, x3, v1, v2, v3)
     # which by the Cauchy-Schwarz inequality is greater than or equal to 0
     # Because n × s ∥ (r × v) × r, we affirm that c points in
     # the direction of velocity if defined as...
-    c = cross(n, s) 
+    c = cross(n, s)
 
     return hcat(c, s, n)
 end
@@ -391,5 +367,4 @@ end
 
    Compare two angles knowing they live in the circle
 """
-isapprox_angle(a, b; atol=1e-8) = abs(rem2pi(a - b, RoundNearest)) < atol
-
+isapprox_angle(a, b; atol = 1e-8) = abs(rem2pi(a - b, RoundNearest)) < atol

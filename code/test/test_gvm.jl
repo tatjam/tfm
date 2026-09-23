@@ -12,8 +12,8 @@
         β = [0.0, 0.0, 0.0, 0.0, 0.0]
         Γ = zeros(5, 5)
         κ = 100.0
-        
-        dist = GaussVonMises(orbit_u0_mee[1:5], orbit_u0_mee[6], β, Γ, κ, P=P)
+
+        dist = GaussVonMises(orbit_u0_mee[1:5], orbit_u0_mee[6], β, Γ, κ, P = P)
         # A sufficiently short Keplerian problem should be very exactly modelled
         end_dist = run_gvm(EARTH_FM_WITH_J2_KEPLER, dist, Δt)
 
@@ -24,11 +24,9 @@
         # Flatten to a conventional matrix 
         samples_mc_mat = reduce(hcat, samples_mc)
 
-        avg_mahalanobis = mean(
-            map(eachcol(samples_mc_mat)) do v
-                mahalanobis(v, end_dist)
-            end
-        )
+        avg_mahalanobis = mean(map(eachcol(samples_mc_mat)) do v
+            mahalanobis(v, end_dist)
+        end)
 
         # We expect, due to high κ, for avg_mahalanobis to be close to 6
         # (5 euclidean dimensions + 1 angular)

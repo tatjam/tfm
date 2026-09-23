@@ -10,7 +10,13 @@
 # appropriate, but careful choice of i = ω = Ω = 0 has to be done if these
 # coordinates are to be considered Gaussian.
 
-struct GaussVonMises{T <: Real, V1 <: AbstractVector{T}, V2 <: AbstractVector{T}, MG <: AbstractMatrix{T}, MA <: AbstractMatrix{T}}
+struct GaussVonMises{
+    T<:Real,
+    V1<:AbstractVector{T},
+    V2<:AbstractVector{T},
+    MG<:AbstractMatrix{T},
+    MA<:AbstractMatrix{T},
+}
     # μ mean vector for the Gaussian in Euclidean space
     μ::V1
     # α mean vector for the Von Mises (scalar)
@@ -18,11 +24,11 @@ struct GaussVonMises{T <: Real, V1 <: AbstractVector{T}, V2 <: AbstractVector{T}
     # β is a 1-form: ℝⁿ -> ℝ, acting on vectors via dot(β, v)
     β::V2
     # Γ is a symmetric bilinear form
-    Γ::Symmetric{T, MG}
+    Γ::Symmetric{T,MG}
     # κ is a scalar that shapes the Von Mises transform
     κ::T
     # A is the lower Cholesky factor of P
-    A::LowerTriangular{T, MA}
+    A::LowerTriangular{T,MA}
 end
 
 """
@@ -43,7 +49,7 @@ where A is the lower triangular Cholesky decomposition of P, and:
 The distribution assigns probabilities to a random tuple (x, θ), where x is the euclidean random variable and θ is the angular random variable.
     
 """
-function GaussVonMises(μ, α, β, Γ, κ; P=nothing, A=nothing)
+function GaussVonMises(μ, α, β, Γ, κ; P = nothing, A = nothing)
     if !isnothing(P)
         A = LowerTriangular(cholesky(Symmetric(P)).L)
     elseif isnothing(A)
@@ -60,7 +66,7 @@ Transforms a random vector distributed under a canonical GVM (i.e. GVM(0, I, 0, 
 The vector is of the form [euclidean part..., angular value]!
 """
 function decanonicalize(dist::GaussVonMises, v::AbstractVector)
-    ceuc = @view v[1:end-1]
+    ceuc = @view v[1:(end-1)]
     cang = v[end]
 
     euc = dist.μ + dist.A * ceuc
@@ -91,8 +97,8 @@ function Base.rand(rng::AbstractRNG, d::GaussVonMises)
     return SA[x...; vm]
 end
 
-function Base.rand(rng::AbstractRNG, d::GaussVonMises, dims::NTuple{N, Int}) where {N}
-    return reshape([rand(rng, d) for _ in 1:prod(dims)], dims)
+function Base.rand(rng::AbstractRNG, d::GaussVonMises, dims::NTuple{N,Int}) where {N}
+    return reshape([rand(rng, d) for _ = 1:prod(dims)], dims)
 end
 
 """
@@ -108,8 +114,8 @@ Essentially, the sum of euclidean distance in canonical space (to the origin) an
 the angular coordinate, weighted by κ.
 """
 function mahalanobis(x::AbstractVector, dist::GaussVonMises)
-    deuclid = x[1:end-1] - dist.μ
-    z = dist.A \ deuclid 
+    deuclid = x[1:(end-1)] - dist.μ
+    z = dist.A \ deuclid
 
     expected_ang = dist.α + dot(dist.β, z) + 0.5 * dot(z, dist.Γ, z)
     ϕ = x[end] - expected_ang
@@ -121,9 +127,9 @@ function canon_mahalanobis(z::AbstractVector, ϕ::Real, κ::Real)
     # Alternative way to cheaply compute (x-μ)ᵀ(AAᵀ)⁻¹(x-μ)
     # z = A⁻¹ (x-μ), thus
     # zᵀz = (x-μ)ᵀ A⁻ᵀ A⁻¹ (x-μ) = (x-μ)ᵀ(AAᵀ)⁻¹(x-μ)
-    euclid_term = dot(z, z) 
+    euclid_term = dot(z, z)
     t1 = sin(0.5 * ϕ)
-    
+
     # Types naturally promote here without needing T(4.0)
     ang_term = 4 * κ * t1 * t1
 
