@@ -6,6 +6,7 @@ module OrbitalUncertainty
 using SatelliteToolbox
 using ReferenceFrameRotations
 using StaticArrays
+using Statistics
 using LinearAlgebra
 using DifferentialEquations
 using Distributions

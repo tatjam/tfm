@@ -73,7 +73,7 @@ end
 """
     withen_union(X, Y)
 
-Same as whiten_union! but operating on copies of X and Y, returning the whitened sample sets.  
+Same as whiten_union! but operating on copies of X and Y, returning the whitened samples.  
 """
 function withen_union(X::AbstractMatrix, Y::AbstractMatrix)
     return withen_union!(copy(X), copy(Y))
@@ -97,26 +97,28 @@ end
 """
     energy_test_null_distribution!(samples, X, Y)
 
-Performs a random sampling of X and Y and computes the energy statistic for each entry in the samples
-array, replacing the entry with the resulting statistic.
+Performs a random sampling of X and Y and computes the energy statistic for each entry in
+the samples array, replacing the entry with the resulting statistic.
 
 Once again, X and Y are not whitened before to performing the test.
 
-The random sampling is simply done by stacking both X and Y horizontally (remember, columns are samples),
-generating a column array, and repeatedly shuffling it to generate our partitions. The partitions are just
-the first n (cols of X) cols, through the indexing array to the first, and the remainder m (cols of Y) to the second.
+The random sampling is simply done by stacking both X and Y horizontally (remember,
+columns are samples), generating a column array, and repeatedly shuffling it to generate
+our partitions. The partitions are just the first n (cols of X) cols, through the indexing
+array to the first, and the remainder m (cols of Y) to the second.
 """
 function energy_test_null_distribution!(
     samples::AbstractVector,
     X::AbstractMatrix,
     Y::AbstractMatrix,
 )
+    n, m = size(X, 2), size(Y, 2)
     Z = hcat(X, Y)
 
     # {1, 2, ..., n, n+1, n+2, ..., n+m}
     # {X, X, ..., X,   Y,   Y, ...,   Y}
     index_map = collect(1:(n+m))
-    for k = 1:size(samples)
+    for k in eachindex(samples)
         shuffle!(index_map)
         # First n samples to first partition, by reference to not copy
         # TODO: Copying may be faster at the end due to cache locality! Benchmark
@@ -124,7 +126,6 @@ function energy_test_null_distribution!(
         # Remainder (m) samples to second partition
         yp = @view Z[:, index_map[(n+1):end]]
         samples[k] = energy_test_statistic(xp, yp)
-
     end
 end
 
@@ -137,6 +138,7 @@ must use whiten_union! first if you want to do the whitened energy test.
 """
 function energy_test(X::AbstractMatrix, Y::AbstractMatrix, num_samples::Int)
     t = energy_test_statistic(X, Y)
-
-
+    null_dist = zeros(num_samples)
+    energy_test_null_distribution!(null_dist, X, Y)
+    return mean(null_dist .≥ t)
 end
