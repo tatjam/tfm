@@ -269,10 +269,10 @@ weights(q::OprlQuadrature{T, N}) where {T, N} = q.weights
 
 
 """
-A polynomial basis orthogonal to some distribution on the unit circle,
-OPUC meaning Orthogonal Polynomial on the Unit Circle
+A **normalized** polynomial basis orthonormal to some distribution on
+the unit circle, OPUC meaning Orthogonal Polynomial on the Unit Circle
 """
 struct OpucBasis <: AbstractPCEBasis
-
+    verblunsky::
 end
 

@@ -30,9 +30,9 @@ which are given as d×n and d×m matrices (i.e. number of points is the number o
 """
 function energy_metric(X::AbstractMatrix, Y::AbstractMatrix)
     n, m = size(X, 2), size(Y, 2)
-    cross = mean(norm(X[:,i] - Y[:,j]) for i in 1:n, j in 1:m)
-    inx = mean(norm(X[:,i] - Y[:,j]) for i in 1:n, j in 1:n)
-    iny = mean(norm(X[:,i] - Y[:,j]) for i in 1:n, j in 1:n)
+    cross = mean(norm(X[:, i] - Y[:, j]) for i in 1:n, j in 1:m)
+    inx = mean(norm(X[:, i] - Y[:, j]) for i in 1:n, j in 1:n)
+    iny = mean(norm(X[:, i] - Y[:, j]) for i in 1:n, j in 1:n)
     return 2 * cross - inx - iny
 end
 
@@ -61,7 +61,7 @@ function withen_union!(X::AbstractMatrix, Y::AbstractMatrix)
     cov = (n - 1) / cc * covX + (m - 1) / cc * covY + (n * m) / (c * cc) * meandiff * meandiff'
 
     k = cholesky(Symmetric(cov)).L
-    X .= k \ (X .- mean) 
+    X .= k \ (X .- mean)
     Y .= k \ (Y .- mean)
 
     return X, Y
@@ -92,6 +92,36 @@ function energy_test_statistic(X::AbstractMatrix, Y::AbstractMatrix)
 end
 
 """
+    energy_test_null_distribution!(samples, X, Y)
+
+Performs a random sampling of X and Y and computes the energy statistic for each entry in the samples
+array, replacing the entry with the resulting statistic.
+
+Once again, X and Y are not whitened before to performing the test.
+
+The random sampling is simply done by stacking both X and Y horizontally (remember, columns are samples),
+generating a column array, and repeatedly shuffling it to generate our partitions. The partitions are just
+the first n (cols of X) cols, through the indexing array to the first, and the remainder m (cols of Y) to the second.
+"""
+function energy_test_null_distribution!(samples::AbstractVector, X::AbstractMatrix, Y::AbstractMatrix)
+    Z = hcat(X, Y)
+
+    # {1, 2, ..., n, n+1, n+2, ..., n+m}
+    # {X, X, ..., X,   Y,   Y, ...,   Y}
+    index_map = collect(1:n+m)
+    for k in 1:size(samples)
+        shuffle!(index_map)
+        # First n samples to first partition, by reference to not copy
+        # TODO: Copying may be faster at the end due to cache locality! Benchmark
+        xp = @view Z[:, index_map[0:n]]
+        # Remainder (m) samples to second partition
+        yp = @view Z[:, index_map[n+1:end]]
+        samples[k] = energy_test_statistic(xp, yp)
+
+    end
+end
+
+"""
     energy_test(X, Y)
 
 Performs the energy test to X and Y, using the given number of samples to estimate the
@@ -101,6 +131,6 @@ must use whiten_union! first if you want to do the whitened energy test.
 function energy_test(X::AbstractMatrix, Y::AbstractMatrix, num_samples::Int)
     t = energy_test_statistic(X, Y)
 
-    
+
 end
 

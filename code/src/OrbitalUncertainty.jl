@@ -45,6 +45,9 @@ export GaussVonMises, decanonicalize, mahalanobis, canon_mahalanobis
 include("propagators/GVM.jl")
 export GVMSigmaVectors, b12, gvm_propagate, run_gvm
 
+include("statistics/EnergyTest.jl")
+export energy_test, whiten_union!
+
 # Utils 
 EARTH_FM_NEWTON = ForceModel(GM_EARTH, (), Val(true))
 EARTH_FM_KEPLER = ForceModel(GM_EARTH, (), Val(false))
