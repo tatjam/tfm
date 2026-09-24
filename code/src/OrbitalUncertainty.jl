@@ -47,7 +47,14 @@ include("propagators/GVM.jl")
 export GVMSigmaVectors, b12, gvm_propagate, run_gvm
 
 include("statistics/EnergyTest.jl")
-export energy_test, whiten_union!
+export energy_metric,
+    energy_metric_reference,
+    withen_union,
+    energy_test_null_distribution!,
+    energy_test,
+    distance_matrix,
+    energy_metric_on_distance_matrix,
+    center_distance_matrix!
 
 # Utils 
 EARTH_FM_NEWTON = ForceModel(GM_EARTH, (), Val(true))
