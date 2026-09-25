@@ -73,4 +73,11 @@ export EARTH_FM_WITH_J2_NEWTON, EARTH_FM_WITH_J2_KEPLER
     end
 end
 
+# To fix LSP on figures (Change to the one you're working on!)
+@static if false
+    module FigureScope
+    include("../figures/EnergyTestOverPropagation.jl")
+    end
+end
+
 end # module OrbitalUncertainty
