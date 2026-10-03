@@ -11,9 +11,9 @@ using SatelliteToolbox
 
 function run_comparison(fm, fm_kepler, starting_dist, starting_dist_kep, t1, Δt)
     # Samples of ground-truth Monte Carlo
-    NSAMPLES_TRUTH = 10000
+    NSAMPLES_TRUTH = 1000
     # Samples of methods evaluated against ground-truth
-    NSAMPLES = 1000
+    NSAMPLES = 100
 
     # We propagate a 10000 point Monte Carlo as "ground-truth" distribution
     ref_samples = [SVector{6}(col) for col in eachcol(rand(starting_dist, NSAMPLES_TRUTH))]
@@ -30,12 +30,13 @@ function run_comparison(fm, fm_kepler, starting_dist, starting_dist_kep, t1, Δt
     μ₀_kepler = mean(starting_dist_kep)
     P₀_kepler = cov(starting_dist_kep)
 
-    nsteps = floor(t1 / Δt)
+    nsteps = trunc(Int, t1 / Δt)
 
     # mc, ut, stm, ut_kep, stm_kep
     energies = zeros(Float32, (5, nsteps))
 
-    for t = 0:Δt:t1
+    ts = 0:Δt:t1
+    for i = 1:length(ts)
         t = Δt * i
 
         # Propagate Monte Carlo from t - Δt -> t
@@ -65,22 +66,25 @@ function run_comparison(fm, fm_kepler, starting_dist, starting_dist_kep, t1, Δt
             dims = 1,
         )
 
-        @info "Propagation to t = ", t, " complete."
+        @info "Propagation complete" t
+
+        mc_mat = reduce(hcat, current_mc_samples)
+        ref_mat = reduce(hcat, current_ref_samples)
 
         # TODO: Whiten?
-        energy_mc = energy_metric(current_mc_samples, current_ref_samples, Float32)
-        energy_ut = energy_metric(ut_samples, current_ref_samples, Float32)
-        energy_stm = energy_metric(stm_samples, current_ref_samples, Float32)
-        energy_ut_kepler = energy_metric(ut_samples_kepler, current_ref_samples, Float32)
-        energy_stm_kepler = energy_metric(stm_samples_kepler, current_ref_samples, Float32)
+        energy_mc = energy_metric(mc_mat, ref_mat; precision = Float32)
+        energy_ut = energy_metric(ut_samples, ref_mat; precision = Float32)
+        energy_stm = energy_metric(stm_samples, ref_mat; precision = Float32)
+        energy_ut_kepler = energy_metric(ut_samples_kepler, ref_mat; precision = Float32)
+        energy_stm_kepler = energy_metric(stm_samples_kepler, ref_mat; precision = Float32)
 
-        @info "Energies of t = ", t, " complete."
+        @info "Energies complete" t
 
-        energies[0, i] = energy_mc
-        energies[1, i] = energy_ut
-        energies[2, i] = energy_stm
-        energies[3, i] = energy_ut_kepler
-        energies[4, i] = energy_stm_kepler
+        energies[1, i] = energy_mc
+        energies[2, i] = energy_ut
+        energies[3, i] = energy_stm
+        energies[4, i] = energy_ut_kepler
+        energies[5, i] = energy_stm_kepler
     end
 
     # TODO: Save data for posterior plotting
@@ -89,8 +93,8 @@ end
 
 
 function main()
-    END_T = 3600.0 * 12.0
-    DELTA_T = 60.0
+    END_T = 3600.0 * 1.0
+    DELTA_T = 600.0
 
     fm = EARTH_FM_WITH_J2_NEWTON
     fmk = EARTH_FM_WITH_J2_KEPLER
