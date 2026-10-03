@@ -3,3 +3,4 @@ biblio/
 archive/
 __pycache__
 *.pkl
+*.jld2

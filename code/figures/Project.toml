@@ -1,6 +1,9 @@
 [deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+KittyTerminalImages = "b7fa5abe-5c7d-46c6-a1ae-1026d0d509b9"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrbitalUncertainty = "a9a1a3d1-c457-4620-9d4d-81bb393a3c57"
 SatelliteToolbox = "6ac157d9-b43d-51bb-8fab-48bf53814f4a"

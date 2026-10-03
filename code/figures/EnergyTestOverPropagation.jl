@@ -3,17 +3,17 @@
 # ---------------------------------------------
 
 using OrbitalUncertainty
-using GLMakie
 using Distributions
 using StaticArrays
 using LinearAlgebra
 using SatelliteToolbox
+using JLD2
 
 function run_comparison(fm, fm_kepler, starting_dist, starting_dist_kep, t1, Δt)
     # Samples of ground-truth Monte Carlo
-    NSAMPLES_TRUTH = 1000
+    NSAMPLES_TRUTH = 5000
     # Samples of methods evaluated against ground-truth
-    NSAMPLES = 100
+    NSAMPLES = 1000
 
     # We propagate a 10000 point Monte Carlo as "ground-truth" distribution
     ref_samples = [SVector{6}(col) for col in eachcol(rand(starting_dist, NSAMPLES_TRUTH))]
@@ -30,12 +30,14 @@ function run_comparison(fm, fm_kepler, starting_dist, starting_dist_kep, t1, Δt
     μ₀_kepler = mean(starting_dist_kep)
     P₀_kepler = cov(starting_dist_kep)
 
-    nsteps = trunc(Int, t1 / Δt)
+    ts = 0:Δt:t1
+    nsteps = length(ts)
 
     # mc, ut, stm, ut_kep, stm_kep
     energies = zeros(Float32, (5, nsteps))
+    sampled_states = zeros(Float32, (5, nsteps, 6, NSAMPLES))
+    truth = zeros(Float32, (nsteps, 6, NSAMPLES_TRUTH))
 
-    ts = 0:Δt:t1
     for i = 1:length(ts)
         t = Δt * i
 
@@ -80,21 +82,31 @@ function run_comparison(fm, fm_kepler, starting_dist, starting_dist_kep, t1, Δt
 
         @info "Energies complete" t
 
+        truth[i, :, :] = ref_mat
+
         energies[1, i] = energy_mc
+        sampled_states[1, i, :, :] = mc_mat
+
         energies[2, i] = energy_ut
+        sampled_states[2, i, :, :] = ut_samples
+
         energies[3, i] = energy_stm
+        sampled_states[3, i, :, :] = stm_samples
+
         energies[4, i] = energy_ut_kepler
+        sampled_states[4, i, :, :] = ut_samples_kepler
+
         energies[5, i] = energy_stm_kepler
+        sampled_states[5, i, :, :] = stm_samples_kepler
+
     end
 
-    # TODO: Save data for posterior plotting
+    return ts, truth, sampled_states, energies
 end
 
-
-
 function main()
-    END_T = 3600.0 * 1.0
-    DELTA_T = 600.0
+    END_T = 3600.0 * 24.0
+    DELTA_T = 60.0
 
     fm = EARTH_FM_WITH_J2_NEWTON
     fmk = EARTH_FM_WITH_J2_KEPLER
@@ -106,7 +118,10 @@ function main()
     # Transform to MEE coordinates, assuming normal after the non-linear transform
     starting_dist_kep = ut_propagate(v -> euclid_to_mee(v..., GM_EARTH), μ, σ^2, α = 1e-1)
 
-    run_comparison(fm, fmk, starting_dist, starting_dist_kep, END_T, DELTA_T)
+    ts, truth, sampled_states, energies =
+        run_comparison(fm, fmk, starting_dist, starting_dist_kep, END_T, DELTA_T)
+
+    jldsave("comparison.jld2"; ts, truth, sampled_states, energies)
 end
 
 main()
