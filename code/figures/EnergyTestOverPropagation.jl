@@ -89,7 +89,6 @@ end
 
 
 function main()
-
     END_T = 3600.0 * 12.0
     DELTA_T = 60.0
 
@@ -102,9 +101,8 @@ function main()
 
     # Transform to MEE coordinates, assuming normal after the non-linear transform
     starting_dist_kep = ut_propagate(v -> euclid_to_mee(v..., GM_EARTH), μ, σ^2, α = 1e-1)
-    run_comparison(fm, fmk, starting_dist, starting_dist_kep, END_T, DELTA_T)
 
+    run_comparison(fm, fmk, starting_dist, starting_dist_kep, END_T, DELTA_T)
 end
 
 main()
-
