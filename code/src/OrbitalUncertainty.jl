@@ -14,6 +14,7 @@ using Bessels
 using Random
 using NLLSsolver
 using Static: static
+using PDMats
 
 # ForceModel
 include("dynamics/ForceModel.jl")
@@ -31,6 +32,7 @@ export run_monte_carlo
 
 include("propagators/UT.jl")
 export SigmaVectors, ut_propagate, run_ut, nearest_pd_matrix
+export equilibrated_sqrt, equilibrated_pdm
 
 include("propagators/STM.jl")
 export run_stm

@@ -9,11 +9,14 @@ using ForwardDiff
 using DiffResults
 
 """
-    run_stm(p::ForceModel, dist::Distribution, Δt; reltol=1e-10, abstol=1e-10) 
+    run_stm(p::ForceModel, dist::Distribution, Δt; reltol=1e-10, abstol=1e-10, equilibrate=false)
 
-Propagates the dynamics of the force model and builds the state transition matrix (STM) by
-automatic differentiation. This STM, alongside the propagated mean,
-is used to update the distribution, which is returned.
+Propagates the dynamics of the force model and builds the state transition
+matrix (STM) by automatic differentiation. This STM, alongside the propagated
+mean, is used to update the distribution, which is returned.
+
+With `equilibrate = true` the propagated covariance has its negative eigen
+values clamped in an scaled space (see `equilibrated_pdm`).
 """
 function run_stm(
     p::ForceModel,
@@ -22,6 +25,7 @@ function run_stm(
     Δt;
     reltol = 1e-10,
     abstol = 1e-10,
+    equilibrate = false,
 ) where {T}
 
     dr = DiffResults.JacobianResult(μ)
@@ -36,6 +40,10 @@ function run_stm(
     # is directly the state transition matrix
     ϕ = DiffResults.jacobian(dr)
 
-    Pend = nearest_pd_matrix(ϕ * P * ϕ')
+    Pend = if equilibrate
+        equilibrated_pdm(ϕ * P * ϕ')
+    else
+        nearest_pd_matrix(ϕ * P * ϕ')
+    end
     return MvNormal(μ_prop, Pend)
 end
