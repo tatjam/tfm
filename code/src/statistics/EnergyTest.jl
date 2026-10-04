@@ -81,7 +81,7 @@ Thus we have demonstrated the identity wᵀDw = wᵀDᶜw when ∑w = 0
 """
 function center_distance_matrix!(D::AbstractMatrix{Float64})
     # D is symmetric => row means == column means
-    r = vec(mean(D, dims = 2))      
+    r = vec(mean(D, dims = 2))
     g = mean(r)
     D .= D .- r .- r' .+ g
     return D
@@ -196,13 +196,11 @@ function null_statistics_from_distance!(
 end
 
 """
-    withen_union!(X, Y)
+    withening_of_union(X, Y)
 
-Computes the mean of X ∪ Y and its covariance matrix, and then whitens the points in
-both of the sets (in-place) with the whitening associated to said mean and covariance.
-The points are given as d×n and d×m matrices (number of points in cols).
+Computes the mean of X ∪ Y and its covariance matrix
 """
-function withen_union!(X::AbstractMatrix, Y::AbstractMatrix)
+function withening_of_union(X, Y)
     n, m = size(X, 2), size(Y, 2)
     c = n + m
     cc = c - 1  # Bessel correction
@@ -218,6 +216,27 @@ function withen_union!(X::AbstractMatrix, Y::AbstractMatrix)
         (n - 1) / cc * covX +
         (m - 1) / cc * covY +
         (n * m) / (c * cc) * (meandiff * meandiff')
+
+    return joint_mean, joint_cov
+end
+
+"""
+    withen_union!(X, Y)
+
+Computes the mean of X ∪ Y and its covariance matrix, and then whitens the points in
+both of the sets (in-place) with the whitening associated to said mean and covariance.
+The points are given as d×n and d×m matrices (number of points in cols).
+"""
+function withen_union!(X::AbstractMatrix, Y::AbstractMatrix)
+    joint_mean, joint_cov = withening_of_union(X, Y)
+
+    L = cholesky(Symmetric(joint_cov)).L
+
+    X .-= joint_mean
+    Y .-= joint_mean
+    ldiv!(L, X)
+    ldiv!(L, Y)
+
 
     L = cholesky(Symmetric(joint_cov)).L
 
@@ -237,13 +256,22 @@ Same as withen_union! but operating on copies of X and Y, returning the whitened
 withen_union(X::AbstractMatrix, Y::AbstractMatrix) = withen_union!(copy(X), copy(Y))
 
 """
-    energy_metric(X, Y; precision = Float64)
+    energy_metric(X, Y; precision = Float64, whiten = false)
 
 (Efficiently) computes 2/nm ∑ᵢⱼ ‖Xᵢ-Yⱼ‖ - 1/n² ∑‖Xᵢ-Xⱼ‖ - 1/m²
 ∑‖Yᵢ-Yⱼ‖ for the points given as d×n and d×m matrices.
 (number of points = number of columns).
 """
-function energy_metric(X::AbstractMatrix, Y::AbstractMatrix; precision::Type = Float64)
+function energy_metric(
+    X::AbstractMatrix,
+    Y::AbstractMatrix;
+    precision::Type = Float64,
+    whiten::Bool = false,
+)
+    if whiten
+        X, Y = withen_union(X, Y)
+    end
+
     D = centered_distance_matrix(hcat(X, Y), precision)
     return energy_metric_from_distance(D, size(X, 2), size(Y, 2))
 end
@@ -253,7 +281,11 @@ end
 
 (Efficiently) computes the test statistic T = (nm)/(n+m) E. X and Y are NOT whitened.
 """
-function energy_test_statistic(X::AbstractMatrix, Y::AbstractMatrix; precision::Type = Float64)
+function energy_test_statistic(
+    X::AbstractMatrix,
+    Y::AbstractMatrix;
+    precision::Type = Float64,
+)
     D = centered_distance_matrix(hcat(X, Y), precision)
     return energy_statistic_from_distance(D, size(X, 2), size(Y, 2))
 end
@@ -276,7 +308,12 @@ function energy_test_null_distribution!(
 )
     D = centered_distance_matrix(hcat(X, Y), precision)
     return null_statistics_from_distance!(
-        samples, D, size(X, 2), size(Y, 2); batch = batch, rng = rng,
+        samples,
+        D,
+        size(X, 2),
+        size(Y, 2);
+        batch = batch,
+        rng = rng,
     )
 end
 
@@ -367,4 +404,3 @@ function energy_metric_reference(X::AbstractMatrix, Y::AbstractMatrix)
     D = distance_matrix(hcat(X, Y))
     return energy_metric_on_distance_matrix(D, collect(1:n), collect((n+1):(n+m)), sum(D))
 end
-

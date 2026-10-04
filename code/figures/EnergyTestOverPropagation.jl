@@ -7,9 +7,26 @@ using Distributions
 using StaticArrays
 using LinearAlgebra
 using SatelliteToolbox
-using JLD2
+using HDF5
 
-function run_comparison(fm, fm_kepler, starting_dist, starting_dist_kep, t1, Δt)
+
+function whitener(ref)
+    ref_mean = mean(ref, dims = 2)
+    ref_cov = cov(ref, dims = 2)
+    L = cholesky(Symmetric(ref_cov)).L
+
+    return X -> L \ (X .- ref_mean)
+end
+
+function run_comparison(
+    fm,
+    fm_kepler,
+    starting_dist,
+    starting_dist_kep,
+    t1,
+    Δt,
+    outfile = "comparison.h5",
+)
     # Samples of ground-truth Monte Carlo
     NSAMPLES_TRUTH = 3000
     # Samples of methods evaluated against ground-truth
@@ -33,85 +50,113 @@ function run_comparison(fm, fm_kepler, starting_dist, starting_dist_kep, t1, Δt
     ts = 0:Δt:t1
     nsteps = length(ts)
 
-    # mc, ut, stm, ut_kep, stm_kep
-    energies = zeros(Float32, (5, nsteps))
-    sampled_states = zeros(Float32, (5, nsteps, 6, NSAMPLES))
-    truth = zeros(Float32, (nsteps, 6, NSAMPLES_TRUTH))
+    h5open(outfile, "w") do f
 
-    for i = 1:length(ts)
-        t = Δt * i
+        attrs(f)["NSAMPLES"] = NSAMPLES
+        attrs(f)["NSAMPLES_TRUTH"] = NSAMPLES_TRUTH
+        attrs(f)["delta_t"] = Δt
+        attrs(f)["methods"] = "mc,ut,stm,ut_kep,stm_kep"
+        f["ts"] = collect(ts)
 
-        # Propagate Monte Carlo from t - Δt -> t
-        # WARNING: There's a clear issue here, if the force model is not time-independent
-        # we need to update its internal time for the Monte Carlo step, as it doesn't
-        # start at t=0 but at t=t implicitly!
-        current_ref_samples = run_monte_carlo(fm, current_ref_samples, Δt)
-        current_mc_samples = run_monte_carlo(fm, current_mc_samples, Δt)
-
-        # Propagate statistical propagators from 0 -> t
-        ut_dist = run_ut(fm, μ₀, P₀, t)
-        stm_dist = run_stm(fm, μ₀, P₀, t)
-        ut_dist_kepler = run_ut(fm_kepler, μ₀_kepler, P₀_kepler, t)
-        stm_dist_kepler = run_stm(fm_kepler, μ₀_kepler, P₀_kepler, t)
-
-        # Sample (and transform to Euclidean coords if needed)
-        ut_samples = stack(rand(ut_dist, NSAMPLES))
-        stm_samples = stack(rand(stm_dist, NSAMPLES))
-        ut_samples_kepler = mapslices(
-            v -> mee_to_euclid.(v..., GM_EARTH),
-            stack(rand(ut_dist_kepler, NSAMPLES)),
-            dims = 1,
-        )
-        stm_samples_kepler = mapslices(
-            v -> mee_to_euclid.(v..., GM_EARTH),
-            stack(rand(stm_dist_kepler, NSAMPLES)),
-            dims = 1,
+        d_truth = create_dataset(
+            f,
+            "truth",
+            Float32,
+            (6, NSAMPLES_TRUTH, nsteps);
+            chunk = (6, NSAMPLES_TRUTH, 1),
+            deflate = 3,
         )
 
-        @info "Propagation complete" t
+        d_samples = create_dataset(
+            f,
+            "samples",
+            Float32,
+            (6, NSAMPLES, 5, nsteps);
+            chunk = (6, NSAMPLES, 5, 1),
+            deflate = 3,
+        )
 
-        mc_mat = reduce(hcat, current_mc_samples)
-        ref_mat = reduce(hcat, current_ref_samples)
+        d_energy = create_dataset(f, "energies", Float32, (5, nsteps))
 
-        # TODO: Whiten?
-        energy_mc = energy_metric(mc_mat, ref_mat; precision = Float32)
-        energy_ut = energy_metric(ut_samples, ref_mat; precision = Float32)
-        energy_stm = energy_metric(stm_samples, ref_mat; precision = Float32)
-        energy_ut_kepler = energy_metric(ut_samples_kepler, ref_mat; precision = Float32)
-        energy_stm_kepler = energy_metric(stm_samples_kepler, ref_mat; precision = Float32)
+        for i = 1:nsteps
+            t = Δt * i
 
-        @info "Energies complete" t
+            # Propagate Monte Carlo from t - Δt -> t
+            # WARNING: There's a clear issue here, if the force model is not time-independent
+            # we need to update its internal time for the Monte Carlo step, as it doesn't
+            # start at t=0 but at t=t implicitly!
+            current_ref_samples = run_monte_carlo(fm, current_ref_samples, Δt)
+            current_mc_samples = run_monte_carlo(fm, current_mc_samples, Δt)
 
-        truth[i, :, :] = ref_mat
+            # Propagate statistical propagators from 0 -> t
+            ut_dist = run_ut(fm, μ₀, P₀, t)
+            stm_dist = run_stm(fm, μ₀, P₀, t)
+            ut_dist_kepler = run_ut(fm_kepler, μ₀_kepler, P₀_kepler, t)
+            stm_dist_kepler = run_stm(fm_kepler, μ₀_kepler, P₀_kepler, t)
 
-        energies[1, i] = energy_mc
-        sampled_states[1, i, :, :] = mc_mat
+            # Sample (and transform to Euclidean coords if needed)
+            ut_samples = stack(rand(ut_dist, NSAMPLES))
+            stm_samples = stack(rand(stm_dist, NSAMPLES))
+            ut_samples_kepler = mapslices(
+                v -> mee_to_euclid.(v..., GM_EARTH),
+                stack(rand(ut_dist_kepler, NSAMPLES)),
+                dims = 1,
+            )
+            stm_samples_kepler = mapslices(
+                v -> mee_to_euclid.(v..., GM_EARTH),
+                stack(rand(stm_dist_kepler, NSAMPLES)),
+                dims = 1,
+            )
 
-        energies[2, i] = energy_ut
-        sampled_states[2, i, :, :] = ut_samples
+            @info "Propagation complete" t
 
-        energies[3, i] = energy_stm
-        sampled_states[3, i, :, :] = stm_samples
+            mc_mat = reduce(hcat, current_mc_samples)
+            ref_mat = reduce(hcat, current_ref_samples)
 
-        energies[4, i] = energy_ut_kepler
-        sampled_states[4, i, :, :] = ut_samples_kepler
+            d_truth[:, :, i] = ref_mat
+            d_samples[:, :, 1, i] = mc_mat
+            d_samples[:, :, 2, i] = ut_samples
+            d_samples[:, :, 3, i] = stm_samples
+            d_samples[:, :, 4, i] = ut_samples_kepler
+            d_samples[:, :, 5, i] = stm_samples_kepler
 
-        energies[5, i] = energy_stm_kepler
-        sampled_states[5, i, :, :] = stm_samples_kepler
+            # Withen with the reference
+            w = whitener(ref_mat)
+            ref_white = w(ref_mat)
 
+            energy = X -> energy_metric(w(X), ref_white; precision = Float32)
+
+            energy_mc = energy(mc_mat)
+            energy_ut = energy(ut_samples)
+            energy_stm = energy(stm_samples)
+            energy_ut_kepler = energy(ut_samples_kepler)
+            energy_stm_kepler = energy(stm_samples_kepler)
+
+            @info "Energies complete" t
+
+            d_energy[:, i] = Float32[
+                energy_mc,
+                energy_ut,
+                energy_stm,
+                energy_ut_kepler,
+                energy_stm_kepler,
+            ]
+
+            flush(f)
+        end
     end
 
-    return ts, truth, sampled_states, energies
+    return outfile
 end
 
 function main()
-    END_T = 3600.0 * 24.0
-    DELTA_T = 60.0
+    END_T = 3600.0 * 24.0 * 7
+    DELTA_T = 600.0
 
     fm = EARTH_FM_WITH_J2_NEWTON
     fmk = EARTH_FM_WITH_J2_KEPLER
     μ = [9000e3, 0, 0, 0, 8620, 0]
-    σ = Diagonal([100e3, 10e3, 10e3, 1.0, 100.0, 1.0])
+    σ = Diagonal([1e3, 1e3, 1e3, 0.02, 0.02, 0.02])
 
     starting_dist = MvNormal(μ, σ^2)
 
@@ -120,8 +165,6 @@ function main()
 
     ts, truth, sampled_states, energies =
         run_comparison(fm, fmk, starting_dist, starting_dist_kep, END_T, DELTA_T)
-
-    jldsave("comparison.jld2"; ts, truth, sampled_states, energies)
 end
 
 main()
