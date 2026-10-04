@@ -11,9 +11,9 @@ using JLD2
 
 function run_comparison(fm, fm_kepler, starting_dist, starting_dist_kep, t1, Δt)
     # Samples of ground-truth Monte Carlo
-    NSAMPLES_TRUTH = 5000
+    NSAMPLES_TRUTH = 3000
     # Samples of methods evaluated against ground-truth
-    NSAMPLES = 1000
+    NSAMPLES = 800
 
     # We propagate a 10000 point Monte Carlo as "ground-truth" distribution
     ref_samples = [SVector{6}(col) for col in eachcol(rand(starting_dist, NSAMPLES_TRUTH))]
@@ -110,7 +110,7 @@ function main()
 
     fm = EARTH_FM_WITH_J2_NEWTON
     fmk = EARTH_FM_WITH_J2_KEPLER
-    μ = [9000e3, 0, 0, 0, 6620, 0]
+    μ = [9000e3, 0, 0, 0, 8620, 0]
     σ = Diagonal([100e3, 10e3, 10e3, 1.0, 100.0, 1.0])
 
     starting_dist = MvNormal(μ, σ^2)
