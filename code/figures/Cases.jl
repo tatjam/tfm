@@ -74,30 +74,33 @@ function case_covariance(μ, Σ)
 end
 
 function main()
-    GLMakie.activate!()
+    CairoMakie.activate!(type="pdf")
+    # CairoMakie.activate!(type = "png")
+    # GLMakie.activate!()
     for case_i = 1:length(CASES_MEAN_MEE)
-        fig = Figure(size = (600, 600))
-        ax3 = Axis3(
-            fig[1, 1],
-            title = "Case $case_i",
-            xlabel = "x [km]",
-            ylabel = "y [km]",
-            zlabel = "z [km]",
-            aspect = :data,
-            xgridcolor = :gray,
-            ygridcolor = :gray,
-            zgridcolor = :gray,
-        )
+        for mat_i = 1:length(CASES_COV_RTN_SCALED)
+            fig = Figure(size = (600, 600))
+            ax3 = Axis3(
+                fig[1, 1],
+                title = "Caso $case_i, matriz $mat_i",
+                xlabel = "x [km]",
+                ylabel = "y [km]",
+                zlabel = "z [km]",
+                aspect = :data,
+                xgridcolor = :gray,
+                ygridcolor = :gray,
+                zgridcolor = :gray,
+            )
 
 
-        μ = CASES_MEAN_MEE[case_i]
-        Σ, R_eci2rtn = case_covariance(μ, CASES_COV_RTN_SCALED[case_i])
+            μ = CASES_MEAN_MEE[case_i]
+            Σ, R_eci2rtn = case_covariance(μ, CASES_COV_RTN_SCALED[mat_i])
 
-        @info "Case" case_i μ Σ
+            plot_ellipsoid_and_displaced!(ax3, Σ, R_eci2rtn, dt=600)
 
-        plot_rv_ellipsoid(ax3, μ, Σ; relative = true, R = R_eci2rtn)
-
-        # display(fig)
-        display(GLMakie.Screen(), fig)
+            save("../../writeup/img/orbitaluncertainty/case_$(case_i)_$(mat_i).pdf", fig)
+            # save("../../writeup/img/orbitaluncertainty/case_$(case_i)_$(mat_i).png", fig)
+            # display(fig)
+        end
     end
 end
