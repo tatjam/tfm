@@ -75,7 +75,7 @@ function equilibrated_pdm(raw::AbstractMatrix; λmin = nothing)
     # The restored P matrix cholesky factor, computing cholesky of the scaled matrix
     L_full = D * Matrix(cholesky(r * r').L)
     # By definition of Cholesky factoring
-    P_restore = L_full * L_full'
+    # P_restore = L_full * L_full'
     return PDMat(Symmetric(L_full * L_full'), Cholesky(L_full, 'L', 0))
 end
 
@@ -137,27 +137,19 @@ function SigmaVectors(
 end
 
 """
-    ut_propagate(f, μ, P; α, κ, β, equilibrate = false) 
+    ut_propagate_sigma(f, sigma::SigmaVectors; equilibrate = false) 
 
-Propagates a normal distribution through function f, and reconstruct the normal distribution
-at the other side by means of the Unscented Transform.
+Propagates the sigma points given through f, returning the resulting normal
+distribution.
 
-With `equilibrate = true` both the sigma-point generation and the output
-covariance repair are done in an equilibrated space (see `equilibrated_sqrt`
-and `equilibrated_pdm`).
+With `equilibrate = true` the output covariance repair is done in an equilibrated
+space (see `equilibrated_sqrt` and `equilibrated_pdm`).
 """
-function ut_propagate(
+function ut_propagate_sigma(
     f,
-    μ::AbstractVector{T},
-    P::AbstractMatrix{T};
-    α = 1e-3,
-    κ = 0,
-    β = 2,
-    equilibrate = false,
-) where {T}
-    L = length(μ)
-    N = 2 * L + 1
-    sigma = SigmaVectors(μ, P, α, κ, β; equilibrate = equilibrate)
+    sigma::SigmaVectors{L, N, T};
+    equilibrate=false
+) where {L, N, T}
     endpoints = Vector{SVector{L,T}}(undef, N)
     # The sigma-vectors are propagated through the non-linear function 
     Threads.@threads for i = 1:N
@@ -181,10 +173,33 @@ function ut_propagate(
 end
 
 """
+    ut_propagate(f, μ, P; α, κ, β, equilibrate = false) 
+
+Propagates a normal distribution through function f, and reconstruct the normal distribution
+at the other side by means of the Unscented Transform.
+
+With `equilibrate = true` both the sigma-point generation and the output
+covariance repair are done in an equilibrated space (see `equilibrated_sqrt`
+and `equilibrated_pdm`).
+"""
+function ut_propagate(
+    f,
+    μ::AbstractVector{T},
+    P::AbstractMatrix{T};
+    α = 1e-3,
+    κ = 0,
+    β = 2,
+    equilibrate = false,
+) where {T}
+    sigma = SigmaVectors(μ, P, α, κ, β; equilibrate = equilibrate)
+    return ut_propagate_sigma(f, sigma; equilibrate)
+end
+
+"""
     run_ut(p::ForceModel, μ, P, Δt; reltol, abstol, α, κ, β, equilibrate)
 
 Runs the UT propagation for the given distribution, interval of time Δt,
-and α, κ and β scaling parameters (according to "The Unscented Kalman Filter for Nonlinear Estimation").
+and α, κ and β scaling parameters ("The Unscented Kalman Filter for Nonlinear Estimation").
 Note this doesn't implement a full UKF, just the unscented transform part.
 
 With `equilibrate = true` the covariance is equilibrated before any
