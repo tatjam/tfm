@@ -119,6 +119,27 @@ function label_weights(n::Int, m::Int, ::Type{T} = Float64) where {T<:AbstractFl
 end
 
 """
+    unbiased_energy_metric_from_distance(D, n, m)
+
+Unbiased energy metric E for the labelling "first n points are X, last m are Y",
+given the (uncentered) distance matrix D.
+
+The unbiased metric doesn't include distance of the points to themselves,
+which makes it a unbiased estimator of the Euclidean distance between the two
+distributions. This sadly makes it possible for it to go negative, which makes
+it no longer a distance by itself.
+
+It's useful nonetheless if an estimation of the distance between distributions
+is desired, and not merely a value to use to rank them.
+"""
+function unbiased_energy_metric_from_distance(D::AbstractMatrix, n::Int, m::Int)
+    sxx = sum(view(D, 1:n, 1:n))
+    syy = sum(view(D, (n+1):(n+m), (n+1):(n+m)))
+    sxy = sum(view(D, 1:n, (n+1):(n+m)))
+    return 2sxy / (n * m) - sxx / (n * (n - 1)) - syy / (m * (m - 1))
+end
+
+"""
     energy_metric_from_distance(D, n, m)
 
 Energy metric E for the labelling "first n points are X, last m are Y", given the
@@ -237,14 +258,6 @@ function withen_union!(X::AbstractMatrix, Y::AbstractMatrix)
     ldiv!(L, X)
     ldiv!(L, Y)
 
-
-    L = cholesky(Symmetric(joint_cov)).L
-
-    X .-= joint_mean
-    Y .-= joint_mean
-    ldiv!(L, X)
-    ldiv!(L, Y)
-
     return X, Y
 end
 
@@ -256,24 +269,34 @@ Same as withen_union! but operating on copies of X and Y, returning the whitened
 withen_union(X::AbstractMatrix, Y::AbstractMatrix) = withen_union!(copy(X), copy(Y))
 
 """
-    energy_metric(X, Y; precision = Float64, whiten = false)
+    energy_metric(X, Y; precision = Float64, whiten = false, unbiased = false)
 
 (Efficiently) computes 2/nm ∑ᵢⱼ ‖Xᵢ-Yⱼ‖ - 1/n² ∑‖Xᵢ-Xⱼ‖ - 1/m²
 ∑‖Yᵢ-Yⱼ‖ for the points given as d×n and d×m matrices.
 (number of points = number of columns).
+
+Note, if the unbiased metric is used, distances can be negative, and the method runs
+significantly slower! Use only for analysis.
 """
 function energy_metric(
     X::AbstractMatrix,
     Y::AbstractMatrix;
     precision::Type = Float64,
     whiten::Bool = false,
+    unbiased::Bool = false,
 )
     if whiten
         X, Y = withen_union(X, Y)
     end
+    n, m = size(X, 2), size(Y, 2)
 
-    D = centered_distance_matrix(hcat(X, Y), precision)
-    return energy_metric_from_distance(D, size(X, 2), size(Y, 2))
+    if unbiased
+        D = distance_matrix(hcat(X, Y))
+        return unbiased_energy_metric_from_distance(D, n, m)
+    else
+        D = centered_distance_matrix(hcat(X, Y), precision)
+        return energy_metric_from_distance(D, n, m)
+    end 
 end
 
 """
