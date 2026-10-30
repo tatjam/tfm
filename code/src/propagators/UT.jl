@@ -121,7 +121,8 @@ function SigmaVectors(
     W0c = λ / (L + λ) + (1 - α^2 + β)
 
     S = if equilibrate
-        first(equilibrated_sqrt((L + λ) * Matrix(P)))
+        D, r = equilibrated_sqrt((L + λ) * Matrix(P))
+        D * r
     else
         sqrt((L + λ) * P)
     end
