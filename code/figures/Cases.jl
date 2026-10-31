@@ -74,7 +74,7 @@ function case_covariance(μ, Σ)
 end
 
 function main()
-    CairoMakie.activate!(type="pdf")
+    CairoMakie.activate!(type = "pdf")
     # CairoMakie.activate!(type = "png")
     # GLMakie.activate!()
     for case_i = 1:length(CASES_MEAN_MEE)
@@ -96,7 +96,7 @@ function main()
             μ = CASES_MEAN_MEE[case_i]
             Σ, R_eci2rtn = case_covariance(μ, CASES_COV_RTN_SCALED[mat_i])
 
-            plot_ellipsoid_and_displaced!(ax3, Σ, R_eci2rtn, dt=600)
+            plot_ellipsoid_and_displaced!(ax3, Σ, R_eci2rtn, dt = 600)
 
             save("../../writeup/img/orbitaluncertainty/case_$(case_i)_$(mat_i).pdf", fig)
             # save("../../writeup/img/orbitaluncertainty/case_$(case_i)_$(mat_i).png", fig)

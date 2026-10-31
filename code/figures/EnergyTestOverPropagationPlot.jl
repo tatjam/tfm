@@ -6,6 +6,8 @@ using GLMakie
 using HDF5
 using Statistics
 
+include("Utils.jl")
+
 # Methods stored in the HDF5 file, in sample order ("mc,ut,stm,ut_kep,stm_kep").
 # Toggle which ones to visualize by editing METHOD_PLOT.
 METHODS = [
@@ -14,13 +16,15 @@ METHODS = [
     (name = "STM", color = :purple),
     (name = "UT (MEE)", color = :royalblue),
     (name = "STM (MEE)", color = :crimson),
+    (name = "UT (MEE alt)", color = :pink),
 ]
-METHOD_PLOT = [1, 2, 3, 4, 5]
+METHOD_PLOT = [1, 2, 3, 4, 5, 6]
 
 # Plot the energy curves on a logarithmic y-axis.
 ENERGY_LOG = true
 
 function main()
+    @info "Loading"
     file = get(ARGS, 1, "comparison.h5")
     ts, energies, truth, samples = h5open(file, "r") do f
         read(f["ts"]), read(f["energies"]), read(f["truth"]), read(f["samples"])
@@ -42,6 +46,7 @@ function main()
         ylabel = "Energy",
         yscale = ENERGY_LOG ? log10 : identity,
     )
+    @info "Energies"
     for (i, m) in plot_methods
         lines!(ax, ts, energies[i, :], color = m.color, label = m.name)
     end
@@ -57,6 +62,7 @@ function main()
     vlines!(ax, lift(i -> ts[i], i_time), color = :gray, linewidth = 1)
 
     # 3D orbital view at the selected time
+    @info "Orbital View"
     ax3 = Axis3(
         fig[1:2, 2],
         xlabel = "x [km]",
@@ -72,6 +78,7 @@ function main()
         zgridcolor = :gray,
     )
 
+    @info "Orbital View Monte Carlo"
     # Ground-truth Monte Carlo cloud (backdrop)
     scatter!(
         ax3,
@@ -82,6 +89,7 @@ function main()
         label = "Truth MC",
     )
 
+    @info "Orbital View Methods"
     # Same methods as the line plot
     for (i, m) in plot_methods
         scatter!(
@@ -95,6 +103,7 @@ function main()
     end
 
     # Mean trajectory of the truth cloud over the whole propagation
+    @info "Orbital View Mean Traj"
     mean_traj = dropdims(mean(truth, dims = 2), dims = 2)   # (6, nsteps)
     lines!(
         ax3,
@@ -106,6 +115,7 @@ function main()
         label = "Mean trajectory",
     )
 
+    @info "Orbital View Earth"
     # Earth for context
     R_EARTH_KM = 6371.0
     mesh!(ax3, Sphere(Point3f(0, 0, 0), R_EARTH_KM), color = (:steelblue, 0.6))
@@ -120,6 +130,7 @@ function main()
     axislegend(ax3)
 
     # Velocity vector scatter at the selected time
+    @info "Velocity scatter"
     axv = Axis3(
         fig[1:2, 3],
         xlabel = "vx [km/s]",
