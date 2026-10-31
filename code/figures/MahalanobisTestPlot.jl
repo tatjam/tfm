@@ -8,7 +8,7 @@ using Statistics
 
 include("MahalanobisTest.jl")
 
-METHOD_PLOT = [1, 2, 3, 4]
+METHOD_PLOT = [1, 2, 3, 4, 5, 6, 7, 8]
 DIST_LOG = true
 
 function plot_band!(ax, t, q, m)

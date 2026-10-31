@@ -213,12 +213,12 @@ function run_ut(
     p::ForceModel,
     μ::AbstractVector{T},
     P::AbstractMatrix{T},
-    Δt,
+    Δt;
     reltol = 1e-10,
     abstol = 1e-10,
     α = 1e-3,
     κ = 0,
-    β = 2;
+    β = 2,
     equilibrate = false,
 ) where {T}
     return ut_propagate(
