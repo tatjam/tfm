@@ -2,7 +2,7 @@
 
 julia_version = "1.12.7"
 manifest_format = "2.0"
-project_hash = "e6dceb6130ee93dab20b020a26d598d905328868"
+project_hash = "4fc2a9239dec930db616934c0fdd18b6fb8d636c"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -870,6 +870,11 @@ weakdeps = ["Dates", "Test"]
     InverseFunctionsDatesExt = "Dates"
     InverseFunctionsTestExt = "Test"
 
+[[deps.InvertedIndices]]
+git-tree-sha1 = "6da3c4316095de0f5ee2ebd875df8721e7e0bdbe"
+uuid = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
+version = "1.3.1"
+
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "b2d91fe939cae05960e760110b328288867b5758"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
@@ -1410,7 +1415,7 @@ uuid = "fbd9d27c-2d1c-5c1c-99f2-7497d746985d"
 version = "1.0.0"
 
 [[deps.OrbitalUncertainty]]
-deps = ["BenchmarkTools", "Bessels", "DiffResults", "DifferentialEquations", "Distributions", "ForwardDiff", "LinearAlgebra", "NLLSsolver", "Random", "ReferenceFrameRotations", "SatelliteToolbox", "Static", "StaticArrays", "Statistics", "Test"]
+deps = ["BenchmarkTools", "Bessels", "DiffResults", "DifferentialEquations", "Distances", "Distributions", "ForwardDiff", "LinearAlgebra", "NLLSsolver", "PDMats", "Random", "ReferenceFrameRotations", "SatelliteToolbox", "Static", "StaticArrays", "Statistics", "Test"]
 path = "."
 uuid = "a9a1a3d1-c457-4620-9d4d-81bb393a3c57"
 version = "0.1.0"

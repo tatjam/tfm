@@ -111,20 +111,31 @@ function run_comparison(
             d_covsm[:, :, 2, i] = cov(stm_dist)
 
             # Mahalanobis distance of MC samples to Euclidean methods
-            mahal_ut = sqmahal(ut_dist, mc_mat) / size(mc_mat)[1]
+            mahal_ut = sqmahal(ut_dist, mc_mat) / NSAMPLES_TRUTH
             d_mahalanobis_tot[1, i] = sum(mahal_ut)
             d_mahalanobis_q[:, 1, i] = quantile(mahal_ut, QUANTILES)
 
-            mahal_stm = sqmahal(stm_dist, mc_mat) / size(mc_mat)[1]
+            mahal_stm = sqmahal(stm_dist, mc_mat) / NSAMPLES_TRUTH
             d_mahalanobis_tot[2, i] = sum(mahal_stm)
             d_mahalanobis_q[:, 2, i] = quantile(mahal_stm, QUANTILES)
 
             # Fit the Von Mises distribution to the wrapped normal on MEE methods
-            # ut_kep_mahal_vm = 
+            L_COORD = 6
+            ut_kep_mahal_gvm = moment_match(ut_dist_kepler, L_COORD)
+            stm_kep_mahal_gvm = moment_match(stm_dist_kepler, L_COORD)
 
             # Von-Mises Mahalanobis distance of MC samples to MEE methods
-            # ut_kep_mahal_vm = mahalanobis.(mc_mat_kepler, ut_dist_kepler_vm)
-            # stm_kep_mahal_vm = mahalanobis.(mc_mat_kepler, stm_dist_kepler_vm)
+            mahal_ut_kep_gvm =
+                mapslices(v->mahalanobis(v, ut_kep_mahal_gvm), mc_mat_kepler, dims = 1) /
+                NSAMPLES_TRUTH
+            d_mahalanobis_tot[3, i] = sum(mahal_ut_kep_gvm)
+            d_mahalanobis_q[:, 3, i] = quantile(mahal_ut_kep_gvm, QUANTILES)
+
+            mahal_stm_kep_gvm =
+                mapslices(v->mahalanobis(v, stm_kep_mahal_gvm), mc_mat_kepler, dims = 1) /
+                NSAMPLES_TRUTH
+            d_mahalanobis_tot[4, i] = sum(mahal_stm_kep_gvm)
+            d_mahalanobis_q[:, 4, i] = quantile(mahal_stm_kep_gvm, QUANTILES)
 
             @info "Propagation complete" t
             flush(f)
@@ -137,8 +148,8 @@ function run_comparison(
 end
 
 function main()
-    END_T = 3600.0 * 10.0
-    DELTA_T = 600.0
+    END_T = 3600.0 * 24.0 * 30
+    DELTA_T = 12000.0
 
     fm = EARTH_FM_WITH_J2_NEWTON
     fmk = EARTH_FM_WITH_J2_KEPLER
