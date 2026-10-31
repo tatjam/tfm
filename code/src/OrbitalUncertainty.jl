@@ -15,6 +15,8 @@ using Random
 using NLLSsolver
 using Static: static
 using PDMats
+using InvertedIndices
+using Roots
 
 # ForceModel
 include("dynamics/ForceModel.jl")
@@ -44,7 +46,7 @@ export OprlBasis, OprlQuadrature
 export hermite_basis
 
 include("statistics/GVM.jl")
-export GaussVonMises, decanonicalize, mahalanobis, canon_mahalanobis
+export GaussVonMises, decanonicalize, mahalanobis, canon_mahalanobis, moment_match
 include("propagators/GVM.jl")
 export GVMSigmaVectors, b12, gvm_propagate, run_gvm
 

@@ -135,3 +135,48 @@ function canon_mahalanobis(z::AbstractVector, ϕ::Real, κ::Real)
 
     return euclid_term + ang_term
 end
+
+"""
+    moment_match(dist::MvNormal, ang)
+
+Performs moment matching on the given multi-variate normal distribution, whose given coordinate is assumed
+to be angular and in radians, to the closest Gauss Von Mises.
+"""
+function moment_match(dist::MvNormal, ang)
+    p_full = cov(dist)
+
+    # The euclidean part of the covariance, excluding rows / cols which involve
+    # the angular part 
+    p_e = p_full[Not(ang), Not(ang)]
+    a_e = LowerTriangular(cholesky(Symmetric(p_e)).L)
+
+    # Angular-euclidean coupling vector (as col vector)
+    γ = p_full[Not(ang), ang]
+    # Angular dispersion itself
+    σ2 = p_full[ang, ang]
+
+    # Angular mean
+    α = mean(dist)[ang]
+    # Euclidean mean
+    μ_e = mean(dist)[Not(ang)]
+
+    # The matched GVM coupling vector
+    β = a_e \ γ
+    β2 = dot(β, β)
+
+    # Mathematically β² - σ² < 0, but clamp to prevent
+    # floating point errors
+    v = 0.5 * (β2 - σ2)
+    v = min(v, -1e-16)
+    # The wanted value of I₁/I₀(κ)
+    target = exp(v)
+
+    κ = if target < 0.999
+        find_zero(κ -> besselix(1, κ) / besselix(0, κ) - target, (0.0, 1e3), Roots.Brent())
+    else
+        # Asymptotic approx, exact for target > 0.999 according to Mathematica
+        0.5 / (1.0 - target)
+    end
+
+    GaussVonMises(μ_e, α, β, zeros(length(μ_e), length(μ_e)), κ; A=a_e)
+end
