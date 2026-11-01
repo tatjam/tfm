@@ -8,7 +8,7 @@ using ReferenceFrameRotations
 using StaticArrays
 using Statistics
 using LinearAlgebra
-using DifferentialEquations
+using OrdinaryDiffEq
 using Distributions
 using Bessels
 using Random
@@ -80,7 +80,7 @@ end
 # To fix LSP on figures (Change to the one you're working on!)
 @static if false
     module FigureScope
-    include("../figures/EnergyTestOverPropagation.jl")
+    include("../figures/MahalanobisTestPlot.jl")
     end
 end
 

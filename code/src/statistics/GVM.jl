@@ -10,6 +10,10 @@
 # appropriate, but careful choice of i = ω = Ω = 0 has to be done if these
 # coordinates are to be considered Gaussian.
 
+
+# At this point we are pretty much a delta function
+κ_MAX = 1e8
+
 struct GaussVonMises{
     T<:Real,
     V1<:AbstractVector{T},
@@ -93,7 +97,7 @@ function Base.rand(rng::AbstractRNG, d::GaussVonMises)
     # we "unwrap" so it lives on [-π, π)
     # TODO: Not sure if unwrapping is needed?
     # vm = mod(rand(rng, VonMises(Θ, d.κ)) + π, 2π) - π
-    vm = rand(rng, VonMises(Θ, d.κ))
+    vm = rand(rng, VonMises(Θ, min(d.κ, κ_MAX)))
     return SA[x...; vm]
 end
 
@@ -175,7 +179,7 @@ function moment_match(dist::MvNormal, ang)
         find_zero(κ -> besselix(1, κ) / besselix(0, κ) - target, (0.0, 1e3), Roots.Brent())
     else
         # Asymptotic approx, exact for target > 0.999 according to Mathematica
-        0.5 / (1.0 - target)
+        min(0.5 / (1.0 - target), κ_MAX)
     end
 
     GaussVonMises(μ_e, α, β, zeros(length(μ_e), length(μ_e)), κ; A=a_e)

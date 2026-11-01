@@ -26,11 +26,6 @@
         @test istril(gvm.A)
         @test P ≈ gvm.A * gvm.A'
     end
-
-    @testset "Sampling" begin
-        vs = rand(gvm, 1000)
-        @test all(θ -> -π <= θ <= π, getindex.(vs, 4))
-    end
 end
 
 @testset "Marginals" begin

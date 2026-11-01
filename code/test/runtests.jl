@@ -1,9 +1,12 @@
 using Test
 using StaticArrays
-using DifferentialEquations
+using OrdinaryDiffEq
 using Distributions
+using ForwardDiff
 using LinearAlgebra
 using SatelliteToolbox
+using Random
+using Bessels
 
 using OrbitalUncertainty
 
@@ -19,14 +22,13 @@ end
     include("test_ut.jl")
 end
 
-# TODO: Fix this
-# @testset "GVM" begin
-#     include("test_gvm.jl")
-# end
-#
-# @testset "GVM Distribution" begin
-#     include("test_gvm_dist.jl")
-# end
+ @testset "GVM" begin
+     include("test_gvm.jl")
+ end
+
+ @testset "GVM Distribution" begin
+     include("test_gvm_dist.jl")
+ end
 
 @testset "PCE" begin
     include("test_pce.jl")
