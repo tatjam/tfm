@@ -8,22 +8,22 @@ using Statistics
 
 include("MahalanobisTest.jl")
 
-METHOD_PLOT = [1, 2, 3, 4, 5, 6, 7, 8]
+METHOD_PLOT = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 DIST_LOG = true
 
 function plot_band!(ax, t, q, m)
-    b  = band!(ax, t, q[1, :], q[3, :], color = (m.color, 0.25))
-    md = lines!(ax, t, q[2, :], color = m.color)
-    lo = lines!(ax, t, q[1, :], color = m.color, linestyle = :dash)
-    hi = lines!(ax, t, q[3, :], color = m.color, linestyle = :dash)
+    b  = band!(ax, t, sqrt.(q[1, :]), sqrt.(q[3, :]), color = (m.color, 0.25))
+    md = lines!(ax, t, sqrt.(q[2, :]), color = m.color)
+    lo = lines!(ax, t, sqrt.(q[1, :]), color = m.color, linestyle = :dash)
+    hi = lines!(ax, t, sqrt.(q[3, :]), color = m.color, linestyle = :dash)
     return [b, md, lo, hi]
 end
 
-function main()
+function main_plot()
     @info "Loading"
     file = get(ARGS, 1, "comparison.h5")
-    ts, mahalanobis_tot, mahalanobis_q = h5open(file, "r") do f
-        read(f["ts"]), read(f["mahalanobis_tot"]), read(f["mahalanobis_q"])
+    ts, mahalanobis_q = h5open(file, "r") do f
+        read(f["ts"]), read(f["mahalanobis_q"])
     end
 
     ts /= 3600.0
@@ -35,28 +35,17 @@ function main()
     fig = Figure(size = (1800, 900))
     @info "Mahalanobis Plot"
 
-    ax_tot = Axis(
-        fig[1, 1],
-        xlabel = "t [h]",
-        ylabel = "Mahalanobis (total)",
-        yscale = DIST_LOG ? log10 : identity,
-    )
-    for (i, m) in plot_methods
-        lines!(ax_tot, ts, mahalanobis_tot[i, :], color = m.color, label = m.name)
-    end
-
-    axislegend(ax_tot)
-
     @info "Mahalanobis quartiles Plot"
     ax_q = Axis(
-        fig[2, 1],
+        fig[1, 1],
         xlabel = "t [h]",
         ylabel = "Mahalanobis (quartiles)",
-        yscale = DIST_LOG ? log10 : identity,
+        yscale = DIST_LOG ? log10 : sqrt,
+        yautolimitmargin = (0.0, 0.05)
     )
 
 
-    panel = GridLayout(fig[1:2, 2], tellheight = false)
+    panel = GridLayout(fig[1, 2], tellheight = false)
     
     for (row, (i, m)) in enumerate(plot_methods)
         band_plots = plot_band!(ax_q, ts, mahalanobis_q[:, i, :], m)

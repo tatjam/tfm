@@ -21,8 +21,24 @@ const METHODS = [
     (name = "STM (MEE->EUCL UT)", color = :darkorchid),
     (name = "UT (MEE->EUCL MC)", color = :cadetblue),
     (name = "STM (MEE->EUCL MC)", color = :mediumvioletred),
+    (name = "Ref MC", color = :black),
+    (name = "Resampled MC", color = :gray),
 ]
 const QUANTILES = [0.05, 0.5, 0.95]
+
+const METHOD_IDX = Dict(m.name => j for (j, m) in enumerate(METHODS))
+
+function save_dist!(d_mean, d_covm, name, i, dist)
+    j = METHOD_IDX[name]
+    d_mean[:, j, i] = mean(dist)
+    d_covm[:, :, j, i] = cov(dist)
+end
+
+function save_mahal!(d_q, name, i, dist, mc_mat)
+    d = sqmahal(dist, mc_mat)
+    j = METHOD_IDX[name]
+    d_q[:, j, i] = quantile(vec(d), QUANTILES)
+end
 
 function run_comparison(
     fm,
@@ -37,8 +53,11 @@ function run_comparison(
 
     # Ground truth distribution
     ref_samples = [SVector{6}(col) for col in eachcol(rand(starting_dist, NSAMPLES_TRUTH))]
-
     current_ref_samples = copy(ref_samples)
+
+    # Resampling to have a baseline
+    alt_samples = [SVector{6}(col) for col in eachcol(rand(starting_dist, NSAMPLES_TRUTH))]
+    current_alt_samples = copy(alt_samples)
 
     μ₀ = mean(starting_dist)
     P₀ = cov(starting_dist)
@@ -85,9 +104,7 @@ function run_comparison(
             deflate = 3,
         )
 
-        d_mahalanobis_tot =
-            create_dataset(f, "mahalanobis_tot", Float32, (length(METHODS), nsteps))
-        d_mahalanobis_q = create_dataset(
+        d_mahal_q = create_dataset(
             f,
             "mahalanobis_q",
             Float32,
@@ -97,32 +114,28 @@ function run_comparison(
         for i = 1:nsteps
             t = Δt * i
             current_ref_samples = run_monte_carlo(fm, current_ref_samples, Δt)
+            current_alt_samples = run_monte_carlo(fm, current_alt_samples, Δt)
             current_ref_samples_kepler =
                 map(v -> euclid_to_mee(v..., GM_EARTH), current_ref_samples)
 
             mc_mat = reduce(hcat, current_ref_samples)
+            mc_alt_mat = reduce(hcat, current_alt_samples)
             mc_mat_kepler = reduce(hcat, current_ref_samples_kepler)
 
             d_truth[:, :, i] = mc_mat
 
-            ut_dist = run_ut(fm, μ₀, P₀, t)
-            stm_dist = run_stm(fm, μ₀, P₀, t)
-            ut_dist_kepler = run_ut(fm_kepler, μ₀_kepler, P₀_kepler, t; equilibrate = true, α=1e-1)
+            ut_dist = run_ut(fm, μ₀, P₀, t; equilibrate=true)
+            stm_dist = run_stm(fm, μ₀, P₀, t; equilibrate=true)
+            ut_dist_kepler =
+                run_ut(fm_kepler, μ₀_kepler, P₀_kepler, t; equilibrate = true, α = 1e-1)
             stm_dist_kepler =
                 run_stm(fm_kepler, μ₀_kepler, P₀_kepler, t; equilibrate = true)
 
-            d_means[:, 1, i] = mean(ut_dist)
-            d_covsm[:, :, 1, i] = cov(ut_dist)
+            save_dist!(d_means, d_covsm, "UT", i, ut_dist)
+            save_dist!(d_means, d_covsm, "STM", i, stm_dist)
 
-            d_means[:, 2, i] = mean(stm_dist)
-            d_covsm[:, :, 2, i] = cov(stm_dist)
-
-            d_means[:, 3, i] = mean(ut_dist_kepler)
-            d_covsm[:, :, 3, i] = cov(ut_dist_kepler)
-
-            d_means[:, 4, i] = mean(stm_dist_kepler)
-            d_covsm[:, :, 4, i] = cov(stm_dist_kepler)
-
+            save_dist!(d_means, d_covsm, "UT (MEE)", i, ut_dist_kepler)
+            save_dist!(d_means, d_covsm, "STM (MEE)", i, stm_dist_kepler)
             # MEE -> Euclid mapping via UT
             ut_dist_kepler_eucl_ut = ut_propagate(
                 v -> mee_to_euclid(v..., GM_EARTH),
@@ -139,11 +152,8 @@ function run_comparison(
                 equilibrate = true,
             )
 
-            d_means[:, 5, i] = mean(ut_dist_kepler_eucl_ut)
-            d_covsm[:, :, 5, i] = cov(ut_dist_kepler_eucl_ut)
-
-            d_means[:, 6, i] = mean(stm_dist_kepler_eucl_ut)
-            d_covsm[:, :, 6, i] = cov(stm_dist_kepler_eucl_ut)
+            save_dist!(d_means, d_covsm, "UT (MEE->EUCL UT)", i, ut_dist_kepler_eucl_ut)
+            save_dist!(d_means, d_covsm, "STM (MEE->EUCL UT)", i, stm_dist_kepler_eucl_ut)
 
             # MEE -> Euclid mapping via sampling
             samples_ut_dist_kepler = rand(ut_dist_kepler, NSAMPLES_MC_MAPPING)
@@ -154,9 +164,7 @@ function run_comparison(
             )
             ut_dist_kepler_eucl_mc = fit(MvNormal, samples_ut_dist_kepler_eucl)
 
-            d_means[:, 7, i] = mean(ut_dist_kepler_eucl_mc)
-            d_covsm[:, :, 7, i] = cov(ut_dist_kepler_eucl_mc)
-
+            save_dist!(d_means, d_covsm, "UT (MEE->EUCL MC)", i, ut_dist_kepler_eucl_mc)
 
             samples_stm_dist_kepler = rand(stm_dist_kepler, NSAMPLES_MC_MAPPING)
             samples_stm_dist_kepler_eucl = mapslices(
@@ -165,35 +173,49 @@ function run_comparison(
                 dims = 1,
             )
             stm_dist_kepler_eucl_mc = fit(MvNormal, samples_stm_dist_kepler_eucl)
-            d_means[:, 8, i] = mean(stm_dist_kepler_eucl_mc)
-            d_covsm[:, :, 8, i] = cov(stm_dist_kepler_eucl_mc)
+            save_dist!(d_means, d_covsm, "STM (MEE->EUCL MC)", i, stm_dist_kepler_eucl_mc)
+
+            # Reference and alternate sampling MC
+            ref_mc = fit(MvNormal, mc_mat)
+            alt_mc = fit(MvNormal, mc_alt_mat)
+
+            save_dist!(d_means, d_covsm, "Ref MC", i, ref_mc)
+            save_dist!(d_means, d_covsm, "Resampled MC", i, alt_mc)
 
             # Mahalanobis distance of MC samples to Euclidean methods
-            mahal_ut = sqmahal(ut_dist, mc_mat) / NSAMPLES_TRUTH
-            d_mahalanobis_tot[1, i] = sum(mahal_ut)
-            d_mahalanobis_q[:, 1, i] = quantile(mahal_ut, QUANTILES)
+            save_mahal!(d_mahal_q, "UT", i, ut_dist, mc_mat)
+            save_mahal!(d_mahal_q, "STM", i, stm_dist, mc_mat)
+            save_mahal!(
+                d_mahal_q,
+                "UT (MEE->EUCL UT)",
+                i,
+                ut_dist_kepler_eucl_ut,
+                mc_mat,
+            )
+            save_mahal!(
+                d_mahal_q,
+                "STM (MEE->EUCL UT)",
+                i,
+                stm_dist_kepler_eucl_ut,
+                mc_mat,
+            )
+            save_mahal!(
+                d_mahal_q,
+                "UT (MEE->EUCL MC)",
+                i,
+                ut_dist_kepler_eucl_mc,
+                mc_mat,
+            )
+            save_mahal!(
+                d_mahal_q,
+                "STM (MEE->EUCL MC)",
+                i,
+                stm_dist_kepler_eucl_mc,
+                mc_mat,
+            )
 
-            mahal_stm = sqmahal(stm_dist, mc_mat) / NSAMPLES_TRUTH
-            d_mahalanobis_tot[2, i] = sum(mahal_stm)
-            d_mahalanobis_q[:, 2, i] = quantile(mahal_stm, QUANTILES)
-
-            mahal_ut_kep_eucl_ut = sqmahal(ut_dist_kepler_eucl_ut, mc_mat) / NSAMPLES_TRUTH
-            d_mahalanobis_tot[5, i] = sum(mahal_ut_kep_eucl_ut)
-            d_mahalanobis_q[:, 5, i] = quantile(mahal_ut_kep_eucl_ut, QUANTILES)
-
-            mahal_stm_kep_eucl_ut =
-                sqmahal(stm_dist_kepler_eucl_ut, mc_mat) / NSAMPLES_TRUTH
-            d_mahalanobis_tot[6, i] = sum(mahal_stm_kep_eucl_ut)
-            d_mahalanobis_q[:, 6, i] = quantile(mahal_stm_kep_eucl_ut, QUANTILES)
-
-            mahal_ut_kep_eucl_mc = sqmahal(ut_dist_kepler_eucl_mc, mc_mat) / NSAMPLES_TRUTH
-            d_mahalanobis_tot[7, i] = sum(mahal_ut_kep_eucl_mc)
-            d_mahalanobis_q[:, 7, i] = quantile(mahal_ut_kep_eucl_mc, QUANTILES)
-
-            mahal_stm_kep_eucl_mc =
-                sqmahal(stm_dist_kepler_eucl_mc, mc_mat) / NSAMPLES_TRUTH
-            d_mahalanobis_tot[8, i] = sum(mahal_stm_kep_eucl_mc)
-            d_mahalanobis_q[:, 8, i] = quantile(mahal_stm_kep_eucl_mc, QUANTILES)
+            save_mahal!(d_mahal_q, "Ref MC", i, ref_mc, mc_mat)
+            save_mahal!(d_mahal_q, "Resampled MC", i, alt_mc, mc_mat)
 
             # Fit the Von Mises distribution to the wrapped normal on MEE methods
             L_COORD = 6
@@ -202,16 +224,12 @@ function run_comparison(
 
             # Von-Mises Mahalanobis distance of MC samples to MEE methods
             mahal_ut_kep_gvm =
-                mapslices(v->mahalanobis(v, ut_kep_mahal_gvm), mc_mat_kepler, dims = 1) /
-                NSAMPLES_TRUTH
-            d_mahalanobis_tot[3, i] = sum(mahal_ut_kep_gvm)
-            d_mahalanobis_q[:, 3, i] = quantile(mahal_ut_kep_gvm, QUANTILES)
+                mapslices(v->mahalanobis(v, ut_kep_mahal_gvm), mc_mat_kepler, dims = 1)
+            d_mahal_q[:, 3, i] = quantile(mahal_ut_kep_gvm, QUANTILES)
 
             mahal_stm_kep_gvm =
-                mapslices(v->mahalanobis(v, stm_kep_mahal_gvm), mc_mat_kepler, dims = 1) /
-                NSAMPLES_TRUTH
-            d_mahalanobis_tot[4, i] = sum(mahal_stm_kep_gvm)
-            d_mahalanobis_q[:, 4, i] = quantile(mahal_stm_kep_gvm, QUANTILES)
+                mapslices(v->mahalanobis(v, stm_kep_mahal_gvm), mc_mat_kepler, dims = 1)
+            d_mahal_q[:, 4, i] = quantile(mahal_stm_kep_gvm, QUANTILES)
 
             @info "Propagation complete" t
             flush(f)
@@ -243,6 +261,5 @@ function main()
         equilibrate = true,
     )
 
-    ts, truth, sampled_states, energies =
-        run_comparison(fm, fmk, starting_dist, starting_dist_kep, END_T, DELTA_T)
+    run_comparison(fm, fmk, starting_dist, starting_dist_kep, END_T, DELTA_T)
 end
