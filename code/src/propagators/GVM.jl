@@ -33,18 +33,31 @@ function b12(κ::T) where {T}
     return (T(1) - bessels[2] / bessels[1], T(1) - bessels[3] / bessels[1])
 end
 
+"""
+    sigma_params(κ)
+
+Returns acos(b₂(κ) / (2 b₁(κ)) - 1) and b₁²(κ) / (4 b₁(κ) - b₂(κ)) using the asymptotic approximation for them when κ is large.
+
+See annex for derivation of the asymptotic expressions.
+"""
+function sigma_params(κ::T) where {T}
+    if κ > 1e5
+        return sqrt(3 / κ), T(1) / 6
+    else
+        b1, b2 = b12(κ)
+        return acos(b2 / (T(2) * b1) - T(1)), (b1 * b1) / (T(4) * b1 - b2)
+    end
+end
+
 function GVMSigmaVectors(dist::GaussVonMises{T}) where {T}
     n = length(dist.μ)
     L = n + 1
     N = 2L + 1
 
     # Canonical sigma vectors depend solely on κ
-    b1, b2 = b12(dist.κ)
     ξc = sqrt(T(3))
-    ηc = acos(b2 / (T(2) * b1) - T(1))
-
+    ηc, wcη = sigma_params(dist.κ)
     wcξ = T(1) / T(6)
-    wcη = (b1 * b1) / (T(4) * b1 - b2)
     wc0 = T(1) - T(2) * wcη - T(2) * n * wcξ
 
     # Generate canonical sigma vectors

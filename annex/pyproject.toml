@@ -1,0 +1,14 @@
+[project]
+name = "annex"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "kitcat>=2.0.2",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
+    "pqdm>=0.2.0",
+    "scikit-learn>=1.9.1",
+    "scipy>=1.18.1",
+    "seaborn>=0.13.2",
+    "sympy>=1.14.0",
+]
