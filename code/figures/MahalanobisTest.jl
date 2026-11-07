@@ -7,11 +7,14 @@ using Distributions
 using Statistics
 using StaticArrays
 using LinearAlgebra
+using Random
 using SatelliteToolbox
 using HDF5
 
 const NSAMPLES_TRUTH = 10000
-const NSAMPLES_MC_MAPPING = 1000
+const NSAMPLES_MC_MAPPING = 100_000
+const L_COORD = 6
+
 const METHODS = [
     (name = "UT", color = :dodgerblue3),
     (name = "STM", color = :chocolate1),
@@ -21,12 +24,36 @@ const METHODS = [
     (name = "STM (MEE->EUCL UT)", color = :darkorchid),
     (name = "UT (MEE->EUCL MC)", color = :cadetblue),
     (name = "STM (MEE->EUCL MC)", color = :mediumvioletred),
+    (name = "GVM :ad (MEE->EUCL MC)", color = :forestgreen),
+    (name = "GVM :nodes (MEE->EUCL MC)", color = :olivedrab),
+    (name = "GVM :ad refine (MEE->EUCL MC)", color = :darkgreen),
+    (name = "GVM :nodes refine (MEE->EUCL MC)", color = :limegreen),
     (name = "Ref MC", color = :black),
     (name = "Resampled MC", color = :gray),
+    (name = "UT moment-match GVM (MEE->EUCL MC)", color = :goldenrod),
 ]
 const QUANTILES = [0.05, 0.5, 0.95]
 
 const METHOD_IDX = Dict(m.name => j for (j, m) in enumerate(METHODS))
+
+const GVM_VARIANTS = [
+    (name = "GVM :ad (MEE->EUCL MC)", mee_name = "GVM :ad", slopes = :ad, refine = false),
+    (name = "GVM :nodes (MEE->EUCL MC)", mee_name = "GVM :nodes", slopes = :nodes, refine = false),
+    (name = "GVM :ad refine (MEE->EUCL MC)", mee_name = "GVM :ad refine", slopes = :ad, refine = true),
+    (name = "GVM :nodes refine (MEE->EUCL MC)", mee_name = "GVM :nodes refine", slopes = :nodes, refine = true),
+]
+
+const MEE_METHODS = [
+    "UT (MEE)",
+    "STM (MEE)",
+    "UT (MEE) GVM moment-match",
+    "STM (MEE) GVM moment-match",
+    "GVM :ad",
+    "GVM :nodes",
+    "GVM :ad refine",
+    "GVM :nodes refine",
+]
+const MEE_IDX = Dict(n => j for (j, n) in enumerate(MEE_METHODS))
 
 function save_dist!(d_mean, d_covm, name, i, dist)
     j = METHOD_IDX[name]
@@ -34,10 +61,38 @@ function save_dist!(d_mean, d_covm, name, i, dist)
     d_covm[:, :, j, i] = cov(dist)
 end
 
+function save_nan!(d_mean, d_covm, d_q, name, i)
+    j = METHOD_IDX[name]
+    d_mean[:, j, i] = fill(Float32(NaN), 6)
+    d_covm[:, :, j, i] = fill(Float32(NaN), 6, 6)
+    d_q[:, j, i] = fill(Float32(NaN), length(QUANTILES))
+end
+
 function save_mahal!(d_q, name, i, dist, mc_mat)
     d = sqmahal(dist, mc_mat)
     j = METHOD_IDX[name]
     d_q[:, j, i] = quantile(vec(d), QUANTILES)
+end
+
+unwrap_to(L, ref) = ref + rem2pi(L - ref, RoundNearest)
+
+function mahal_mee(dist::MvNormal, mat)
+    m = Matrix{Float64}(mat)
+    m[L_COORD, :] .= unwrap_to.(m[L_COORD, :], mean(dist)[L_COORD])
+    return vec(sqmahal(dist, m))
+end
+
+mahal_mee(dist::GaussVonMises, mat) = [mahalanobis(c, dist) for c in eachcol(mat)]
+
+function save_mahal_mee!(d_q, name, i, model, mat)
+    d_q[:, MEE_IDX[name], i] = quantile(mahal_mee(model, mat), QUANTILES)
+end
+
+function gvm_to_eucl_mc(gvm, N)
+    # Package sampler returns a Vector of SVectors (one per sample)
+    samples = reduce(hcat, rand(Random.default_rng(), gvm, (N,)))
+    eucl = mapslices(v -> mee_to_euclid(v..., GM_EARTH), samples, dims = 1)
+    return fit(MvNormal, eucl)
 end
 
 function run_comparison(
@@ -65,14 +120,19 @@ function run_comparison(
     μ₀_kepler = mean(starting_dist_kep)
     P₀_kepler = cov(starting_dist_kep)
 
-    ts = 0:Δt:t1
+    # Initial GVM (curvature Γ = 0) shared by all propagated GVM variants
+    gvm0 = moment_match(starting_dist_kep, L_COORD)
+
+    ts = Δt:Δt:t1
     nsteps = length(ts)
 
     h5open(outfile, "w") do f
 
         attrs(f)["NSAMPLES_TRUTH"] = NSAMPLES_TRUTH
+        attrs(f)["NSAMPLES_MC_MAPPING"] = NSAMPLES_MC_MAPPING
         attrs(f)["delta_t"] = Δt
         attrs(f)["methods"] = map(v->v.name, METHODS)
+        attrs(f)["mee_methods"] = MEE_METHODS
         attrs(f)["QUANTILES"] = QUANTILES
         f["ts"] = collect(ts)
 
@@ -84,7 +144,6 @@ function run_comparison(
             chunk = (6, NSAMPLES_TRUTH, 1),
             deflate = 3,
         )
-
 
         d_means = create_dataset(
             f,
@@ -111,6 +170,13 @@ function run_comparison(
             (length(QUANTILES), length(METHODS), nsteps),
         )
 
+        d_mahal_mee = create_dataset(
+            f,
+            "mahalanobis_q_mee",
+            Float32,
+            (length(QUANTILES), length(MEE_METHODS), nsteps),
+        )
+
         for i = 1:nsteps
             t = Δt * i
             current_ref_samples = run_monte_carlo(fm, current_ref_samples, Δt)
@@ -124,8 +190,14 @@ function run_comparison(
 
             d_truth[:, :, i] = mc_mat
 
-            ut_dist = run_ut(fm, μ₀, P₀, t; equilibrate=true)
-            stm_dist = run_stm(fm, μ₀, P₀, t; equilibrate=true)
+            # Slots that have no Cartesian-space meaning start as NaN
+            d_mahal_q[:, :, i] =
+                fill(Float32(NaN), length(QUANTILES), length(METHODS))
+            d_mahal_mee[:, :, i] =
+                fill(Float32(NaN), length(QUANTILES), length(MEE_METHODS))
+
+            ut_dist = run_ut(fm, μ₀, P₀, t; equilibrate = true)
+            stm_dist = run_stm(fm, μ₀, P₀, t; equilibrate = true)
             ut_dist_kepler =
                 run_ut(fm_kepler, μ₀_kepler, P₀_kepler, t; equilibrate = true, α = 1e-1)
             stm_dist_kepler =
@@ -182,59 +254,60 @@ function run_comparison(
             save_dist!(d_means, d_covsm, "Ref MC", i, ref_mc)
             save_dist!(d_means, d_covsm, "Resampled MC", i, alt_mc)
 
-            # Mahalanobis distance of MC samples to Euclidean methods
-            save_mahal!(d_mahal_q, "UT", i, ut_dist, mc_mat)
-            save_mahal!(d_mahal_q, "STM", i, stm_dist, mc_mat)
-            save_mahal!(
-                d_mahal_q,
-                "UT (MEE->EUCL UT)",
-                i,
-                ut_dist_kepler_eucl_ut,
-                mc_mat,
-            )
-            save_mahal!(
-                d_mahal_q,
-                "STM (MEE->EUCL UT)",
-                i,
-                stm_dist_kepler_eucl_ut,
-                mc_mat,
-            )
-            save_mahal!(
-                d_mahal_q,
-                "UT (MEE->EUCL MC)",
-                i,
-                ut_dist_kepler_eucl_mc,
-                mc_mat,
-            )
-            save_mahal!(
-                d_mahal_q,
-                "STM (MEE->EUCL MC)",
-                i,
-                stm_dist_kepler_eucl_mc,
-                mc_mat,
-            )
+            # Control moment-matched GVM of the UT / STM MEE Gaussian (Γ = 0)
+            gvm_mm_ut = moment_match(ut_dist_kepler, L_COORD)
+            gvm_mm_stm = moment_match(stm_dist_kepler, L_COORD)
 
-            save_mahal!(d_mahal_q, "Ref MC", i, ref_mc, mc_mat)
-            save_mahal!(d_mahal_q, "Resampled MC", i, alt_mc, mc_mat)
+            name_mm = "UT moment-match GVM (MEE->EUCL MC)"
+            gvm_mm_ut_eucl = gvm_to_eucl_mc(gvm_mm_ut, NSAMPLES_MC_MAPPING)
+            save_dist!(d_means, d_covsm, name_mm, i, gvm_mm_ut_eucl)
 
-            # Fit the Von Mises distribution to the wrapped normal on MEE methods
-            L_COORD = 6
-            ut_kep_mahal_gvm = moment_match(ut_dist_kepler, L_COORD)
-            stm_kep_mahal_gvm = moment_match(stm_dist_kepler, L_COORD)
+            # Propagated GVMs
+            mee_models = Pair{String,Any}[
+                "UT (MEE)"=>ut_dist_kepler,
+                "STM (MEE)"=>stm_dist_kepler,
+                "UT (MEE) GVM moment-match"=>gvm_mm_ut,
+                "STM (MEE) GVM moment-match"=>gvm_mm_stm,
+            ]
+            eucl_models = Pair{String,Any}[
+                "UT"=>ut_dist,
+                "STM"=>stm_dist,
+                "UT (MEE->EUCL UT)"=>ut_dist_kepler_eucl_ut,
+                "STM (MEE->EUCL UT)"=>stm_dist_kepler_eucl_ut,
+                "UT (MEE->EUCL MC)"=>ut_dist_kepler_eucl_mc,
+                "STM (MEE->EUCL MC)"=>stm_dist_kepler_eucl_mc,
+                "Ref MC"=>ref_mc,
+                "Resampled MC"=>alt_mc,
+                name_mm=>gvm_mm_ut_eucl,
+            ]
 
-            # Von-Mises Mahalanobis distance of MC samples to MEE methods
-            mahal_ut_kep_gvm =
-                mapslices(v->mahalanobis(v, ut_kep_mahal_gvm), mc_mat_kepler, dims = 1)
-            d_mahal_q[:, 3, i] = quantile(mahal_ut_kep_gvm, QUANTILES)
+            for v in GVM_VARIANTS
+                try
+                    gvm_end =
+                        run_gvm(fm_kepler, gvm0, t; slopes = v.slopes, refine = v.refine)
+                    gvm_eucl = gvm_to_eucl_mc(gvm_end, NSAMPLES_MC_MAPPING)
+                    save_dist!(d_means, d_covsm, v.name, i, gvm_eucl)
+                    push!(mee_models, v.mee_name => gvm_end)
+                    push!(eucl_models, v.name => gvm_eucl)
+                catch e
+                    @warn "GVM variant failed" variant = v.name t exception = (e, catch_backtrace())
+                    save_nan!(d_means, d_covsm, d_mahal_q, v.name, i)
+                end
+            end
 
-            mahal_stm_kep_gvm =
-                mapslices(v->mahalanobis(v, stm_kep_mahal_gvm), mc_mat_kepler, dims = 1)
-            d_mahal_q[:, 4, i] = quantile(mahal_stm_kep_gvm, QUANTILES)
+            # Mahalanobis quantiles, Cartesian space (all methods vs. MC samples)
+            for (name, model) in eucl_models
+                save_mahal!(d_mahal_q, name, i, model, mc_mat)
+            end
+
+            # Mahalanobis quantiles, MEE space (MC samples converted to MEE)
+            for (name, model) in mee_models
+                save_mahal_mee!(d_mahal_mee, name, i, model, mc_mat_kepler)
+            end
 
             @info "Propagation complete" t
             flush(f)
         end
-
 
     end
 
@@ -242,7 +315,7 @@ function run_comparison(
 end
 
 function main()
-    END_T = 3600.0 * 24.0 * 2
+    END_T = 3600.0 * 24.0 * 1.0
     DELTA_T = 360.0
 
     fm = EARTH_FM_WITH_J2_NEWTON
