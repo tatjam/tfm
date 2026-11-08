@@ -260,18 +260,18 @@ end
 
 struct TestForce end
 
-function acceleration(fm::TestForce, r, v, _t, _μ)
-    v_mag = norm(v)
-    # Quadratic drag, proportional to v²
-    return -1e-10 * v_mag * v
+# Quadratic drag, proportional to v²
+testforce_acceleration(v) = -1e-10 * norm(v) * v
+
+function acceleration(fm::TestForce, rv, _extra, _t, _μ)
+    acc = testforce_acceleration(rv[4:6])
+    return SA[0.0, 0.0, 0.0, acc...]
 end
 
-function param_variation(fm::TestForce, p, f, g, h, k, L, t, μ)
+function param_variation(fm::TestForce, p, f, g, h, k, L, _extra, t, μ)
     euclid_state = mee_to_euclid(p, f, g, h, k, L, μ)
-    r = euclid_state[SA[1, 2, 3]]
-    v = euclid_state[SA[4, 5, 6]]
+    a_eci = testforce_acceleration(euclid_state[4:6])
 
-    a_eci = acceleration(fm, r, v, t, μ)
     csn2eci = get_csn_basis(euclid_state...)
     a_csn = csn2eci' * a_eci
     return csn_acceleration_to_mee(p, f, g, h, k, L, a_csn..., μ)
