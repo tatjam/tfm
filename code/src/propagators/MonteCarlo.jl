@@ -13,14 +13,14 @@ ending positions after the given time has passed.
 """
 function run_monte_carlo(
     p::ForceModel,
-    samples::AbstractVector{<:SVector{6,T}},
+    samples::AbstractVector{<:SVector{L,T}},
     delta_t;
     reltol = 1e-10,
     abstol = 1e-10,
-) where {T<:Real}
+) where {T<:Real,L}
 
     n = length(samples)
-    results = Vector{SVector{6,T}}(undef, n)
+    results = Vector{SVector{L,T}}(undef, n)
 
     Threads.@threads for i in eachindex(samples)
         results[i] =

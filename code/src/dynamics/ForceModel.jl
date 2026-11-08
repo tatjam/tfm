@@ -286,6 +286,9 @@ Either way, force models can have extra elements after the main ones to specify
 per-propagation values, as determined by the nextra function. The elements
 are stacked one after another in the array in the same order as the force models
 are in the tuple, and the extra argument receives only the relevant ones.
+
+For the acceleration, the array shape ends up as [x, y, z, vx, vy, vz, e1, e2, ...].
+For the param variation, it's [p, f, g, h, k, e1, e2, e3, ..., L]]
 """
 struct ForceModel{F<:Tuple,IsNewton,N}
     μ::Float64
@@ -297,7 +300,8 @@ function ForceModel(μ::Float64, forces::F, ::Val{IsNewton}) where {F<:Tuple,IsN
     return ForceModel{F,IsNewton,N}(μ, forces)
 end
 
-# Compile-time sized slice of the extras, explicit eltype so n = 0 works
+# Compile-time sized slice, containing n items (statically), starting at o, from
+# the array u.
 @inline extras(u, o, ::Val{n}) where {n} =
     SVector{n,eltype(u)}(ntuple(i -> u[o+i-1], Val(n)))
 
@@ -321,10 +325,15 @@ end
 @inline function add_variation!(du, forces::Tuple, u, o, t, μ)
     force = first(forces)
     n = nextra(typeof(force))
-    a = param_variation(force, u[SOneTo(6)]..., extras(u, o, Val(n)), t, μ)
-    for i = 1:6
+    # We keep L at the end as it's so special (the truly angular variable!)
+    a = param_variation(force, u[SOneTo(5)]..., u[end], extras(u, o, Val(n)), t, μ)
+    for i = 1:5
         du[i] += a[i]
     end
+    # L
+    du[end] += a[6]
+
+    # Extras
     for i = 1:n
         du[o+i-1] += a[6+i]
     end
@@ -347,7 +356,7 @@ function acceleration(fm::ForceModel{F,true,N}, u, t) where {F,N}
     g = -fm.μ / norm(r)^3 * r
     du[4] += g[1]
     du[5] += g[2]
-    du[6] += g[3]
+    du[end] += g[3]
 
     return SVector(du)
 end
@@ -360,11 +369,13 @@ Variation of the MEE parameters (and extras) given the force model.
 function param_variation(fm::ForceModel{F,false,N}, u, t) where {F,N}
     T = promote_type(Float64, eltype(u))
     du = zero(MVector{6 + N,T})
-    add_variation!(du, fm.forces, u, 7, t, fm.μ)
+
+    # Note: offset 6 because the last element is L, extras start at index 6!
+    add_variation!(du, fm.forces, u, 6, t, fm.μ)
 
     # 2-body term only in L
-    w = 1 + u[2] * cos(u[6]) + u[3] * sin(u[6])
-    du[6] += sqrt(fm.μ * u[1]) * (w / u[1])^2
+    w = 1 + u[2] * cos(u[end]) + u[3] * sin(u[end])
+    du[end] += sqrt(fm.μ * u[1]) * (w / u[1])^2
 
     return SVector(du)
 end
