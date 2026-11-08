@@ -7,6 +7,18 @@
 # Both "Newton" propagation (Chapter 8 of Vallado) and "Gauss" (Chapter 9 of Vallado) 
 # propagation are possible with the same data structures.
 
+# Default 0 extra parameters
+nextra(::Type{T}) where T = 0
+
+
+@generated function nextra_total(::Type{F}) where F<:Tuple
+    n = 0
+    for T in F.parameters
+        n += nextra(T)
+    end
+    return n
+end
+
 """
     J2Force(R, J2)
 
@@ -18,11 +30,13 @@ struct J2Force
 end
 
 """
-    acceleration(f::J2Force, r, v, t, μ)
+    acceleration(f::J2Force, rv, extra, t, μ)
 
 J2 newtonian perturbation, Vallado page 594 formula.
 """
-function acceleration(f::J2Force, r, _v, _t, μ)
+function acceleration(f::J2Force, rv, _extra, _t, μ)
+    r = rv[1:3]
+
     # Note this is slightly incorrect if we assume r is on ECI frame, as J2 is defined in
     # earth relative coordinates, and the pole rotates slightly wrt. to our assumed J2000 ECI frame.
     # For the purpose of this work, it doesn't matter, and would slightly impact performance, but,
@@ -32,6 +46,7 @@ function acceleration(f::J2Force, r, _v, _t, μ)
     # jd = t / 86400.0 + jd0
     # eci2ecef = r_eci_to_ecef(J2000(), PEF(), jd)
     # r = eci2ecef * r
+    
 
     common = -3.0 * f.J2 * μ * f.R^2 / (2.0 * norm(r)^5)
     zrel = 5 * r[3]^2 / norm(r)^2
@@ -43,17 +58,19 @@ function acceleration(f::J2Force, r, _v, _t, μ)
     # a = eci2ecef' * a
     # return a
 
-    return common * (r .* SA[xy_term, xy_term, z_term])
+    acc = common * (r .* SA[xy_term, xy_term, z_term])
+
+    return SA[0.0, 0.0, 0.0, acc...]
 end
 
 """
-    param_variation(fm::J2Force, p, f, g, h, k, L, t, μ)
+    param_variation(fm::J2Force, p, f, g, h, k, L, extra, t, μ)
 
     "A set of modified equinoctial orbit elements", Walker et al 1985, formula 8
     and formula 11 particularized for J2 only
 
 """
-function param_variation(fm::J2Force, p, f, g, h, k, L, _t, μ)
+function param_variation(fm::J2Force, p, f, g, h, k, L, _extra, _t, μ)
     sinL, cosL = sincos(L)
     w = 1 + f * cosL + g * sinL
     s = sqrt(1 + h^2 + k^2)
@@ -154,20 +171,21 @@ function egm96_acceleration_eci(f::EGM96Force, r_eci, t)
 end
 
 """
-    acceleration(f::EGM96Force, r, v, t)
+    acceleration(f::EGM96Force, rv, extra, t, μ)
 
 EGM96 newtonian acceleration.
 """
-function acceleration(f::EGM96Force, r_eci, _v, t, _μ)
-    return egm96_acceleration_eci(f, r_eci, t)
+function acceleration(f::EGM96Force, rv_eci, _extra, t, _μ)
+    r_eci = rv_eci[1:3]
+    return SA[0, 0, 0, egm96_acceleration_eci(f, r_eci, t)...]
 end
 
 """
-    param_variation(fm::EGM96Force, p, f, g, h, k, L, t, μ)
+    param_variation(fm::EGM96Force, p, f, g, h, k, L, extra, t, μ)
 
 IGRF acceleration, computed in euclidean coordinates and then transformed.
 """
-function param_variation(fm::EGM96Force, p, f, g, h, k, L, t, μ)
+function param_variation(fm::EGM96Force, p, f, g, h, k, L, _extra, t, μ)
     euclid_state = mee_to_euclid(p, f, g, h, k, L, μ)
     a_eci = egm96_acceleration_eci(fm, euclid_state[SA[1, 2, 3]], t)
 
@@ -199,32 +217,44 @@ defined as follows
     h = tan(½i) cos(Ω)
     k = tan(½i) sin(Ω)
     L = Ω + ω + ν
+
+Either way, force models can have extra elements after the main ones to specify
+per-propagation values, as determined by the nextra function. The elements
+are stacked one after another in the array in the same order as the force models
+are in the tuple, and the extra argument receives only the relevant ones.
 """
-struct ForceModel{F<:Tuple,IsNewton}
+struct ForceModel{F<:Tuple,IsNewton,N}
     μ::Float64
     forces::F
 end
 
-ForceModel(μ::Float64, forces::F, ::Val{IsNewton}) where {F<:Tuple,IsNewton} =
-    ForceModel{F,IsNewton}(μ, forces)
-
+function ForceModel(μ::Float64, forces::F, ::Val{IsNewton}) where {F<:Tuple,IsNewton}
+    N = nextra_total(F)
+    return ForceModel{F,IsNewton,N}(μ, forces)
+end
 
 """
 
-    acceleration(fm::ForceModel, r, v, t)
+    acceleration(fm::ForceModel, u, t)
 
 Computes the acceleration due to all forces in the model sequentially
 """
-function acceleration(fm::ForceModel{F,true}, r, v, t) where {F}
-    a = SA[0.0, 0.0, 0.0]
+function acceleration(fm::ForceModel{F,true,N}, u, t) where {F, N}
+    du = @MVector zeros(6+N)
+    # Offset into a for extras
+    o = 7
     for force in fm.forces
-        a += acceleration(force, r, v, t, fm.μ)
+        n = nextra(typeof(force))
+        a = acceleration(force, u[1:6], u[o:(o+n-1)], t, fm.μ)
+        du[1:6] += a[1:6]
+        du[o:(o+n-1)] += a[7:7+n-1]
+        o += n
     end
 
     # 2-body term
-    a += -fm.μ / norm(r)^3 * r
+    du[4:6] += -fm.μ / norm(u[1:3])^3 * u[1:3]
 
-    return a
+    return du
 end
 
 """
@@ -233,17 +263,23 @@ end
 
 Computes the variation in MEE parameters given the force model.
 """
-function param_variation(fm::ForceModel{F,false}, u, t) where {F}
-    du = SA[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+function param_variation(fm::ForceModel{F,false, N}, u, t) where {F, N}
+    du = @MVector zeros(6 + N)
+    # Offset into a for extras
+    o = 7
     for force in fm.forces
-        du += param_variation(force, u..., t, fm.μ)
+        n = nextra(typeof(force))
+        a = param_variation(force, u[1:6]..., u[o:(o+n-1)], t, fm.μ)
+        du[1:6] += a[1:6]
+        du[o:(o+n-1)] += a[7:7+n-1]
+        o += n
     end
 
-    # 2-body term
+    # 2-body term only in L
     w = 1 + u[2] * cos(u[6]) + u[3] * sin(u[6])
-    du += SA[0.0, 0.0, 0.0, 0.0, 0.0, sqrt(fm.μ*u[1])*(w/u[1])^2]
+    du[6] += sqrt(fm.μ*u[1])*(w/u[1])^2
 
-    return du
+    return SVector(du)
 end
 
 """
@@ -254,11 +290,12 @@ Propagation equations for a Newtonian ForceModel. Computes du, given u,
 the force model, and the time.
 """
 function force_model(u, p::ForceModel{F,true}, t) where {F}
-    r = SA[u[1], u[2], u[3]]
-    v = SA[u[4], u[5], u[6]]
-    a = acceleration(p, r, v, t)
+    a = acceleration(p, u, t)
 
-    return SA[v[1], v[2], v[3], a[1], a[2], a[3]]
+    # dx = v
+    a[1:3] = u[4:6]
+
+    return SVector(a)
 end
 
 """
@@ -281,13 +318,13 @@ end
 Propagates a ForceModel. Computes du, given u, the force model, and the time.
 """
 function propagate_orbit(
-    fm::ForceModel,
+    fm::ForceModel{F, I, N},
     u0::AbstractVector{<:Real},
     t::Real;
     reltol = 1e-10,
     abstol = 1e-10,
-)
-    u0_static = SVector{6}(u0)
+) where {F, I, N}
+    u0_static = SVector{6+N}(u0)
 
     tspan = (zero(t), t)
     prob = ODEProblem(force_model, u0_static, tspan, fm)

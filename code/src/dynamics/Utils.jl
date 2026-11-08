@@ -299,7 +299,7 @@ function mee_to_euclid(p, f, g, h, k, L, μ)
 end
 
 """
-    mee_variational_perturbation(p, f, g, h, k, L, C, S, N, μ)
+    csn_acceleration_to_mee(p, f, g, h, k, L, C, S, N, μ)
 
 Returns the changes to parameters [p, f, g, h, k, L] due to an acceleration [C, S, N] expressed in the
 CSN basis (perpendicular to radius vector in direction of motion, along radius vector outward and normal to orbital plane
