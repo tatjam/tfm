@@ -135,4 +135,4 @@ function main_plot(; file = get(ARGS, 1, "comparison.h5"))
     end
 
     return figs
-en
+end
