@@ -8,13 +8,13 @@
 # propagation are possible with the same data structures.
 
 # Default 0 extra parameters
-nextra(::Type{T}) where T = 0
+nextra(::Type{T}) where {T} = 0
 
 # Static indexes for performance
 const POS = SA[1, 2, 3]
 const VEL = SA[4, 5, 6]
 
-@generated function nextra_total(::Type{F}) where F<:Tuple
+@generated function nextra_total(::Type{F}) where {F<:Tuple}
     n = 0
     for T in F.parameters
         n += nextra(T)
@@ -49,7 +49,7 @@ function acceleration(f::J2Force, rv, _extra, _t, μ)
     # jd = t / 86400.0 + jd0
     # eci2ecef = r_eci_to_ecef(J2000(), PEF(), jd)
     # r = eci2ecef * r
-    
+
 
     common = -3.0 * f.J2 * μ * f.R^2 / (2.0 * norm(r)^5)
     zrel = 5 * r[3]^2 / norm(r)^2
@@ -230,16 +230,16 @@ nextra(::Type{<:SimpleDragForce}) = 1
 Drag from the simple atmosphere model.
 """
 function acceleration(f::SimpleDragForce, rv, extra, t, _μ)
-    r = rv[SA[1,2,3]]
-    v = rv[SA[4,5,6]]
+    r = rv[SA[1, 2, 3]]
+    v = rv[SA[4, 5, 6]]
     β = extra[1]
 
     # Angular velocity of the earth = atmosphere
     ωE = SA[0.0, 0.0, 7.2921159e-5]
     v_rel = v - cross(ωE, r)
-    
+
     ρ = f.ρ₀ * exp(-(norm(r) - f.r₀) / f.H)
-    a = -v_rel * 0.5 * ρ * norm(v_rel) / β 
+    a = -v_rel * 0.5 * ρ * norm(v_rel) / β
     return SA[0.0, 0.0, 0.0, a..., 0.0]
 end
 
@@ -297,7 +297,7 @@ end
 
 # Compile-time sized slice of the extras, explicit eltype so n = 0 works
 @inline extras(u, o, ::Val{n}) where {n} =
-    SVector{n,eltype(u)}(ntuple(i -> u[o + i - 1], Val(n)))
+    SVector{n,eltype(u)}(ntuple(i -> u[o+i-1], Val(n)))
 
 # Recursive to ensure it's optimized away into flat code
 @inline add_acceleration!(_du, ::Tuple{}, _u, _o, _t, _μ) = nothing
@@ -305,11 +305,11 @@ end
     force = first(forces)
     n = nextra(typeof(force))
     a = acceleration(force, u[SOneTo(6)], extras(u, o, Val(n)), t, μ)
-    for i in 1:6
+    for i = 1:6
         du[i] += a[i]
     end
-    for i in 1:n
-        du[o + i - 1] += a[6 + i]
+    for i = 1:n
+        du[o+i-1] += a[6+i]
     end
     add_acceleration!(du, Base.tail(forces), u, o + n, t, μ)
 end
@@ -320,11 +320,11 @@ end
     force = first(forces)
     n = nextra(typeof(force))
     a = param_variation(force, u[SOneTo(6)]..., extras(u, o, Val(n)), t, μ)
-    for i in 1:6
+    for i = 1:6
         du[i] += a[i]
     end
-    for i in 1:n
-        du[o + i - 1] += a[6 + i]
+    for i = 1:n
+        du[o+i-1] += a[6+i]
     end
     add_variation!(du, Base.tail(forces), u, o + n, t, μ)
 end
@@ -388,12 +388,12 @@ end
 Propagates a ForceModel. Computes du, given u, the force model, and the time.
 """
 function propagate_orbit(
-    fm::ForceModel{F, I, N},
+    fm::ForceModel{F,I,N},
     u0::AbstractVector{<:Real},
     t::Real;
     reltol = 1e-10,
     abstol = 1e-10,
-) where {F, I, N}
+) where {F,I,N}
     u0_static = SVector{6+N}(u0)
 
     tspan = (zero(t), t)

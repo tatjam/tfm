@@ -38,9 +38,24 @@ const METHOD_IDX = Dict(m.name => j for (j, m) in enumerate(METHODS))
 
 const GVM_VARIANTS = [
     (name = "GVM :ad (MEE->EUCL MC)", mee_name = "GVM :ad", slopes = :ad, refine = false),
-    (name = "GVM :nodes (MEE->EUCL MC)", mee_name = "GVM :nodes", slopes = :nodes, refine = false),
-    (name = "GVM :ad refine (MEE->EUCL MC)", mee_name = "GVM :ad refine", slopes = :ad, refine = true),
-    (name = "GVM :nodes refine (MEE->EUCL MC)", mee_name = "GVM :nodes refine", slopes = :nodes, refine = true),
+    (
+        name = "GVM :nodes (MEE->EUCL MC)",
+        mee_name = "GVM :nodes",
+        slopes = :nodes,
+        refine = false,
+    ),
+    (
+        name = "GVM :ad refine (MEE->EUCL MC)",
+        mee_name = "GVM :ad refine",
+        slopes = :ad,
+        refine = true,
+    ),
+    (
+        name = "GVM :nodes refine (MEE->EUCL MC)",
+        mee_name = "GVM :nodes refine",
+        slopes = :nodes,
+        refine = true,
+    ),
 ]
 
 const MEE_METHODS = [
@@ -191,8 +206,7 @@ function run_comparison(
             d_truth[:, :, i] = mc_mat
 
             # Slots that have no Cartesian-space meaning start as NaN
-            d_mahal_q[:, :, i] =
-                fill(Float32(NaN), length(QUANTILES), length(METHODS))
+            d_mahal_q[:, :, i] = fill(Float32(NaN), length(QUANTILES), length(METHODS))
             d_mahal_mee[:, :, i] =
                 fill(Float32(NaN), length(QUANTILES), length(MEE_METHODS))
 
@@ -290,7 +304,8 @@ function run_comparison(
                     push!(mee_models, v.mee_name => gvm_end)
                     push!(eucl_models, v.name => gvm_eucl)
                 catch e
-                    @warn "GVM variant failed" variant = v.name t exception = (e, catch_backtrace())
+                    @warn "GVM variant failed" variant = v.name t exception =
+                        (e, catch_backtrace())
                     save_nan!(d_means, d_covsm, d_mahal_q, v.name, i)
                 end
             end

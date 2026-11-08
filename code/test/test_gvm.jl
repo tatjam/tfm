@@ -252,7 +252,7 @@ end
         # θ' = 2θ: a VM(κ) variable scaled by 2 is VM(κ/4), so the end
         # distribution is exact and κ must shrink by c² = 4, with
         # c = ∂f_θ/∂θ − β'ᵀA'⁻¹(∂f_x/∂θ) = 2 here.
-        out = gvm_propagate(w -> SA[w[1], w[2], w[3], 2 * w[4]], d)
+        out = gvm_propagate(w -> SA[w[1], w[2], w[3], 2*w[4]], d)
         ref = GaussVonMises(d.μ, 2 * d.α, 2 * d.β, 2 * d.Γ, d.κ / 4, A = d.A)
         test_same_dist(out, ref)
     end

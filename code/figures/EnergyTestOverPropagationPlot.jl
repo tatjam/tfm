@@ -55,7 +55,11 @@ function main()
     # Slider picking the time visualized in the orbital view
     sg = SliderGrid(
         fig[2, 1],
-        (label = "t", range = 1:nsteps, format = i -> "$(round(ts[i] / 86400, digits = 2)) d"),
+        (
+            label = "t",
+            range = 1:nsteps,
+            format = i -> "$(round(ts[i] / 86400, digits = 2)) d",
+        ),
     )
     i_time = sg.sliders[1].value
     set_close_to!(sg.sliders[1], nsteps)
@@ -170,10 +174,9 @@ function main()
 
     # Axis limits: 10% beyond the 99.5% quantile of |component| over all
     # clouds, so outliers don't zoom everything out
-    vlim = 1.1 * quantile(
-        abs.(vcat(vec(truth[4:6, :, :]), vec(samples[4:6, :, :, :]))),
-        0.995,
-    ) / 1e3
+    vlim =
+        1.1 *
+        quantile(abs.(vcat(vec(truth[4:6, :, :]), vec(samples[4:6, :, :, :]))), 0.995) / 1e3
     for setlims in (xlims!, ylims!, zlims!)
         setlims(axv, -vlim, vlim)
     end

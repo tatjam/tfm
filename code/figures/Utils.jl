@@ -109,7 +109,7 @@ function plot_ellipsoid_and_displaced!(
     )
 
     # Frame length (covers both ellipsoids)
-    L =1.3 * max(maximum(norm.(eachcol(drs))), maximum(norm.(eachcol(drs2))))
+    L = 1.3 * max(maximum(norm.(eachcol(drs))), maximum(norm.(eachcol(drs2))))
 
     # Cover both ellipsoids and the frame tips + labels
     ext = [

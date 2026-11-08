@@ -13,8 +13,8 @@ Y = randn(rng, d, m) .+ 0.3
 
     # a random relabelling, through the weight-vector identity
     D = distance_matrix(hcat(X, Y))
-    p = shuffle(rng, 1:(n + m))
-    idxI, idxJ = sort(p[1:n]), sort(p[(n + 1):end])
+    p = shuffle(rng, 1:(n+m))
+    idxI, idxJ = sort(p[1:n]), sort(p[(n+1):end])
     ref = energy_metric_on_distance_matrix(D, idxI, idxJ, sum(D))
     w = fill(-1 / m, n + m)
     w[idxI] .= 1 / n
@@ -45,4 +45,3 @@ end
     @test energy_test(Xa, Ya, 500; rng = rng) > 0.01              # H0 true
     @test energy_test(Xa, Ya .+ 0.5, 500; rng = rng) == 1 / 501   # H0 false: min p
 end
-

@@ -182,5 +182,5 @@ function moment_match(dist::MvNormal, ang)
         min(0.5 / (1.0 - target), κ_MAX)
     end
 
-    GaussVonMises(μ_e, α, β, zeros(length(μ_e), length(μ_e)), κ; A=a_e)
+    GaussVonMises(μ_e, α, β, zeros(length(μ_e), length(μ_e)), κ; A = a_e)
 end

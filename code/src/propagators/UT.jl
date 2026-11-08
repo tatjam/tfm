@@ -148,9 +148,9 @@ space (see `equilibrated_sqrt` and `equilibrated_pdm`).
 """
 function ut_propagate_sigma(
     f,
-    sigma::SigmaVectors{L, N, T};
-    equilibrate=false
-) where {L, N, T}
+    sigma::SigmaVectors{L,N,T};
+    equilibrate = false,
+) where {L,N,T}
     endpoints = Vector{SVector{L,T}}(undef, N)
     # The sigma-vectors are propagated through the non-linear function 
     Threads.@threads for i = 1:N

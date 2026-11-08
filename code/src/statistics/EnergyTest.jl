@@ -296,7 +296,7 @@ function energy_metric(
     else
         D = centered_distance_matrix(hcat(X, Y), precision)
         return energy_metric_from_distance(D, n, m)
-    end 
+    end
 end
 
 """

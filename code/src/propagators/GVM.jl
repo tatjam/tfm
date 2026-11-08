@@ -221,7 +221,12 @@ function NLLSsolver.computeresidual(reg::GVMRegularizer{S,M,T}, α, β, Γ_vec) 
     )
 end
 
-function gvm_propagate(f, dist::GaussVonMises{T}; slopes::Symbol = :ad, refine::Bool = true) where {T}
+function gvm_propagate(
+    f,
+    dist::GaussVonMises{T};
+    slopes::Symbol = :ad,
+    refine::Bool = true,
+) where {T}
     n = length(dist.μ)
     L = n + 1
     N = 2L + 1
@@ -267,7 +272,9 @@ function gvm_propagate(f, dist::GaussVonMises{T}; slopes::Symbol = :ad, refine::
             # δ²f[i, j, k] = ∂²f_i/∂x_j∂x_k
             δ²f = reshape(
                 ForwardDiff.jacobian(x -> vec(ForwardDiff.jacobian(f, x)), central_point),
-                L, L, L,
+                L,
+                L,
+                L,
             )
 
             # Prior canonical Jacobian of the state: s(z) ≈ c + Jz
@@ -283,11 +290,17 @@ function gvm_propagate(f, dist::GaussVonMises{T}; slopes::Symbol = :ad, refine::
             ξ = sqrt(T(3))
             η, wη = sigma_params(dist.κ)
             F0 = endpoints[1]
-            Dz = reduce(hcat, ((endpoints[3+i] - endpoints[3+n+i]) / (2ξ) for i in 1:n))
-            D2 = reduce(hcat, ((endpoints[3+i] + endpoints[3+n+i] - 2F0) / ξ^2 for i in 1:n))
+            Dz = reduce(hcat, ((endpoints[3+i] - endpoints[3+n+i]) / (2ξ) for i = 1:n))
+            D2 = reduce(hcat, ((endpoints[3+i] + endpoints[3+n+i] - 2F0) / ξ^2 for i = 1:n))
             Dφ = dist.κ * wη * sin(η) * (endpoints[2] - endpoints[3])
-            (Dz[L, :], Diagonal(D2[L, :]), Dz[1:n, :],
-             ntuple(k -> Diagonal(D2[k, :]), Val(n)), Dφ[L], Dφ[1:n])
+            (
+                Dz[L, :],
+                Diagonal(D2[L, :]),
+                Dz[1:n, :],
+                ntuple(k -> Diagonal(D2[k, :]), Val(n)),
+                Dφ[L],
+                Dφ[1:n],
+            )
         else
             error("slopes must be :ad or :nodes, got $slopes")
         end
@@ -301,7 +314,7 @@ function gvm_propagate(f, dist::GaussVonMises{T}; slopes::Symbol = :ad, refine::
         # Qeff = Q − Σᵢ hᵢqᵢ.
         Minv = inv(M)
         h = Minv' * grad
-        Qeff = Q - sum(h[i] * q[i] for i in 1:n)
+        Qeff = Q - sum(h[i] * q[i] for i = 1:n)
 
         P = Minv * end_A
         δ = endpoints[1][1:n] - end_μ
@@ -339,16 +352,25 @@ function gvm_propagate(f, dist::GaussVonMises{T}; slopes::Symbol = :ad, refine::
             NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(end_β...))
             NLLSsolver.addvariable!(problem, NLLSsolver.EuclideanVector(Γ_vec...))
 
-            NLLSsolver.addcost!(problem, GVMLeastSquares{S,L,N,n,T}(
-                SVector(lₑ),
-                SMatrix{L,N,T}(reduce(hcat, endpoints)),
-                end_κ,
-                SVector{n}(end_μ),
-                LowerTriangular(SMatrix{n,n}(end_A)),
-            ))
-            NLLSsolver.addcost!(problem, GVMRegularizer{S,n,T}(
-                end_α, SVector{n}(end_β), SVector{S}(Γ_vec), sqrt(1 + dist.κ),
-            ))
+            NLLSsolver.addcost!(
+                problem,
+                GVMLeastSquares{S,L,N,n,T}(
+                    SVector(lₑ),
+                    SMatrix{L,N,T}(reduce(hcat, endpoints)),
+                    end_κ,
+                    SVector{n}(end_μ),
+                    LowerTriangular(SMatrix{n,n}(end_A)),
+                ),
+            )
+            NLLSsolver.addcost!(
+                problem,
+                GVMRegularizer{S,n,T}(
+                    end_α,
+                    SVector{n}(end_β),
+                    SVector{S}(Γ_vec),
+                    sqrt(1 + dist.κ),
+                ),
+            )
 
             NLLSsolver.optimize!(problem, NLLSsolver.NLLSOptions())
 

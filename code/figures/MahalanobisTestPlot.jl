@@ -11,29 +11,29 @@ include("MahalanobisTest.jl")
 # :eucl  only the Cartesian-space figure
 # :mee   only the MEE-space figure
 # :both  both, two separate windows
-PLOT_MODE  = :mee
-DIST_LOG   = false
+PLOT_MODE = :eucl
+DIST_LOG = true
 
 # Which methods to include in each figure (indices into METHODS / MEE_METHODS)
 const EUCL_METHODS = 1:length(METHODS)
 const MEE_METHODS_PLOT = 1:length(MEE_METHODS)
 
 const MEE_METHOD_COLORS = Dict(
-    "UT (MEE)"                   => :deepskyblue,
-    "STM (MEE)"                  => :crimson,
-    "UT (MEE) GVM moment-match"  => :goldenrod,
+    "UT (MEE)" => :deepskyblue,
+    "STM (MEE)" => :crimson,
+    "UT (MEE) GVM moment-match" => :goldenrod,
     "STM (MEE) GVM moment-match" => :purple,
-    "GVM :ad"                    => :forestgreen,
-    "GVM :nodes"                 => :olivedrab,
-    "GVM :ad refine"             => :darkgreen,
-    "GVM :nodes refine"          => :limegreen,
+    "GVM :ad" => :forestgreen,
+    "GVM :nodes" => :olivedrab,
+    "GVM :ad refine" => :darkgreen,
+    "GVM :nodes refine" => :limegreen,
 )
 
 function plot_band!(ax, t, q, color, label)
     q05 = sqrt.(q[1, :])
     q50 = sqrt.(q[2, :])
     q95 = sqrt.(q[3, :])
-    b  = band!(ax, t, q05, q95, color = (color, 0.25))
+    b = band!(ax, t, q05, q95, color = (color, 0.25))
     md = lines!(ax, t, q50, color = color, label = label)
     lo = lines!(ax, t, q05, color = color, linestyle = :dash)
     hi = lines!(ax, t, q95, color = color, linestyle = :dash)
@@ -53,12 +53,7 @@ function make_figure(; title, methods, data, ts)
         aspect = nothing,
     )
 
-    panel = GridLayout(
-        fig[1, 2];
-        tellheight = false,
-        tellwidth  = true,
-        valign     = :top,
-    )
+    panel = GridLayout(fig[1, 2]; tellheight = false, tellwidth = true, valign = :top)
     colsize!(fig.layout, 2, Fixed(280))
 
     # Row 1 takes the full figure height
@@ -82,35 +77,46 @@ end
 function make_eucl_plot(ts, mahal_q)
     methods = [(i, METHODS[i].name, METHODS[i].color) for i in EUCL_METHODS]
     return make_figure(;
-        title   = "Cartesian space",
+        title = "Cartesian space",
         methods = methods,
-        data    = mahal_q,
-        ts      = ts,
+        data = mahal_q,
+        ts = ts,
     )
 end
 
 function make_mee_plot(ts, mahal_q_mee)
     methods = [
-        (i, MEE_METHODS[i], get(MEE_METHOD_COLORS, MEE_METHODS[i], :black))
-        for i in MEE_METHODS_PLOT
+        (i, MEE_METHODS[i], get(MEE_METHOD_COLORS, MEE_METHODS[i], :black)) for
+        i in MEE_METHODS_PLOT
     ]
     return make_figure(;
-        title   = "MEE space",
+        title = "MEE space",
         methods = methods,
-        data    = mahal_q_mee,
-        ts      = ts,
+        data = mahal_q_mee,
+        ts = ts,
     )
 end
 
 function main_plot(; file = get(ARGS, 1, "comparison.h5"))
     @info "Loading" file
     ts, mahal_q, mahal_q_mee = h5open(file, "r") do f
-        t  = read(f["ts"])
+        t = read(f["ts"])
         qe = read(f["mahalanobis_q"])
         qm = haskey(f, "mahalanobis_q_mee") ? read(f["mahalanobis_q_mee"]) : nothing
         (t, qe, qm)
     end
     ts ./= 3600.0
+
+    # The writer stores (quantiles, methods, steps); refuse stale files, as
+    # mismatched dims would silently plot nonsense
+    expected = (length(QUANTILES), length(METHODS))
+    if (size(mahal_q, 1), size(mahal_q, 2)) != expected
+        error(
+            "`$file` has mahalanobis_q of size $(size(mahal_q)), expected " *
+            "($expected..., nsteps). Was it produced by an older layout? " *
+            "Regenerate it with MahalanobisTest.jl main()",
+        )
+    end
 
     if !isnothing(mahal_q_mee) == false
         @warn "No `mahalanobis_q_mee` in file" file
