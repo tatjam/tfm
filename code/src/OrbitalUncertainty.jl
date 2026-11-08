@@ -21,7 +21,7 @@ using Roots
 # ForceModel
 include("dynamics/ForceModel.jl")
 include("dynamics/Utils.jl")
-export ForceModel, J2Force, EGM96Force
+export ForceModel, J2Force, EGM96Force, SimpleDragForce
 export acceleration, force_model, propagate_orbit
 export kepler_to_euclid, kepler_to_array, euclid_to_kepler
 export kepler_to_mee, mee_to_kepler

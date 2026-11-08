@@ -10,6 +10,9 @@
 # Default 0 extra parameters
 nextra(::Type{T}) where T = 0
 
+# Static indexes for performance
+const POS = SA[1, 2, 3]
+const VEL = SA[4, 5, 6]
 
 @generated function nextra_total(::Type{F}) where F<:Tuple
     n = 0
@@ -35,7 +38,7 @@ end
 J2 newtonian perturbation, Vallado page 594 formula.
 """
 function acceleration(f::J2Force, rv, _extra, _t, μ)
-    r = rv[1:3]
+    r = rv[POS]
 
     # Note this is slightly incorrect if we assume r is on ECI frame, as J2 is defined in
     # earth relative coordinates, and the pole rotates slightly wrt. to our assumed J2000 ECI frame.
@@ -176,14 +179,14 @@ end
 EGM96 newtonian acceleration.
 """
 function acceleration(f::EGM96Force, rv_eci, _extra, t, _μ)
-    r_eci = rv_eci[1:3]
+    r_eci = rv_eci[POS]
     return SA[0, 0, 0, egm96_acceleration_eci(f, r_eci, t)...]
 end
 
 """
     param_variation(fm::EGM96Force, p, f, g, h, k, L, extra, t, μ)
 
-IGRF acceleration, computed in euclidean coordinates and then transformed.
+EGM96 acceleration, computed in euclidean coordinates and then transformed.
 """
 function param_variation(fm::EGM96Force, p, f, g, h, k, L, _extra, t, μ)
     euclid_state = mee_to_euclid(p, f, g, h, k, L, μ)
@@ -193,6 +196,65 @@ function param_variation(fm::EGM96Force, p, f, g, h, k, L, _extra, t, μ)
     a_csn = csn2eci' * a_eci
 
     return csn_acceleration_to_mee(p, f, g, h, k, L, a_csn..., μ)
+end
+
+
+
+"""
+   SimpleDragForce(ρ₀, r₀, H)
+
+Simple exponential falloff atmosphere model with density
+    ρ(r) = ρ₀ exp(-(r - r₀) / H)
+where r is the radius to the earth's center. The atmosphere is assumed
+to remain stationary relative to the earth fixed frame for simplicity.
+
+Drag is applied according to the ballistic coefficient β, giving
+    a = ½ρv² / β
+opposite to the direction of motion.
+"""
+struct SimpleDragForce{T<:Real}
+    # Density (kg/m³) at r₀
+    ρ₀::T
+    # Radius of reference (m)
+    r₀::T
+    # Scale height (m)
+    H::T
+end
+
+# The ballistic coefficient of the body β
+nextra(::Type{<:SimpleDragForce}) = 1
+
+"""
+    acceleration(f::SimpleDragForce, rv, extra, t, μ)
+
+Drag from the simple atmosphere model.
+"""
+function acceleration(f::SimpleDragForce, rv, extra, t, _μ)
+    r = rv[SA[1,2,3]]
+    v = rv[SA[4,5,6]]
+    β = extra[1]
+
+    # Angular velocity of the earth = atmosphere
+    ωE = SA[0.0, 0.0, 7.2921159e-5]
+    v_rel = v - cross(ωE, r)
+    
+    ρ = f.ρ₀ * exp(-(norm(r) - f.r₀) / f.H)
+    a = -v_rel * 0.5 * ρ * norm(v_rel) / β 
+    return SA[0.0, 0.0, 0.0, a..., 0.0]
+end
+
+"""
+    param_variation(fm::SimpleDragForce, p, f, g, h, k, L, extra, t, μ)
+
+Drag from the simple atmosphere mode
+"""
+function param_variation(fm::SimpleDragForce, p, f, g, h, k, L, extra, _t, μ)
+    euclid_state = mee_to_euclid(p, f, g, h, k, L, μ)
+    a_eci = acceleration(fm, euclid_state, extra, _t, μ)[SA[4, 5, 6]]
+    csn2eci = get_csn_basis(euclid_state...)
+    a_csn = csn2eci' * a_eci
+
+    return SA[csn_acceleration_to_mee(p, f, g, h, k, L, a_csn..., μ)..., 0.0]
 end
 
 
@@ -233,84 +295,90 @@ function ForceModel(μ::Float64, forces::F, ::Val{IsNewton}) where {F<:Tuple,IsN
     return ForceModel{F,IsNewton,N}(μ, forces)
 end
 
-"""
+# Compile-time sized slice of the extras, explicit eltype so n = 0 works
+@inline extras(u, o, ::Val{n}) where {n} =
+    SVector{n,eltype(u)}(ntuple(i -> u[o + i - 1], Val(n)))
 
-    acceleration(fm::ForceModel, u, t)
-
-Computes the acceleration due to all forces in the model sequentially
-"""
-function acceleration(fm::ForceModel{F,true,N}, u, t) where {F, N}
-    T = promote_type(Float64, eltype(u))
-    du = zero(MVector{6+N, T})
-    # Offset into a for extras
-    o = 7
-    for force in fm.forces
-        n = nextra(typeof(force))
-        a = acceleration(force, u[1:6], u[o:(o+n-1)], t, fm.μ)
-        du[1:6] += a[1:6]
-        du[o:(o+n-1)] += a[7:7+n-1]
-        o += n
+# Recursive to ensure it's optimized away into flat code
+@inline add_acceleration!(_du, ::Tuple{}, _u, _o, _t, _μ) = nothing
+@inline function add_acceleration!(du, forces::Tuple, u, o, t, μ)
+    force = first(forces)
+    n = nextra(typeof(force))
+    a = acceleration(force, u[SOneTo(6)], extras(u, o, Val(n)), t, μ)
+    for i in 1:6
+        du[i] += a[i]
     end
+    for i in 1:n
+        du[o + i - 1] += a[6 + i]
+    end
+    add_acceleration!(du, Base.tail(forces), u, o + n, t, μ)
+end
 
-    # 2-body term
-    du[4:6] += -fm.μ / norm(u[1:3])^3 * u[1:3]
-
-    return du
+# Same as before
+@inline add_variation!(_du, ::Tuple{}, _u, _o, _t, _μ) = nothing
+@inline function add_variation!(du, forces::Tuple, u, o, t, μ)
+    force = first(forces)
+    n = nextra(typeof(force))
+    a = param_variation(force, u[SOneTo(6)]..., extras(u, o, Val(n)), t, μ)
+    for i in 1:6
+        du[i] += a[i]
+    end
+    for i in 1:n
+        du[o + i - 1] += a[6 + i]
+    end
+    add_variation!(du, Base.tail(forces), u, o + n, t, μ)
 end
 
 """
+    acceleration(fm::ForceModel, u, t)
 
-    param_variation(fm::ForceModel, u, t)
-
-Computes the variation in MEE parameters given the force model.
+Sum of all force contributions (and extra-parameter derivatives), plus the
+two-body term.
 """
-function param_variation(fm::ForceModel{F,false, N}, u, t) where {F, N}
+function acceleration(fm::ForceModel{F,true,N}, u, t) where {F,N}
     T = promote_type(Float64, eltype(u))
-    du = zero(MVector{6 + N, T})
-    # Offset into a for extras
-    o = 7
-    for force in fm.forces
-        n = nextra(typeof(force))
-        a = param_variation(force, u[1:6]..., u[o:(o+n-1)], t, fm.μ)
-        du[1:6] += a[1:6]
-        du[o:(o+n-1)] += a[7:7+n-1]
-        o += n
-    end
+    du = zero(MVector{6 + N,T})
+    add_acceleration!(du, fm.forces, u, 7, t, fm.μ)
 
-    # 2-body term only in L
-    w = 1 + u[2] * cos(u[6]) + u[3] * sin(u[6])
-    du[6] += sqrt(fm.μ*u[1])*(w/u[1])^2
+    # 2-body term
+    r = u[POS]
+    g = -fm.μ / norm(r)^3 * r
+    du[4] += g[1]
+    du[5] += g[2]
+    du[6] += g[3]
 
     return SVector(du)
 end
 
 """
+    param_variation(fm::ForceModel, u, t)
 
-    force_model(u, p::ForceModel{True}, t)
-
-Propagation equations for a Newtonian ForceModel. Computes du, given u,
-the force model, and the time.
+Variation of the MEE parameters (and extras) given the force model.
 """
-function force_model(u, p::ForceModel{F,true}, t) where {F}
-    a = acceleration(p, u, t)
+function param_variation(fm::ForceModel{F,false,N}, u, t) where {F,N}
+    T = promote_type(Float64, eltype(u))
+    du = zero(MVector{6 + N,T})
+    add_variation!(du, fm.forces, u, 7, t, fm.μ)
 
+    # 2-body term only in L
+    w = 1 + u[2] * cos(u[6]) + u[3] * sin(u[6])
+    du[6] += sqrt(fm.μ * u[1]) * (w / u[1])^2
+
+    return SVector(du)
+end
+
+function force_model(u, p::ForceModel{F,true,N}, t) where {F,N}
+    a = MVector(acceleration(p, u, t))
     # dx = v
-    a[1:3] = u[4:6]
-
+    a[1] = u[4]
+    a[2] = u[5]
+    a[3] = u[6]
     return SVector(a)
 end
 
-"""
-
-    force_model(u, p::ForceModel{False}, t)
-
-Propagation equations for a Keplerian ForceModel. Computes du, given u,
-the force model, and the time.
-"""
-function force_model(u, p::ForceModel{F,false}, t) where {F}
+function force_model(u, p::ForceModel{F,false,N}, t) where {F,N}
     return param_variation(p, u, t)
 end
-
 
 
 """
