@@ -240,7 +240,8 @@ end
 Computes the acceleration due to all forces in the model sequentially
 """
 function acceleration(fm::ForceModel{F,true,N}, u, t) where {F, N}
-    du = @MVector zeros(6+N)
+    T = promote_type(Float64, eltype(u))
+    du = zero(MVector{6+N, T})
     # Offset into a for extras
     o = 7
     for force in fm.forces
@@ -264,7 +265,8 @@ end
 Computes the variation in MEE parameters given the force model.
 """
 function param_variation(fm::ForceModel{F,false, N}, u, t) where {F, N}
-    du = @MVector zeros(6 + N)
+    T = promote_type(Float64, eltype(u))
+    du = zero(MVector{6 + N, T})
     # Offset into a for extras
     o = 7
     for force in fm.forces
