@@ -211,6 +211,8 @@ to remain stationary relative to the earth fixed frame for simplicity.
 Drag is applied according to the ballistic coefficient β, giving
     a = ½ρv² / β
 opposite to the direction of motion.
+
+Note, in the state vector, log(β) is stored!
 """
 struct SimpleDragForce{T<:Real}
     # Density (kg/m³) at r₀
@@ -229,17 +231,17 @@ nextra(::Type{<:SimpleDragForce}) = 1
 
 Drag from the simple atmosphere model.
 """
-function acceleration(f::SimpleDragForce, rv, extra, t, _μ)
+function acceleration(f::SimpleDragForce, rv, extra, _t, _μ)
     r = rv[SA[1, 2, 3]]
     v = rv[SA[4, 5, 6]]
-    β = extra[1]
+    logβ = extra[1]
 
     # Angular velocity of the earth = atmosphere
     ωE = SA[0.0, 0.0, 7.2921159e-5]
     v_rel = v - cross(ωE, r)
 
     ρ = f.ρ₀ * exp(-(norm(r) - f.r₀) / f.H)
-    a = -v_rel * 0.5 * ρ * norm(v_rel) / β
+    a = -v_rel * 0.5 * ρ * norm(v_rel) / exp(logβ)
     return SA[0.0, 0.0, 0.0, a..., 0.0]
 end
 
