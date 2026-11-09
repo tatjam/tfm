@@ -15,8 +15,8 @@ const NSAMPLES_TRUTH = 10000
 const NSAMPLES_MC_MAPPING = 100_000
 
 # nothing = disable drag
-const DRAG_LOGβ_MEAN = nothing
-# const DRAG_LOGβ_MEAN = log(5.0)
+# const DRAG_LOGβ_MEAN = nothing
+const DRAG_LOGβ_MEAN = log(5.0)
 const DRAG_LOGβ_VAR = 0.09
 const DRAG_ρ₀ = 1e-10  # kg/m³
 const DRAG_r₀ = 6771e3 # m
@@ -39,6 +39,12 @@ const METHODS = [
     (name = "GVM :nodes (MEE->EUCL MC)", color = :olivedrab),
     (name = "GVM :ad refine (MEE->EUCL MC)", color = :darkgreen),
     (name = "GVM :nodes refine (MEE->EUCL MC)", color = :limegreen),
+    (name = "GVM :nodes Γ=0 (MEE->EUCL MC)", color = :yellowgreen),
+    (name = "GVM :nodes Q=0 (MEE->EUCL MC)", color = :salmon),
+    (name = "GVM :nodes κ=const (MEE->EUCL MC)", color = :magenta),
+    (name = "GVM :nodes κ match (MEE->EUCL MC)", color = :brown),
+    (name = "GVM :nodes Γ=0 κ=const (MEE->EUCL MC)", color = :purple),
+    (name = "GVM :nodes Γ=0 κ match (MEE->EUCL MC)", color = :orange),
     (name = "Ref MC", color = :black),
     (name = "Resampled MC", color = :gray),
     (name = "UT moment-match GVM (MEE->EUCL MC)", color = :goldenrod),
@@ -48,24 +54,85 @@ const QUANTILES = [0.05, 0.5, 0.95]
 const METHOD_IDX = Dict(m.name => j for (j, m) in enumerate(METHODS))
 
 const GVM_VARIANTS = [
-    (name = "GVM :ad (MEE->EUCL MC)", mee_name = "GVM :ad", slopes = :ad, refine = false),
+    (
+        name = "GVM :ad (MEE->EUCL MC)",
+        mee_name = "GVM :ad",
+        slopes = :ad,
+        refine = false,
+        ablate = :none,
+        kappa = :transfer,
+    ),
     (
         name = "GVM :nodes (MEE->EUCL MC)",
         mee_name = "GVM :nodes",
         slopes = :nodes,
         refine = false,
+        ablate = :none,
+        kappa = :transfer,
     ),
     (
         name = "GVM :ad refine (MEE->EUCL MC)",
         mee_name = "GVM :ad refine",
         slopes = :ad,
         refine = true,
+        ablate = :none,
+        kappa = :transfer,
     ),
     (
         name = "GVM :nodes refine (MEE->EUCL MC)",
         mee_name = "GVM :nodes refine",
         slopes = :nodes,
         refine = true,
+        ablate = :none,
+        kappa = :transfer,
+    ),
+    (
+        name = "GVM :nodes Γ=0 (MEE->EUCL MC)",
+        mee_name = "GVM :nodes Γ=0",
+        slopes = :nodes,
+        refine = false,
+        ablate = :gamma,
+        kappa = :transfer,
+    ),
+    (
+        name = "GVM :nodes Q=0 (MEE->EUCL MC)",
+        mee_name = "GVM :nodes Q=0",
+        slopes = :nodes,
+        refine = false,
+        ablate = :second_order,
+        kappa = :transfer,
+    ),
+    (
+        name = "GVM :nodes κ=const (MEE->EUCL MC)",
+        mee_name = "GVM :nodes κ=const",
+        slopes = :nodes,
+        refine = false,
+        ablate = :none,
+        kappa = :constant,
+    ),
+    (
+        name = "GVM :nodes κ match (MEE->EUCL MC)",
+        mee_name = "GVM :nodes κ match",
+        slopes = :nodes,
+        refine = false,
+        ablate = :none,
+        kappa = :matched,
+    ),
+    (
+        name = "GVM :nodes Γ=0 κ=const (MEE->EUCL MC)",
+        mee_name = "GVM :nodes Γ=0 κ=const",
+        slopes = :nodes,
+        refine = false,
+        ablate = :gamma,
+        kappa = :constant,
+    ),
+    (
+        name = "GVM :nodes Γ=0 κ match (MEE->EUCL MC)",
+        mee_name = "GVM :nodes Γ=0 κ match",
+        slopes = :nodes,
+        refine = false,
+        ablate = :gamma,
+        kappa = :matched,
     ),
 ]
 
@@ -78,6 +145,12 @@ const MEE_METHODS = [
     "GVM :nodes",
     "GVM :ad refine",
     "GVM :nodes refine",
+    "GVM :nodes Γ=0",
+    "GVM :nodes Q=0",
+    "GVM :nodes κ=const",
+    "GVM :nodes κ match",
+    "GVM :nodes Γ=0 κ=const",
+    "GVM :nodes Γ=0 κ match",
 ]
 const MEE_IDX = Dict(n => j for (j, n) in enumerate(MEE_METHODS))
 
@@ -340,7 +413,15 @@ function run_comparison(
             for v in GVM_VARIANTS
                 try
                     gvm_end =
-                        run_gvm(fm_kepler, gvm0, t; slopes = v.slopes, refine = v.refine)
+                        run_gvm(
+                        fm_kepler,
+                        gvm0,
+                        t;
+                        slopes = v.slopes,
+                        refine = v.refine,
+                        ablate = v.ablate,
+                        kappa = v.kappa,
+                    )
                     gvm_eucl = gvm_to_eucl_mc(gvm_end, NSAMPLES_MC_MAPPING)
                     save_dist!(d_means, d_covsm, v.name, i, gvm_eucl)
                     push!(mee_models, v.mee_name => gvm_end)

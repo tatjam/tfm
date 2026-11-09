@@ -141,6 +141,25 @@ function canon_mahalanobis(z::AbstractVector, ϕ::Real, κ::Real)
 end
 
 """
+    resultant_to_kappa(target)
+
+Concentration κ of a Von Mises whose Bessel ratio I₁(κ)/I₀(κ) equals the
+resultant length `target`.
+"""
+function resultant_to_kappa(target)
+    target = clamp(target, 0.0, 1.0)
+    if target < 0.999
+        return find_zero(
+            κ -> besselix(1, κ) / besselix(0, κ) - target,
+            (0.0, 1e3),
+            Roots.Brent(),
+        )
+    end
+    # Asymptotic approx, exact for target > 0.999 according to Mathematica
+    return min(0.5 / (1.0 - target), κ_MAX)
+end
+
+"""
     moment_match(dist::MvNormal, ang)
 
 Performs moment matching on the given multi-variate normal distribution, whose given coordinate is assumed
@@ -175,12 +194,7 @@ function moment_match(dist::MvNormal, ang)
     # The wanted value of I₁/I₀(κ)
     target = exp(v)
 
-    κ = if target < 0.999
-        find_zero(κ -> besselix(1, κ) / besselix(0, κ) - target, (0.0, 1e3), Roots.Brent())
-    else
-        # Asymptotic approx, exact for target > 0.999 according to Mathematica
-        min(0.5 / (1.0 - target), κ_MAX)
-    end
+    κ = resultant_to_kappa(target)
 
     GaussVonMises(μ_e, α, β, zeros(length(μ_e), length(μ_e)), κ; A = a_e)
 end
