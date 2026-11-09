@@ -46,7 +46,7 @@ export OprlBasis, OprlQuadrature
 export hermite_basis
 
 include("statistics/GVM.jl")
-export GaussVonMises, decanonicalize, mahalanobis, canon_mahalanobis, moment_match
+export GaussVonMises, decanonicalize, mahalanobis, canon_mahalanobis, moment_match, resultant_to_kappa
 include("propagators/GVM.jl")
 export GVMSigmaVectors, b12, gvm_propagate, run_gvm
 

@@ -226,7 +226,13 @@ function gvm_propagate(
     dist::GaussVonMises{T};
     slopes::Symbol = :ad,
     refine::Bool = true,
+    ablate::Symbol = :none,
+    kappa::Symbol = :transfer,
 ) where {T}
+    ablate in (:none, :gamma, :second_order) ||
+        error("ablate must be :none, :gamma or :second_order, got $ablate")
+    kappa in (:transfer, :constant, :matched) ||
+        error("kappa must be :transfer, :constant or :matched, got $kappa")
     n = length(dist.μ)
     L = n + 1
     N = 2L + 1
@@ -305,6 +311,11 @@ function gvm_propagate(
             error("slopes must be :ad or :nodes, got $slopes")
         end
 
+        if ablate === :second_order            # linearize f: no curvature anywhere
+            Q = zero(Q)
+            q = ntuple(_ -> zero(Q), Val(n))
+        end
+
         # Invert the Euclidean map, z = M⁻¹ẋ − ½M⁻¹q(M⁻¹ẋ) with ẋ = x' − f_x(c),
         # and reexpress in the end canonical frame z' = A'⁻¹(x' − out_μ):
         #   Γ' = Pᵀ Qeff P
@@ -321,6 +332,9 @@ function gvm_propagate(
         p = Minv * δ
 
         Γ_est = P' * Qeff * P
+        if ablate === :gamma                   # keep β′, drop the curvature of the surface
+            Γ_est = zero(Γ_est)
+        end
         β_est = P' * (grad - Qeff * p)
 
         # α is referenced to the new canonical origin out_μ: the propagated
@@ -334,8 +348,23 @@ function gvm_propagate(
         # the direct scaling minus the part the conditional mean surface
         # absorbs through the ν-induced Euclidean motion. Hence κ' = κ/c²
         # (inert when c ≈ 1, e.g. short propagation steps).
-        c = c₀ - dot(β_est, end_A \ g)
-        end_κ = isfinite(c) && abs(c) > 1e-3 ? dist.κ / c^2 : dist.κ
+        end_κ = if kappa === :transfer
+            c = c₀ - dot(β_est, end_A \ g)
+            isfinite(c) && abs(c) > 1e-3 ? dist.κ / c^2 : dist.κ
+        elseif kappa === :constant
+            # Original Horwood-Poore formulation: κ is conserved.
+            dist.κ
+        else
+            # Match κ' to the angular residuals of the sigma points around
+            # the estimated surface via the resultant length
+            #   A₁(κ') = 1 − Σᵢ₌₂ᴺ wᵢ (1 − cos ϕᵢ),
+            ϕ = map(1:N) do i
+                z = end_A \ (endpoints[i][1:n] - end_μ)
+                endpoints[i][L] - (α_est + dot(β_est, z) + 0.5 * dot(z, Γ_est, z))
+            end
+            deficit = sum(sigma.W[i] * (1 - cos(ϕ[i])) for i = 2:N)
+            resultant_to_kappa(1 - deficit)
+        end
 
         α_est, β_est, Γ_est, end_κ
     end
@@ -392,10 +421,14 @@ function gvm_propagate(
 end
 
 """
-    run_gvm(p::ForceModel, dist::GaussVonMises, Δt; reltol, abstol, slopes, refine)
+    run_gvm(p::ForceModel, dist::GaussVonMises, Δt; reltol, abstol, slopes, refine, ablate, kappa)
 
 
 Slopes is either :ad (automatic differentaition) or :nodes (via UT like method).
+Ablate is :none, :gamma (drop the surface curvature Γ′) or :second_order
+(linearize f, dropping all curvature).
+Kappa is :transfer (κ′ = κ/c²), :constant (κ′ = κ, paper original) or
+:matched (match κ′ to the sigma-point angular residuals).
 """
 function run_gvm(
     p::ForceModel,
@@ -405,8 +438,10 @@ function run_gvm(
     abstol = 1e-10;
     slopes::Symbol = :ad,
     refine::Bool = true,
+    ablate::Symbol = :none,
+    kappa::Symbol = :transfer,
 ) where {T,V}
-    return gvm_propagate(dist; slopes, refine) do v
+    return gvm_propagate(dist; slopes, refine, ablate, kappa) do v
         propagate_orbit(p, v, Δt, reltol = reltol, abstol = abstol)
     end
 end
