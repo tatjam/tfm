@@ -288,7 +288,7 @@ are stacked one after another in the array in the same order as the force models
 are in the tuple, and the extra argument receives only the relevant ones.
 
 For the acceleration, the array shape ends up as [x, y, z, vx, vy, vz, e1, e2, ...].
-For the param variation, it's [p, f, g, h, k, e1, e2, e3, ..., L]]
+For the param variation, it's [p, f, g, h, k, e1, e2, e3, ..., L]
 """
 struct ForceModel{F<:Tuple,IsNewton,N}
     μ::Float64
@@ -356,7 +356,7 @@ function acceleration(fm::ForceModel{F,true,N}, u, t) where {F,N}
     g = -fm.μ / norm(r)^3 * r
     du[4] += g[1]
     du[5] += g[2]
-    du[end] += g[3]
+    du[6] += g[3]
 
     return SVector(du)
 end

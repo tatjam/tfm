@@ -13,7 +13,18 @@ using HDF5
 
 const NSAMPLES_TRUTH = 10000
 const NSAMPLES_MC_MAPPING = 100_000
-const L_COORD = 6
+
+# nothing = disable drag
+const DRAG_LOGβ_MEAN = nothing
+# const DRAG_LOGβ_MEAN = log(5.0)
+const DRAG_LOGβ_VAR = 0.09
+const DRAG_ρ₀ = 1e-10  # kg/m³
+const DRAG_r₀ = 6771e3 # m
+const DRAG_H = 8e4     # m
+
+const L_STATE = DRAG_LOGβ_MEAN === nothing ? 6 : 7
+# The angular coordinate is the last element of the state either way
+const L_COORD = L_STATE
 
 const METHODS = [
     (name = "UT", color = :dodgerblue3),
@@ -70,6 +81,44 @@ const MEE_METHODS = [
 ]
 const MEE_IDX = Dict(n => j for (j, n) in enumerate(MEE_METHODS))
 
+# Appends the (independent) log β dimension to a distribution when drag is on.
+# For MEE-space distributions (mee = true) the extra is inserted *before* the
+# angular element, matching the [p, f, g, h, k, extras..., L] state layout.
+function with_drag(dist::MvNormal; mee = false)
+    if DRAG_LOGβ_MEAN === nothing
+        return dist
+    end
+    μ = mean(dist)
+    P = Matrix(cov(dist))
+    n = length(μ)
+    if !mee
+        return MvNormal(vcat(μ, DRAG_LOGβ_MEAN),
+                        cat(P, fill(DRAG_LOGβ_VAR, 1, 1); dims = (1, 2)))
+    end
+    # Old indices 1:n-1 keep their place, old n (angular) shifts to n+1,
+    # and the new index n is the log β extra
+    μ_new = vcat(μ[1:(end-1)], DRAG_LOGβ_MEAN, μ[end])
+    P_new = zeros(n + 1, n + 1)
+    P_new[1:(n-1), 1:(n-1)] .= P[1:(n-1), 1:(n-1)]
+    P_new[1:(n-1), n+1]     .= P[1:(n-1), n]
+    P_new[n+1, 1:(n-1)]     .= P[n, 1:(n-1)]
+    P_new[n+1, n+1]         = P[n, n]
+    P_new[n, n]             = DRAG_LOGβ_VAR
+    return MvNormal(μ_new, P_new)
+end
+
+# Sample conversions between Newton and MEE coordinates, carrying the log β
+# extra, which sits before the angular element in MEE coordinates
+function newton_to_mee(v)
+    if DRAG_LOGβ_MEAN === nothing
+        return euclid_to_mee(v..., GM_EARTH)
+    end
+    mee = euclid_to_mee(v[SA[1, 2, 3, 4, 5, 6]]..., GM_EARTH)
+    return SA[mee[SA[1, 2, 3, 4, 5]]..., v[end], mee[6]]
+end
+mee_to_newton(v) = DRAG_LOGβ_MEAN === nothing ? mee_to_euclid(v..., GM_EARTH) :
+    SA[mee_to_euclid(v[SA[1, 2, 3, 4, 5]]..., v[end], GM_EARTH)..., v[6]]
+
 function save_dist!(d_mean, d_covm, name, i, dist)
     j = METHOD_IDX[name]
     d_mean[:, j, i] = mean(dist)
@@ -78,8 +127,8 @@ end
 
 function save_nan!(d_mean, d_covm, d_q, name, i)
     j = METHOD_IDX[name]
-    d_mean[:, j, i] = fill(Float32(NaN), 6)
-    d_covm[:, :, j, i] = fill(Float32(NaN), 6, 6)
+    d_mean[:, j, i] = fill(Float32(NaN), L_STATE)
+    d_covm[:, :, j, i] = fill(Float32(NaN), L_STATE, L_STATE)
     d_q[:, j, i] = fill(Float32(NaN), length(QUANTILES))
 end
 
@@ -106,7 +155,7 @@ end
 function gvm_to_eucl_mc(gvm, N)
     # Package sampler returns a Vector of SVectors (one per sample)
     samples = reduce(hcat, rand(Random.default_rng(), gvm, (N,)))
-    eucl = mapslices(v -> mee_to_euclid(v..., GM_EARTH), samples, dims = 1)
+    eucl = mapslices(mee_to_newton, samples, dims = 1)
     return fit(MvNormal, eucl)
 end
 
@@ -122,11 +171,11 @@ function run_comparison(
     # Samples of ground-truth Monte Carlo
 
     # Ground truth distribution
-    ref_samples = [SVector{6}(col) for col in eachcol(rand(starting_dist, NSAMPLES_TRUTH))]
+    ref_samples = [SVector{L_STATE}(col) for col in eachcol(rand(starting_dist, NSAMPLES_TRUTH))]
     current_ref_samples = copy(ref_samples)
 
     # Resampling to have a baseline
-    alt_samples = [SVector{6}(col) for col in eachcol(rand(starting_dist, NSAMPLES_TRUTH))]
+    alt_samples = [SVector{L_STATE}(col) for col in eachcol(rand(starting_dist, NSAMPLES_TRUTH))]
     current_alt_samples = copy(alt_samples)
 
     μ₀ = mean(starting_dist)
@@ -155,8 +204,8 @@ function run_comparison(
             f,
             "truth",
             Float32,
-            (6, NSAMPLES_TRUTH, nsteps);
-            chunk = (6, NSAMPLES_TRUTH, 1),
+            (L_STATE, NSAMPLES_TRUTH, nsteps);
+            chunk = (L_STATE, NSAMPLES_TRUTH, 1),
             deflate = 3,
         )
 
@@ -164,8 +213,8 @@ function run_comparison(
             f,
             "means",
             Float32,
-            (6, length(METHODS), nsteps);
-            chunk = (6, length(METHODS), 1),
+            (L_STATE, length(METHODS), nsteps);
+            chunk = (L_STATE, length(METHODS), 1),
             deflate = 3,
         )
 
@@ -173,8 +222,8 @@ function run_comparison(
             f,
             "covs",
             Float32,
-            (6, 6, length(METHODS), nsteps);
-            chunk = (6, 6, length(METHODS), 1),
+            (L_STATE, L_STATE, length(METHODS), nsteps);
+            chunk = (L_STATE, L_STATE, length(METHODS), 1),
             deflate = 3,
         )
 
@@ -196,8 +245,7 @@ function run_comparison(
             t = Δt * i
             current_ref_samples = run_monte_carlo(fm, current_ref_samples, Δt)
             current_alt_samples = run_monte_carlo(fm, current_alt_samples, Δt)
-            current_ref_samples_kepler =
-                map(v -> euclid_to_mee(v..., GM_EARTH), current_ref_samples)
+            current_ref_samples_kepler = map(newton_to_mee, current_ref_samples)
 
             mc_mat = reduce(hcat, current_ref_samples)
             mc_alt_mat = reduce(hcat, current_alt_samples)
@@ -224,14 +272,14 @@ function run_comparison(
             save_dist!(d_means, d_covsm, "STM (MEE)", i, stm_dist_kepler)
             # MEE -> Euclid mapping via UT
             ut_dist_kepler_eucl_ut = ut_propagate(
-                v -> mee_to_euclid(v..., GM_EARTH),
+                mee_to_newton,
                 mean(ut_dist_kepler),
                 cov(ut_dist_kepler),
                 α = 1e-1,
                 equilibrate = true,
             )
             stm_dist_kepler_eucl_ut = ut_propagate(
-                v -> mee_to_euclid(v..., GM_EARTH),
+                mee_to_newton,
                 mean(stm_dist_kepler),
                 cov(stm_dist_kepler),
                 α = 1e-1,
@@ -243,21 +291,15 @@ function run_comparison(
 
             # MEE -> Euclid mapping via sampling
             samples_ut_dist_kepler = rand(ut_dist_kepler, NSAMPLES_MC_MAPPING)
-            samples_ut_dist_kepler_eucl = mapslices(
-                v->mee_to_euclid(v..., GM_EARTH),
-                samples_ut_dist_kepler,
-                dims = 1,
-            )
+            samples_ut_dist_kepler_eucl =
+                mapslices(mee_to_newton, samples_ut_dist_kepler, dims = 1)
             ut_dist_kepler_eucl_mc = fit(MvNormal, samples_ut_dist_kepler_eucl)
 
             save_dist!(d_means, d_covsm, "UT (MEE->EUCL MC)", i, ut_dist_kepler_eucl_mc)
 
             samples_stm_dist_kepler = rand(stm_dist_kepler, NSAMPLES_MC_MAPPING)
-            samples_stm_dist_kepler_eucl = mapslices(
-                v->mee_to_euclid(v..., GM_EARTH),
-                samples_stm_dist_kepler,
-                dims = 1,
-            )
+            samples_stm_dist_kepler_eucl =
+                mapslices(mee_to_newton, samples_stm_dist_kepler, dims = 1)
             stm_dist_kepler_eucl_mc = fit(MvNormal, samples_stm_dist_kepler_eucl)
             save_dist!(d_means, d_covsm, "STM (MEE->EUCL MC)", i, stm_dist_kepler_eucl_mc)
 
@@ -330,24 +372,28 @@ function run_comparison(
 end
 
 function main()
-    END_T = 3600.0 * 24.0 * 1.0
-    DELTA_T = 360.0
+    END_T = 3600.0 * 24.0 * 4.0
+    DELTA_T = 3600.0
 
-    fm = EARTH_FM_WITH_J2_NEWTON
-    fmk = EARTH_FM_WITH_J2_KEPLER
-    μ = [9000e3, 0, 0, 0, 8620, 0]
+    forces = DRAG_LOGβ_MEAN === nothing ? EARTH_FM_WITH_J2_TUPLE :
+             (EARTH_FM_WITH_J2_TUPLE..., SimpleDragForce(DRAG_ρ₀, DRAG_r₀, DRAG_H))
+    fm = ForceModel(GM_EARTH, forces, Val(true))
+    fmk = ForceModel(GM_EARTH, forces, Val(false))
+
+    μ = [6771e3, 0, 0, 0, 10142, 0]
+    # μ = [9000e3, 0, 0, 0, 8620, 0]
     σ = Diagonal([1e3, 1e3, 1e3, 0.02, 0.02, 0.02])
 
-    starting_dist = MvNormal(μ, σ^2)
+    starting_dist = with_drag(MvNormal(μ, σ^2))
 
     # Transform to MEE coordinates, assuming normal after the non-linear transform
-    starting_dist_kep = ut_propagate(
+    starting_dist_kep = with_drag(ut_propagate(
         v -> euclid_to_mee(v..., GM_EARTH),
         μ,
         σ^2,
         α = 1e-1,
         equilibrate = true,
-    )
+    ); mee = true)
 
     run_comparison(fm, fmk, starting_dist, starting_dist_kep, END_T, DELTA_T)
 end
